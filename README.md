@@ -1,13 +1,18 @@
 # TrainLog Pro
 
-手機優先的訓練紀錄 Web App。
+GitHub Pages 直接部署的正式原始碼專案。
 
-## GitHub Pages
+## 專案結構
 
-此 Repository 的入口頁面為 `index.html`。
+- `index.html`：頁面 HTML
+- `css/app.css`：介面樣式
+- `js/app.js`：功能與資料邏輯
+- `.nojekyll`：停用 Jekyll 處理
 
-啟用方式：Repository → Settings → Pages → Deploy from a branch → `main` / `/(root)`。
+## 開發方式
 
-## 資料說明
+之後直接修改 HTML / CSS / JS 原始碼即可，不再使用 `gz/*.txt` 壓縮分段。GitHub Pages 從 `main` 分支根目錄直接部署。
 
-TrainLog Pro 的訓練資料主要保存在瀏覽器本機儲存空間。不同裝置、不同瀏覽器、無痕模式不會共用資料，請定期使用 App 內的 JSON 備份功能。
+## 資料
+
+訓練資料仍主要儲存在瀏覽器 LocalStorage。不同裝置或瀏覽器不會自動同步，請定期使用 App 內 JSON 備份。
