@@ -1,1 +1,45 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#10171d"><title>TrainLog Pro</title><style>html,body{margin:0;background:#0d1419;color:#f4f7f8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.boot{min-height:100dvh;display:grid;place-items:center;padding:24px;text-align:center}.boot b{font-size:22px}.boot p{color:#9baab5}.err{color:#ff5d6d}</style></head><body><div class="boot"><div><b>TrainLog Pro</b><p id="msg">載入中…</p></div></div><script>(async()=>{try{const names=['parts/01.txt','parts/02.txt','parts/03.txt','parts/04.txt','parts/05.txt','parts/06.txt','parts/07.txt','parts/08.txt','parts/09.txt','parts/10.txt','parts/11.txt','parts/12.txt','parts/13.txt','parts/14.txt','parts/15.txt'];const texts=await Promise.all(names.map(async n=>{const r=await fetch(n,{cache:'no-store'});if(!r.ok)throw new Error(n+' '+r.status);return r.text()}));document.open();document.write(texts.join(''));document.close()}catch(e){document.getElementById('msg').className='err';document.getElementById('msg').textContent='載入失敗：'+e.message}})();</script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10171d">
+<title>TrainLog Pro</title>
+<style>
+html,body{margin:0;background:#0d1419;color:#f4f7f8;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.boot{min-height:100dvh;display:grid;place-items:center;padding:24px;text-align:center}
+.boot b{font-size:22px}
+.boot p{color:#9baab5}
+.err{color:#ff5d6d}
+</style>
+</head>
+<body>
+<div class="boot"><div><b>TrainLog Pro</b><p id="msg">載入中…</p></div></div>
+<script>
+(async()=>{
+  try{
+    if(!('DecompressionStream' in window)) throw new Error('此瀏覽器不支援解壓縮，請更新 Safari / Chrome');
+    const names=Array.from({length:13},(_,i)=>`gz/${String(i+1).padStart(2,'0')}.txt`);
+    const texts=await Promise.all(names.map(async n=>{
+      const r=await fetch(n,{cache:'no-store'});
+      if(!r.ok) throw new Error(n+' '+r.status);
+      return r.text();
+    }));
+    const b64=texts.join('');
+    const bin=atob(b64);
+    const bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+    const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const html=await new Response(stream).text();
+    document.open();
+    document.write(html);
+    document.close();
+  }catch(e){
+    const m=document.getElementById('msg');
+    m.className='err';
+    m.textContent='載入失敗：'+e.message;
+  }
+})();
+</script>
+</body>
+</html>
