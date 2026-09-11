@@ -1,0 +1,74 @@
+name: Apply TrainLog Pro v2.9.22
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v2.9.22.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prefer machine Exercise Library demos for Chinese names containing 機
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('js/motion-gifs.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('// TrainLog Pro v2.9.20 - Exercise Library animated exercise demos', '// TrainLog Pro v2.9.22 - Exercise Library animated exercise demos')
+
+          old = '''function machinePreference(query,item){
+            const eq=(item.equipment||[]).join(' ').toLowerCase();
+            if(/press|extension|curl|abduction|adduction|pulldown|row|fly|raise|pullover/.test(query)){
+              if(/leverage machine|cable|sled machine|elliptical machine|stationary bike|treadmill/.test(eq))return 8;
+            }
+            return 0;
+          }
+          function scoreItem(item,query,equipmentName=''){'''
+          new = '''function equipmentText(item){return (item?.equipment||[]).join(' ').toLowerCase()}
+          function isMachineItem(item){
+            const eq=equipmentText(item);
+            return /machine|cable|treadmill|stationary bike|elliptical|smith|assisted/.test(eq);
+          }
+          function wantsMachineDemo(label='',nameEn='',equipmentName=''){
+            const zh=String(label||'');
+            const en=(String(nameEn||'')+' '+String(equipmentName||'')).toLowerCase();
+            return zh.includes('機') || zh.includes('器械') || /machine|selectorized|plate[- ]loaded|lever|sled|smith/.test(en);
+          }
+          function machinePreference(query,item,equipmentName='',label='',nameEn=''){
+            const eq=equipmentText(item);
+            let score=0;
+            if(/press|extension|curl|abduction|adduction|pulldown|row|fly|raise|pullover/.test(query) && isMachineItem(item))score+=12;
+            if(wantsMachineDemo(label,nameEn,equipmentName)){
+              if(isMachineItem(item))score+=120;
+              if(/dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/.test(eq))score-=180;
+            }
+            return score;
+          }
+          function scoreItem(item,query,equipmentName='',label='',nameEn=''){'''
+          if old not in s:
+              raise SystemExit('machinePreference block not found')
+          s = s.replace(old, new)
+          s = s.replace('score+=machinePreference(q,item);', 'score+=machinePreference(q,item,equipmentName,label,nameEn);')
+          s = s.replace("const q=englishHint(nameEn,label);\n  let best=null,bestScore=-1;\n  for(const item of items){const s=scoreItem(item,q,equipmentName);if(s>bestScore){best=item;bestScore=s}}", "const q=englishHint(nameEn,label);\n  const machineOnly=wantsMachineDemo(label,nameEn,equipmentName);\n  const pool=machineOnly?items.filter(isMachineItem):items;\n  let best=null,bestScore=-1;\n  for(const item of pool){const s=scoreItem(item,q,equipmentName,label,nameEn);if(s>bestScore){best=item;bestScore=s}}")
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8').replace('v2.9.21','v2.9.22')
+          p.write_text(s, encoding='utf-8')
+      - name: Verify JavaScript syntax
+        run: node --check js/motion-gifs.js
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/motion-gifs.js index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: prefer machine Exercise Library demos for 機 labels"
+          git push
