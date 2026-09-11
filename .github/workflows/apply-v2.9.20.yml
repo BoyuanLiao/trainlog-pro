@@ -1,0 +1,55 @@
+name: Apply TrainLog Pro v2.9.20
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v2.9.20.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch Exercise Library integration
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          idxp=Path('index.html')
+          appp=Path('js/app.js')
+          idx=idxp.read_text(encoding='utf-8')
+          app=appp.read_text(encoding='utf-8')
+
+          idx=idx.replace('v2.9.19','v2.9.20').replace('2.9.19','2.9.20')
+
+          old='window.TrainLogMotion3DHtml(e.id,e.pattern,e.name)'
+          new="window.TrainLogMotion3DHtml(e.id,e.pattern,e.name,e.nameEn||'',eq?.nameEn||'')"
+          count=app.count(old)
+          if count < 1:
+              raise SystemExit('Exercise animation helper call not found')
+          app=app.replace(old,new)
+
+          idxp.write_text(idx,encoding='utf-8')
+          appp.write_text(app,encoding='utf-8')
+          print('patched animation calls:', count)
+          PY
+
+          node --check js/app.js
+          node --check js/motion-gifs.js
+          grep -q 'TrainLog Pro v2.9.20' index.html
+          grep -q 'motion-gifs.js?v=2.9.20' index.html
+          grep -q "TrainLogMotion3DHtml(e.id,e.pattern,e.name,e.nameEn||'',eq?.nameEn||'')" js/app.js
+
+          rm -f .github/workflows/apply-v2.9.20.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js .github/workflows/apply-v2.9.20.yml
+          git commit -m 'feat: use Exercise Library GIFs in exercise info'
+          git push
