@@ -1,0 +1,68 @@
+name: Apply TrainLog Pro v2.9.21
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v2.9.21.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Add Exercise Library demo to equipment details
+        shell: python
+        run: |
+          from pathlib import Path
+
+          app = Path('js/app.js')
+          s = app.read_text(encoding='utf-8')
+          start = s.index('function showSystemEquipmentDetail(id){')
+          end = s.find('\nfunction ', start + 1)
+          if end < 0:
+              end = len(s)
+          block = s[start:end]
+
+          if 'equipmentMotion' not in block:
+              marker = ' const compat=supportedBrandsForEquipment(e),brandHtml='
+              insert = " const equipmentMotion=typeof window.TrainLogMotion3DHtml==='function'?window.TrainLogMotion3DHtml(e.id,e.pattern,e.nameZh,e.nameEn,e.nameEn):'';\n"
+              if marker not in block:
+                  raise SystemExit('equipment detail compat marker not found')
+              block = block.replace(marker, insert + marker, 1)
+
+          target = '</div><div style="margin-top:12px"><b>中文說明</b>'
+          replacement = '</div>${equipmentMotion}<div style="margin-top:12px"><b>中文說明</b>'
+          if replacement not in block:
+              if target not in block:
+                  raise SystemExit('equipment detail modal insertion point not found')
+              block = block.replace(target, replacement, 1)
+
+          s = s[:start] + block + s[end:]
+          app.write_text(s, encoding='utf-8')
+
+          index = Path('index.html')
+          h = index.read_text(encoding='utf-8')
+          h = h.replace('v2.9.20', 'v2.9.21').replace('?v=2.9.20', '?v=2.9.21')
+          index.write_text(h, encoding='utf-8')
+
+      - name: Verify JavaScript syntax
+        run: |
+          node --check js/motion-gifs.js
+          node --check js/app.js
+          grep -q 'equipmentMotion' js/app.js
+          grep -q 'Exercise Library' js/motion-gifs.js
+
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "feat: use Exercise Library in equipment details"
+          git push
