@@ -1,8 +1,107 @@
-// TrainLog Pro v2.9.17 exercise 3D-style GIF demos
+// TrainLog Pro v2.9.20 - Exercise Library animated exercise demos
 (function(){
 'use strict';
-const MAP={horizontal_push:'horizontal_push',horizontal_pull:'horizontal_pull',vertical_push:'vertical_push',vertical_pull:'vertical_pull',shoulder_horizontal_adduction:'shoulder_horizontal_adduction',shoulder_extension:'shoulder_extension',shoulder_abduction:'shoulder_abduction',elbow_flexion:'elbow_flexion',elbow_extension:'elbow_extension',knee_dominant:'knee_dominant',knee_extension:'knee_extension',knee_flexion:'knee_flexion',hip_extension:'hip_extension',hip_abduction:'hip_abduction',hip_adduction:'hip_adduction',plantar_flexion:'plantar_flexion',core_flexion:'core_flexion',rotation:'rotation',cardio:'cardio',multi_press:'horizontal_push',dual_pull:'horizontal_pull',scapular_control:'horizontal_pull',guided_compound:'knee_dominant',dual_leg:'knee_dominant',core_stability:'core_flexion',mobility:'core_flexion'};
+
+const DATA_URL='https://raw.githubusercontent.com/mohamedatef90/exercise-library/main/exercises.json';
+const GIF_BASE='https://raw.githubusercontent.com/mohamedatef90/exercise-library/main/gifs/';
+let libraryPromise=null;
+let demoSeq=0;
+
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function key(pattern,name=''){const s=name.toLowerCase();if(/leg extension|腿伸|伸腿/.test(s))return'knee_extension';if(/leg curl|腿彎|腿後勾/.test(s))return'knee_flexion';if(/abduction|外展/.test(s))return'hip_abduction';if(/adduction|內收|內展/.test(s))return'hip_adduction';if(/calf|小腿/.test(s))return'plantar_flexion';if(/biceps|二頭/.test(s))return'elbow_flexion';if(/triceps|三頭/.test(s))return'elbow_extension';if(/lateral raise|側平舉/.test(s))return'shoulder_abduction';if(/pullover|擴背/.test(s))return'shoulder_extension';if(/pec|fly|蝴蝶|夾胸/.test(s))return'shoulder_horizontal_adduction';if(/shoulder press|肩推/.test(s))return'vertical_push';if(/lat pulldown|下拉/.test(s))return'vertical_pull';if(/row|划船/.test(s))return'horizontal_pull';if(/chest press|胸推/.test(s))return'horizontal_push';if(/leg press|hack squat|腿推|哈克/.test(s))return'knee_dominant';if(/crunch|腹肌|捲腹/.test(s))return'core_flexion';if(/rotation|旋轉/.test(s))return'rotation';if(/treadmill|bike|elliptical|跑步|腳踏|橢圓/.test(s))return'cardio';return MAP[pattern]||'horizontal_push'}
-window.TrainLogMotion3DHtml=function(id,pattern,label){const k=key(pattern,label||'');return '<div class="motion-demo motion-demo-3d"><div class="motion-demo-title"><span>3D 動作動畫</span><span class="pill">GIF</span></div><img src="assets/motion3d/'+k+'.gif" alt="'+esc(label||'動作')+' 3D GIF 動作示意" loading="eager"><div class="motion-demo-note">依目前動作自動選擇對應動畫，用來快速確認移動方向與關節動作；實際座椅、握距與活動範圍仍以現場器材為準。</div></div>'};
+function norm(v){return String(v||'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9\u4e00-\u9fff]+/g,' ').replace(/\s+/g,' ').trim()}
+function englishHint(nameEn,label){
+  const en=norm(nameEn);
+  if(/[a-z]{3}/.test(en))return en;
+  const s=String(label||'').toLowerCase();
+  const hints=[
+    [/腿伸|伸腿/,'leg extension'],[/腿彎|腿後勾/,'leg curl'],[/腿推|哈克/,'leg press'],
+    [/髖外展|外展/,'hip abduction'],[/髖內收|內展|內收/,'hip adduction'],
+    [/胸推/,'chest press'],[/蝴蝶|夾胸|飛鳥/,'chest fly'],[/肩推/,'shoulder press'],
+    [/下拉/,'lat pulldown'],[/划船/,'seated row'],[/擴背|pullover/,'pullover'],
+    [/側平舉/,'lateral raise'],[/二頭/,'biceps curl'],[/三頭/,'triceps extension'],
+    [/臀推/,'hip thrust'],[/硬舉/,'deadlift'],[/深蹲/,'squat'],[/小腿/,'calf raise'],
+    [/捲腹|腹肌/,'crunch'],[/旋轉/,'torso rotation'],[/跑步/,'treadmill'],
+    [/橢圓/,'elliptical'],[/腳踏|單車|自行車/,'stationary bike']
+  ];
+  for(const [re,q] of hints)if(re.test(s))return q;
+  return norm(label);
+}
+function tokens(s){
+  const stop=new Set(['machine','exercise','seated','standing','lever','cable','plate','loaded','selectorized','horizontal','vertical','assisted','the','and']);
+  return norm(s).split(' ').filter(x=>x.length>1&&!stop.has(x));
+}
+function machinePreference(query,item){
+  const eq=(item.equipment||[]).join(' ').toLowerCase();
+  if(/press|extension|curl|abduction|adduction|pulldown|row|fly|raise|pullover/.test(query)){
+    if(/leverage machine|cable|sled machine|elliptical machine|stationary bike|treadmill/.test(eq))return 8;
+  }
+  return 0;
+}
+function scoreItem(item,query,equipmentName=''){
+  if(!item?.gif||!item?.name)return -1;
+  const name=norm(item.name),q=norm(query),qt=tokens(q),nt=tokens(name);
+  if(!q||!qt.length)return -1;
+  let score=0;
+  if(name===q)score+=180;
+  if(name.includes(q))score+=90;
+  if(q.includes(name)&&name.length>5)score+=45;
+  let hit=0;
+  for(const t of qt){
+    if(nt.includes(t)){score+=24;hit++}
+    else if(nt.some(n=>n.startsWith(t)||t.startsWith(n))){score+=10;hit+=0.5}
+  }
+  score+=Math.round((hit/qt.length)*50);
+  if(/lat pulldown/.test(q)&&/lat pulldown/.test(name))score+=70;
+  if(/chest press/.test(q)&&/chest press/.test(name))score+=70;
+  if(/shoulder press/.test(q)&&/(shoulder press|military press|overhead press)/.test(name))score+=60;
+  if(/leg press/.test(q)&&/leg press/.test(name))score+=70;
+  if(/leg extension/.test(q)&&/leg extension/.test(name))score+=70;
+  if(/leg curl/.test(q)&&/leg curl/.test(name))score+=70;
+  if(/hip abduction/.test(q)&&/hip abduction/.test(name))score+=70;
+  if(/hip adduction/.test(q)&&/hip adduction/.test(name))score+=70;
+  if(/seated row|row/.test(q)&&/row/.test(name))score+=45;
+  if(/chest fly/.test(q)&&/(fly|flye|pec deck)/.test(name))score+=55;
+  if(/pullover/.test(q)&&/pullover/.test(name))score+=65;
+  score+=machinePreference(q,item);
+  const eqHint=norm(equipmentName);
+  if(eqHint&&/(cable|pulley)/.test(eqHint)&&(item.equipment||[]).some(x=>/cable/i.test(x)))score+=8;
+  return score;
+}
+function bestMatch(items,nameEn,label,equipmentName){
+  const q=englishHint(nameEn,label);
+  let best=null,bestScore=-1;
+  for(const item of items){const s=scoreItem(item,q,equipmentName);if(s>bestScore){best=item;bestScore=s}}
+  return bestScore>=55?{item:best,score:bestScore,query:q}:null;
+}
+async function getLibrary(){
+  if(!libraryPromise){
+    libraryPromise=fetch(DATA_URL,{cache:'force-cache'})
+      .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+      .then(x=>Array.isArray(x)?x:[])
+      .catch(err=>{libraryPromise=null;throw err});
+  }
+  return libraryPromise;
+}
+function renderError(root,msg){
+  root.innerHTML='<div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">'+esc(msg)+'</div>';
+}
+async function loadDemo(domId,nameEn,label,equipmentName){
+  const root=document.getElementById(domId);if(!root)return;
+  try{
+    const items=await getLibrary();
+    const found=bestMatch(items,nameEn,label,equipmentName);
+    if(!found){renderError(root,'Exercise Library 目前找不到足夠吻合的動畫，避免顯示錯誤動作。');return}
+    const x=found.item,src=GIF_BASE+encodeURIComponent(x.gif);
+    root.innerHTML='<div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div>'+
+      '<img class="exercise-library-gif" src="'+esc(src)+'" alt="'+esc(label||x.name)+' 動作動畫" loading="eager" referrerpolicy="no-referrer">'+
+      '<div class="motion-demo-note"><b>對應：</b>'+esc(x.name)+'<br>第三方動畫來源：Exercise Library（GitHub）。實際器械設定、握距與活動範圍仍以現場器材及舒適動作為準。</div>';
+    const img=root.querySelector('img');
+    if(img)img.addEventListener('error',()=>renderError(root,'動畫檔載入失敗，請確認目前網路連線後再試一次。'),{once:true});
+  }catch(err){renderError(root,'無法連線到 Exercise Library。這個動畫需要網路才能載入。')}
+}
+window.TrainLogMotion3DHtml=function(id,pattern,label,nameEn='',equipmentName=''){
+  const domId='exerciseLibraryDemo_'+(++demoSeq);
+  setTimeout(()=>loadDemo(domId,nameEn,label,equipmentName),0);
+  return '<div id="'+domId+'" class="motion-demo motion-demo-3d"><div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">正在尋找「'+esc(nameEn||label||'此動作')+'」的對應動畫…</div></div>';
+};
 })();
