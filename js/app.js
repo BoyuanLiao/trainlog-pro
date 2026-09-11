@@ -964,7 +964,7 @@ function openExerciseDemo(exId){
  openModal('動作示範確認',`<div class="card">
    <div class="record-title">${esc(ex.name)}</div>
    <div class="small">${esc(ex.nameEn||'')}</div>
-   ${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(ex.id,ex.pattern,ex.name):''}
+   ${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(ex.id,ex.pattern,ex.name,ex.nameEn||'',eq?.nameEn||''):''}
    <div class="tagrow" style="margin-top:8px"><span class="tag">${esc(ex.muscle||'其他')}</span><span class="tag">${esc(pattern)}</span><span class="tag">${esc(prescription)}</span></div>
    ${eq?`<div class="small" style="margin-top:8px"><b>對應器械：</b>${esc(eq.nameZh)} / ${esc(eq.nameEn)}</div>`:''}
    <div class="exercise-demo-copy" style="margin-top:11px">${esc(ex.descZh||ex.notes||'目前沒有額外動作說明。')}</div>
