@@ -1,4 +1,4 @@
-// TrainLog Pro v2.9.20 - Exercise Library animated exercise demos
+// TrainLog Pro v2.9.22 - Exercise Library animated exercise demos
 (function(){
 'use strict';
 
@@ -30,14 +30,27 @@ function tokens(s){
   const stop=new Set(['machine','exercise','seated','standing','lever','cable','plate','loaded','selectorized','horizontal','vertical','assisted','the','and']);
   return norm(s).split(' ').filter(x=>x.length>1&&!stop.has(x));
 }
-function machinePreference(query,item){
-  const eq=(item.equipment||[]).join(' ').toLowerCase();
-  if(/press|extension|curl|abduction|adduction|pulldown|row|fly|raise|pullover/.test(query)){
-    if(/leverage machine|cable|sled machine|elliptical machine|stationary bike|treadmill/.test(eq))return 8;
-  }
-  return 0;
+function equipmentText(item){return (item?.equipment||[]).join(' ').toLowerCase()}
+function isMachineItem(item){
+  const eq=equipmentText(item);
+  return /machine|cable|treadmill|stationary bike|elliptical|smith|assisted/.test(eq);
 }
-function scoreItem(item,query,equipmentName=''){
+function wantsMachineDemo(label='',nameEn='',equipmentName=''){
+  const zh=String(label||'');
+  const en=(String(nameEn||'')+' '+String(equipmentName||'')).toLowerCase();
+  return zh.includes('機') || zh.includes('器械') || /machine|selectorized|plate[- ]loaded|lever|sled|smith/.test(en);
+}
+function machinePreference(query,item,equipmentName='',label='',nameEn=''){
+  const eq=equipmentText(item);
+  let score=0;
+  if(/press|extension|curl|abduction|adduction|pulldown|row|fly|raise|pullover/.test(query) && isMachineItem(item))score+=12;
+  if(wantsMachineDemo(label,nameEn,equipmentName)){
+    if(isMachineItem(item))score+=120;
+    if(/dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/.test(eq))score-=180;
+  }
+  return score;
+}
+function scoreItem(item,query,equipmentName='',label='',nameEn=''){
   if(!item?.gif||!item?.name)return -1;
   const name=norm(item.name),q=norm(query),qt=tokens(q),nt=tokens(name);
   if(!q||!qt.length)return -1;
@@ -62,15 +75,17 @@ function scoreItem(item,query,equipmentName=''){
   if(/seated row|row/.test(q)&&/row/.test(name))score+=45;
   if(/chest fly/.test(q)&&/(fly|flye|pec deck)/.test(name))score+=55;
   if(/pullover/.test(q)&&/pullover/.test(name))score+=65;
-  score+=machinePreference(q,item);
+  score+=machinePreference(q,item,equipmentName,label,nameEn);
   const eqHint=norm(equipmentName);
   if(eqHint&&/(cable|pulley)/.test(eqHint)&&(item.equipment||[]).some(x=>/cable/i.test(x)))score+=8;
   return score;
 }
 function bestMatch(items,nameEn,label,equipmentName){
   const q=englishHint(nameEn,label);
+  const machineOnly=wantsMachineDemo(label,nameEn,equipmentName);
+  const pool=machineOnly?items.filter(isMachineItem):items;
   let best=null,bestScore=-1;
-  for(const item of items){const s=scoreItem(item,q,equipmentName);if(s>bestScore){best=item;bestScore=s}}
+  for(const item of pool){const s=scoreItem(item,q,equipmentName,label,nameEn);if(s>bestScore){best=item;bestScore=s}}
   return bestScore>=55?{item:best,score:bestScore,query:q}:null;
 }
 async function getLibrary(){
