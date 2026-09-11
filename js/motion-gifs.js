@@ -194,13 +194,16 @@ function scoreItem(item,queryInfo){
 
 function makeQueryInfo(nameEn,label,equipmentName){
   const query=englishHint(nameEn,label);
-  const semanticText=norm([query,nameEn,label,equipmentName].filter(Boolean).join(' '));
+  // Movement identity comes from the exercise itself. A combo machine name such as
+  // "Inner / Outer Thigh Machine" must not overwrite an exercise like Hip Adduction.
+  const actionText=norm([query,nameEn,label].filter(Boolean).join(' '));
+  const semanticText=norm([actionText,equipmentName].filter(Boolean).join(' '));
   return {
     query,
     semanticText,
     requiredFamily:explicitRequestedFamily(nameEn,label,equipmentName),
-    queryConcepts:concepts(semanticText),
-    primaryConcept:strongConcept(semanticText)
+    queryConcepts:concepts(actionText),
+    primaryConcept:strongConcept(actionText)
   };
 }
 function bestMatch(items,nameEn,label,equipmentName){
