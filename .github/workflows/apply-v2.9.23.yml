@@ -1,0 +1,107 @@
+name: Apply TrainLog Pro v2.9.23
+
+on:
+  push:
+    paths:
+      - '.github/workflows/apply-v2.9.23.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix Exercise Library matching for back extension
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('js/motion-gifs.js')
+          s = p.read_text(encoding='utf-8')
+          s = s.replace('// TrainLog Pro v2.9.22 - Exercise Library animated exercise demos', '// TrainLog Pro v2.9.23 - Exercise Library animated exercise demos')
+
+          s = s.replace("  const hints=[\n    [/腿伸|伸腿/,'leg extension'],", "  const hints=[\n    [/背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/,'back extension'],\n    [/腿伸|伸腿/,'leg extension'],")
+
+          marker = "function machinePreference(query,item,equipmentName='',label='',nameEn=''){"
+          helpers = """function isBackExtensionQuery(query='',label='',nameEn=''){
+            const text=(norm(query)+' '+norm(nameEn)+' '+String(label||'')).toLowerCase();
+            return /back extension|hyperextension|roman chair/.test(text) || /背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/.test(text);
+          }
+          function isBackExtensionItem(item){
+            const name=norm(item?.name),targets=(item?.targetMuscles||[]).join(' ').toLowerCase();
+            if(/back extension|hyperextension|roman chair/.test(name))return true;
+            return /lower back|erector spinae|spinal erector/.test(targets) && /extension/.test(name);
+          }
+          function machinePreference(query,item,equipmentName='',label='',nameEn=''){"""
+          if 'function isBackExtensionQuery' not in s:
+              if marker not in s:
+                  raise SystemExit('machinePreference marker not found')
+              s = s.replace(marker, helpers)
+
+          old_pref = """  if(wantsMachineDemo(label,nameEn,equipmentName)){
+            if(isMachineItem(item))score+=120;
+            if(/dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/.test(eq))score-=180;
+          }"""
+          new_pref = """  if(wantsMachineDemo(label,nameEn,equipmentName)){
+            if(isMachineItem(item))score+=120;
+            const backExt=isBackExtensionQuery(query,label,nameEn);
+            const nonMachinePattern=backExt
+              ? /dumbbell|barbell|kettlebell|band|medicine ball|ez bar/
+              : /dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/;
+            if(nonMachinePattern.test(eq))score-=180;
+          }"""
+          if old_pref not in s:
+              raise SystemExit('machine preference body not found')
+          s = s.replace(old_pref, new_pref)
+
+          bonus_marker = "  if(/pullover/.test(q)&&/pullover/.test(name))score+=65;\n  score+=machinePreference(q,item,equipmentName,label,nameEn);"
+          bonus_new = """  if(/pullover/.test(q)&&/pullover/.test(name))score+=65;
+          if(isBackExtensionQuery(q,label,nameEn)){
+            if(isBackExtensionItem(item))score+=220;
+            else score-=400;
+          }
+          score+=machinePreference(q,item,equipmentName,label,nameEn);"""
+          if bonus_marker not in s:
+              raise SystemExit('score bonus marker not found')
+          s = s.replace(bonus_marker, bonus_new)
+
+          old_best = """function bestMatch(items,nameEn,label,equipmentName){
+            const q=englishHint(nameEn,label);
+            const machineOnly=wantsMachineDemo(label,nameEn,equipmentName);
+            const pool=machineOnly?items.filter(isMachineItem):items;
+            let best=null,bestScore=-1;
+            for(const item of pool){const s=scoreItem(item,q,equipmentName,label,nameEn);if(s>bestScore){best=item;bestScore=s}}
+            return bestScore>=55?{item:best,score:bestScore,query:q}:null;
+          }"""
+          new_best = """function bestMatch(items,nameEn,label,equipmentName){
+            const rawQuery=englishHint(nameEn,label);
+            const backExt=isBackExtensionQuery(rawQuery,label,nameEn);
+            const q=backExt?'back extension':rawQuery;
+            const machineOnly=wantsMachineDemo(label,nameEn,equipmentName);
+            const pool=backExt?items.filter(isBackExtensionItem):(machineOnly?items.filter(isMachineItem):items);
+            let best=null,bestScore=-1;
+            for(const item of pool){const s=scoreItem(item,q,equipmentName,label,nameEn);if(s>bestScore){best=item;bestScore=s}}
+            if(backExt && (!best || !isBackExtensionItem(best)))return null;
+            return bestScore>=55?{item:best,score:bestScore,query:q}:null;
+          }"""
+          if old_best not in s:
+              raise SystemExit('bestMatch block not found')
+          s = s.replace(old_best, new_best)
+          p.write_text(s, encoding='utf-8')
+
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8').replace('v2.9.22','v2.9.23')
+          p.write_text(s, encoding='utf-8')
+      - name: Verify JavaScript syntax
+        run: node --check js/motion-gifs.js
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/motion-gifs.js index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "fix: match back extension demos correctly"
+          git push
