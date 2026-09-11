@@ -1,0 +1,55 @@
+name: Apply TrainLog Pro v2.9.18
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v2.9.18.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch training info modal 3D GIF
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          idxp=Path('index.html')
+          appp=Path('js/app.js')
+          idx=idxp.read_text(encoding='utf-8')
+          app=appp.read_text(encoding='utf-8')
+
+          idx=idx.replace('TrainLog Pro v2.9.17','TrainLog Pro v2.9.18').replace('>v2.9.17<','>v2.9.18<')
+
+          old='''openModal(e.name,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn||'')}</div><div class="tagrow" style="margin-top:8px">'''
+          new='''openModal(e.name,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn||'')}</div>${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(e.id,e.pattern,e.name):''}<div class="tagrow" style="margin-top:8px">'''
+          if old not in app:
+              raise SystemExit('showExerciseDetail insertion point not found')
+          app=app.replace(old,new,1)
+
+          idxp.write_text(idx,encoding='utf-8')
+          appp.write_text(app,encoding='utf-8')
+          PY
+
+          node --check js/app.js
+          node --check js/motion-gifs.js
+          grep -q 'TrainLog Pro v2.9.18' index.html
+          grep -q "openModal(e.name,.*TrainLogMotion3DHtml" js/app.js
+          test -f assets/motion3d/horizontal_push.gif
+          test -f assets/motion3d/vertical_pull.gif
+          test -f assets/motion3d/knee_dominant.gif
+
+          rm -f .github/workflows/apply-v2.9.18.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js .github/workflows/apply-v2.9.18.yml
+          git commit -m 'fix: show 3D GIF in training exercise info modal'
+          git push
