@@ -23,7 +23,8 @@ jobs:
           s = p.read_text(encoding='utf-8')
           s = s.replace('// TrainLog Pro v2.9.22 - Exercise Library animated exercise demos', '// TrainLog Pro v2.9.23 - Exercise Library animated exercise demos')
 
-          s = s.replace("  const hints=[\n    [/腿伸|伸腿/,'leg extension'],", "  const hints=[\n    [/背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/,'back extension'],\n    [/腿伸|伸腿/,'leg extension'],")
+          if "[/背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/,'back extension']" not in s:
+              s = s.replace("  const hints=[\n    [/腿伸|伸腿/,'leg extension'],", "  const hints=[\n    [/背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/,'back extension'],\n    [/腿伸|伸腿/,'leg extension'],")
 
           marker = "function machinePreference(query,item,equipmentName='',label='',nameEn=''){"
           helpers = """function isBackExtensionQuery(query='',label='',nameEn=''){
@@ -41,32 +42,17 @@ jobs:
                   raise SystemExit('machinePreference marker not found')
               s = s.replace(marker, helpers)
 
-          old_pref = """  if(wantsMachineDemo(label,nameEn,equipmentName)){
-            if(isMachineItem(item))score+=120;
-            if(/dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/.test(eq))score-=180;
-          }"""
-          new_pref = """  if(wantsMachineDemo(label,nameEn,equipmentName)){
-            if(isMachineItem(item))score+=120;
-            const backExt=isBackExtensionQuery(query,label,nameEn);
-            const nonMachinePattern=backExt
-              ? /dumbbell|barbell|kettlebell|band|medicine ball|ez bar/
-              : /dumbbell|barbell|body weight|bodyweight|kettlebell|band|medicine ball|ez bar/;
-            if(nonMachinePattern.test(eq))score-=180;
-          }"""
-          if old_pref not in s:
-              raise SystemExit('machine preference body not found')
-          s = s.replace(old_pref, new_pref)
-
           bonus_marker = "  if(/pullover/.test(q)&&/pullover/.test(name))score+=65;\n  score+=machinePreference(q,item,equipmentName,label,nameEn);"
           bonus_new = """  if(/pullover/.test(q)&&/pullover/.test(name))score+=65;
           if(isBackExtensionQuery(q,label,nameEn)){
-            if(isBackExtensionItem(item))score+=220;
-            else score-=400;
+            if(isBackExtensionItem(item))score+=400;
+            else score-=500;
           }
           score+=machinePreference(q,item,equipmentName,label,nameEn);"""
-          if bonus_marker not in s:
-              raise SystemExit('score bonus marker not found')
-          s = s.replace(bonus_marker, bonus_new)
+          if 'if(isBackExtensionQuery(q,label,nameEn))' not in s:
+              if bonus_marker not in s:
+                  raise SystemExit('score bonus marker not found')
+              s = s.replace(bonus_marker, bonus_new)
 
           old_best = """function bestMatch(items,nameEn,label,equipmentName){
             const q=englishHint(nameEn,label);
@@ -87,9 +73,11 @@ jobs:
             if(backExt && (!best || !isBackExtensionItem(best)))return null;
             return bestScore>=55?{item:best,score:bestScore,query:q}:null;
           }"""
-          if old_best not in s:
-              raise SystemExit('bestMatch block not found')
-          s = s.replace(old_best, new_best)
+          if 'const backExt=isBackExtensionQuery(rawQuery,label,nameEn);' not in s:
+              if old_best not in s:
+                  raise SystemExit('bestMatch block not found')
+              s = s.replace(old_best, new_best)
+
           p.write_text(s, encoding='utf-8')
 
           p = Path('index.html')
