@@ -1,0 +1,4 @@
+.motion-demo{margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--surface2)}
+.motion-demo-title{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;font-weight:800}
+.motion-demo img{display:block;width:100%;max-width:360px;aspect-ratio:16/9;object-fit:contain;margin:0 auto;border-radius:12px;background:#f8f9fb}
+.motion-demo-note{margin-top:7px;font-size:12px;line-height:1.45;color:var(--muted)}
