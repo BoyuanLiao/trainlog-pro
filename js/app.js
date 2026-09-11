@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const CURRENT_SCHEMA=17;
+const CURRENT_SCHEMA=18;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
   ['weight_reps','重量 × 次數'],['duration','計時'],['cardio','有氧'],['bodyweight','體重型'],['unilateral','單側']
@@ -122,7 +122,7 @@ function loadData(){try{const cur=localStorage.getItem(APP_KEY);if(cur)return mi
 let data=loadData();
 
 function snapshot(reason){
- const copy={schemaVersion:data.schemaVersion,settings:data.settings,gyms:data.gyms,equipment:data.equipment,exerciseLibrary:data.exerciseLibrary,templates:data.templates,workouts:data.workouts,activeWorkout:data.activeWorkout,currentPlan:data.currentPlan,todayAdjustment:data.todayAdjustment,bodyStatus:data.bodyStatus,trash:data.trash,strengthGoals:data.strengthGoals};
+ const copy=JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key])=>key!=='snapshots'))));
  const snaps=(data.snapshots||[]).filter(s=>s&&s.payload);
  snaps.unshift({id:uid('snap'),at:new Date().toISOString(),reason,payload:copy});
  data.snapshots=snaps.slice(0,5);
@@ -917,6 +917,7 @@ function runAppSelfCheck(){
  const required=['homePage','trainPage','recordsPage','analysisPage','settingsPage','modalWrap','restOverlay','trainingDrawer','settingsPrograms','settingsExercises','settingsGym','settingsTraining','settingsData'];const missing=required.filter(id=>!document.getElementById(id));add(!missing.length,'主要畫面元件存在',missing.join('、'));
  const ids=[...document.querySelectorAll('[id]')].map(x=>x.id),dup=ids.filter((x,i)=>ids.indexOf(x)!==i);add(!dup.length,'目前畫面沒有重複 DOM ID',[...new Set(dup)].join('、'));
  const cp=data.currentPlan,cpOk=!cp||!!SYSTEM_PROGRAMS.find(p=>p.id===cp.programId);add(cpOk,'目前訓練計畫引用正常',cp&&!cpOk?cp.programId:'');const weekdays=availableWeekdays(),weekdayOk=weekdays.every(x=>x>=0&&x<=6)&&new Set(weekdays).size===weekdays.length;add(weekdayOk,'推薦可訓練星期設定正常');const pri=priorityMuscles(),priOk=pri.every(x=>MUSCLES.includes(x));add(priOk,'推薦優先部位設定正常');
+ const backupKeys=Object.keys(freshData()).filter(k=>k!=='snapshots'),snapshotKeys=Object.keys(Object.fromEntries(Object.entries(data).filter(([k])=>k!=='snapshots')));const missingBackupKeys=backupKeys.filter(k=>!snapshotKeys);add(!missingBackupKeys.length,'完整備份欄位涵蓋目前資料結構',missingBackupKeys.join('、'));
  return results
 }
 function renderSelfCheck(results){const box=$('#selfCheckResult');if(!box)return;if(!results){box.innerHTML='';return}const ok=results.every(x=>x.ok);box.innerHTML=`<div class="${ok?'good':'warn'}" style="margin-top:9px;font-weight:900">${ok?'✓ 自我檢查通過':'⚠ 發現需要處理的項目'}</div><div class="selfcheck-list">${results.map(r=>`<div class="selfcheck-item ${r.ok?'ok':'bad'}">${r.ok?'✓':'⚠'} ${esc(r.label)}${r.detail?`<div class="small" style="margin-top:2px">${esc(r.detail)}</div>`:''}</div>`).join('')}</div>`}
@@ -2183,12 +2184,29 @@ function editTemplate(id=''){
 }
 
 function download(name,text,type){const blob=new Blob([text],{type}),a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function exportJSON(){const payload={...data,exportedAt:new Date().toISOString(),app:'TrainLog Pro'};download('trainlog-pro-'+isoToday()+'.json',JSON.stringify(payload,null,2),'application/json');toast('JSON 已匯出')}
+function buildBackupPayload(){return{...JSON.parse(JSON.stringify(data)),backupMeta:{format:'trainlog-pro-full-backup',version:1,appVersion:'2.9.15',exportedAt:new Date().toISOString(),includes:['訓練紀錄','目前訓練計畫','訓練偏好與目標','我的課表','自訂動作','健身房與器材','進行中的訓練','身體狀態','力量目標','回收筒','自動備份紀錄']},app:'TrainLog Pro'}}
+function exportJSON(){download('trainlog-pro-'+isoToday()+'.json',JSON.stringify(buildBackupPayload(),null,2),'application/json');toast('完整備份已下載')}
+function mergeById(a,b){const m=new Map((a||[]).map(x=>[x.id,x]));(b||[]).forEach(x=>m.set(x.id,x));return[...m.values()]}
+function mergeSnapshots(a,b){const m=new Map();[...(a||[]),...(b||[])].forEach(x=>{if(x?.id&&!m.has(x.id))m.set(x.id,x)});return[...m.values()].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).slice(0,5)}
+function mergeBodyStatus(a,b){const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>{if(x?.date)m.set(x.date,x)});return[...m.values()].sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
+function importSummaryHtml(migrated,type,newCount,dup){
+ const hasSettings=type==='json'&&!!migrated.settings,hasPlan=type==='json'&&!!migrated.currentPlan,hasActive=type==='json'&&!!migrated.activeWorkout;
+ return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>訓練紀錄</span></div><div class="stat"><b>${newCount}</b><span>新增紀錄</span></div><div class="stat"><b>${dup}</b><span>相同 ID</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?'<span class="tag good">訓練偏好 ✓</span>':''}${hasPlan?'<span class="tag good">目前計畫 ✓</span>':''}${hasActive?'<span class="tag">未完成訓練 ✓</span>':''}</div>${type==='csv'?'<div class="small" style="margin-top:10px">CSV 只包含訓練表格資料，不會覆蓋訓練偏好、目前計畫或 App 設定。</div>':'<div class="small" style="margin-top:10px">完整 JSON 備份可恢復訓練偏好、目前計畫、器材、課表與其他個人資料。</div>'}</div>`
+}
 function previewImport(incoming,type,fileName){
  const migrated=migrate(incoming),existing=new Map(data.workouts.map(w=>[w.id,w])),newCount=migrated.workouts.filter(w=>!existing.has(w.id)).length,dup=migrated.workouts.length-newCount;
- openModal('匯入預覽',`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的備份資料</div><div class="grid3" style="margin-top:10px"><div class="stat"><b>${migrated.workouts.length}</b><span>訓練紀錄</span></div><div class="stat"><b>${newCount}</b><span>新增</span></div><div class="stat"><b>${dup}</b><span>相同 ID</span></div></div></div><div class="field"><label>重複資料處理</label><select id="impMode"><option value="merge">合併，相同 ID 以匯入資料覆蓋</option><option value="skip">跳過相同 ID</option><option value="replace">完全取代目前資料</option></select></div><button class="btn primary" id="impConfirm">確認匯入</button>`,()=>$('#impConfirm').onclick=()=>{const mode=$('#impMode').value;snapshot('匯入前');if(mode==='replace'){const snaps=data.snapshots;data=migrated;data.snapshots=snaps}else{const map=new Map(data.workouts.map(w=>[w.id,w]));migrated.workouts.forEach(w=>{if(mode==='merge'||!map.has(w.id))map.set(w.id,w)});data.workouts=[...map.values()];data.exerciseLibrary=mergeById(data.exerciseLibrary,migrated.exerciseLibrary);data.templates=mergeById(data.templates,migrated.templates);data.gyms=mergeById(data.gyms,migrated.gyms);data.equipment=mergeById(data.equipment,migrated.equipment)}syncGymsFromHistory(false);save('匯入資料',false);closeModal();toast('匯入完成')})
+ const modeOptions=type==='json'?`<option value="restore">完整還原備份（包含偏好、目前計畫與其他設定）</option><option value="merge">只合併訓練資料，不修改目前設定</option><option value="skip">只加入新的訓練資料，略過相同 ID</option>`:`<option value="merge">合併 CSV 訓練資料</option><option value="skip">只加入新的 CSV 訓練資料</option>`;
+ openModal('匯入預覽',`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的${type==='json'?'完整備份':'表格資料'}</div></div>${importSummaryHtml(migrated,type,newCount,dup)}<div class="field"><label>匯入方式</label><select id="impMode">${modeOptions}</select><div class="hint">完整還原會先自動保存目前狀態，之後仍可從自動備份紀錄恢復。</div></div><button class="btn primary" id="impConfirm">確認匯入</button>`,()=>$('#impConfirm').onclick=()=>{
+   const mode=$('#impMode').value;snapshot('匯入前');const beforeSnapshots=[...(data.snapshots||[])];
+   if(mode==='restore'&&type==='json'){
+     const importedSnapshots=[...(migrated.snapshots||[])];data=migrated;data.snapshots=mergeSnapshots(beforeSnapshots,importedSnapshots);
+   }else{
+     const map=new Map(data.workouts.map(w=>[w.id,w]));migrated.workouts.forEach(w=>{if(mode==='merge'||!map.has(w.id))map.set(w.id,w)});data.workouts=[...map.values()];
+     data.exerciseLibrary=mergeById(data.exerciseLibrary,migrated.exerciseLibrary);data.templates=mergeById(data.templates,migrated.templates);data.gyms=mergeById(data.gyms,migrated.gyms);data.equipment=mergeById(data.equipment,migrated.equipment);data.bodyStatus=mergeBodyStatus(data.bodyStatus,migrated.bodyStatus);data.strengthGoals=mergeById(data.strengthGoals,migrated.strengthGoals);data.snapshots=beforeSnapshots;
+   }
+   syncGymsFromHistory(false);save('匯入資料',false);closeModal();toast(mode==='restore'?'完整備份已恢復':'訓練資料已合併')
+ })
 }
-function mergeById(a,b){const m=new Map((a||[]).map(x=>[x.id,x]));(b||[]).forEach(x=>m.set(x.id,x));return[...m.values()]}
 function csvEscape(v){return'"'+String(v??'').replace(/"/g,'""')+'"'}
 function exportCSV(){
  const rows=[['workoutId','date','workoutName','duration','deload','gymName','exerciseId','exerciseName','muscle','type','equipmentId','inputUnit','setIndex','kind','weightKg','reps','rir','rpe','seconds','leftWeightKg','leftReps','rightWeightKg','rightReps','cardioMinutes','distanceKm','speed','incline','notes']];
