@@ -1,4 +1,4 @@
-// TrainLog Pro v2.9.22 - Exercise Library animated exercise demos
+// TrainLog Pro v2.9.23 - Exercise Library animated exercise demos
 (function(){
 'use strict';
 
@@ -14,6 +14,7 @@ function englishHint(nameEn,label){
   if(/[a-z]{3}/.test(en))return en;
   const s=String(label||'').toLowerCase();
   const hints=[
+    [/背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/,'back extension'],
     [/腿伸|伸腿/,'leg extension'],[/腿彎|腿後勾/,'leg curl'],[/腿推|哈克/,'leg press'],
     [/髖外展|外展/,'hip abduction'],[/髖內收|內展|內收/,'hip adduction'],
     [/胸推/,'chest press'],[/蝴蝶|夾胸|飛鳥/,'chest fly'],[/肩推/,'shoulder press'],
@@ -39,6 +40,15 @@ function wantsMachineDemo(label='',nameEn='',equipmentName=''){
   const zh=String(label||'');
   const en=(String(nameEn||'')+' '+String(equipmentName||'')).toLowerCase();
   return zh.includes('機') || zh.includes('器械') || /machine|selectorized|plate[- ]loaded|lever|sled|smith/.test(en);
+}
+function isBackExtensionQuery(query='',label='',nameEn=''){
+  const text=(norm(query)+' '+norm(nameEn)+' '+String(label||'')).toLowerCase();
+  return /back extension|hyperextension|roman chair/.test(text) || /背伸展|背部伸展|下背伸展|腰背伸展|羅馬椅/.test(text);
+}
+function isBackExtensionItem(item){
+  const name=norm(item?.name),targets=(item?.targetMuscles||[]).join(' ').toLowerCase();
+  if(/back extension|hyperextension|roman chair/.test(name))return true;
+  return /lower back|erector spinae|spinal erector/.test(targets) && /extension/.test(name);
 }
 function machinePreference(query,item,equipmentName='',label='',nameEn=''){
   const eq=equipmentText(item);
@@ -75,17 +85,24 @@ function scoreItem(item,query,equipmentName='',label='',nameEn=''){
   if(/seated row|row/.test(q)&&/row/.test(name))score+=45;
   if(/chest fly/.test(q)&&/(fly|flye|pec deck)/.test(name))score+=55;
   if(/pullover/.test(q)&&/pullover/.test(name))score+=65;
-  score+=machinePreference(q,item,equipmentName,label,nameEn);
+if(isBackExtensionQuery(q,label,nameEn)){
+  if(isBackExtensionItem(item))score+=400;
+  else score-=500;
+}
+score+=machinePreference(q,item,equipmentName,label,nameEn);
   const eqHint=norm(equipmentName);
   if(eqHint&&/(cable|pulley)/.test(eqHint)&&(item.equipment||[]).some(x=>/cable/i.test(x)))score+=8;
   return score;
 }
 function bestMatch(items,nameEn,label,equipmentName){
-  const q=englishHint(nameEn,label);
+  const rawQuery=englishHint(nameEn,label);
+  const backExt=isBackExtensionQuery(rawQuery,label,nameEn);
+  const q=backExt?'back extension':rawQuery;
   const machineOnly=wantsMachineDemo(label,nameEn,equipmentName);
-  const pool=machineOnly?items.filter(isMachineItem):items;
+  const pool=backExt?items.filter(isBackExtensionItem):(machineOnly?items.filter(isMachineItem):items);
   let best=null,bestScore=-1;
   for(const item of pool){const s=scoreItem(item,q,equipmentName,label,nameEn);if(s>bestScore){best=item;bestScore=s}}
+  if(backExt && (!best || !isBackExtensionItem(best)))return null;
   return bestScore>=55?{item:best,score:bestScore,query:q}:null;
 }
 async function getLibrary(){
