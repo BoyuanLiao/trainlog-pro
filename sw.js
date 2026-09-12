@@ -1,4 +1,4 @@
-// TrainLog Pro v2.10.1 - offline cache for Exercise Library animations
+// TrainLog Pro v2.10.2 - offline cache for Exercise Library animations
 'use strict';
 const EXERCISE_CACHE='trainlog-exercise-library-v1';
 self.addEventListener('install',()=>self.skipWaiting());
