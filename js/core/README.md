@@ -1,14 +1,17 @@
 # `js/core/`
 
-狀態：**重構骨架，程式目前尚未從 `app.js` 搬入。**
+跨功能核心能力；不得依賴頁面 render。
 
-未來負責跨功能核心能力：
-- `utils.js`：日期、數值、字串、DOM 無關共用函式
-- `storage.js`：LocalStorage save/load/recovery
-- `migration.js`：Schema migration
+## `migration.js`
+狀態：**已實作（Phase 3a）**。
 
-規則：
-- `core` 不應依賴頁面 render。
-- migration 必須能讀舊資料，不可只支援最新 schema。
-- storage error 必須保留 recovery 能力。
-- 搬移函式後同步更新 `../README.md` 與 `../../docs/REFACTOR.md`。
+提供 `window.TrainLogMigration.create(options)`，由 `app.js` 注入 schema、system exercises、uid、日期與重量轉換等 primitive。負責 fresh defaults、system exercise merge、legacy records/workouts migration、schema < 12 lb→kg normalization、tutorial defaults、active workout / strength goals 與 legacy unknown exercise migration。
+
+### 安全規則
+- 不讀 DOM / LocalStorage / mutable `data`。
+- 修改 migration 前後都跑 `node tests/core/migration-characterization.test.js`。
+- schema 行為變更必須同步 fixture。
+
+## 尚未拆出
+- `storage.js`：`loadData / save / snapshot / recovery` 仍在 `app.js`。
+- `utils.js`：日期、數值等共用 helper 仍待後續整理。

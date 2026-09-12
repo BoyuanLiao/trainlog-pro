@@ -2,60 +2,23 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 
-const app = fs.readFileSync('js/app.js', 'utf8');
 const exercises = fs.readFileSync('js/data/exercises.js', 'utf8');
-
-function functionSource(name) {
-  const re = new RegExp('function\\s+' + name + '\\s*\\(');
-  const m = re.exec(app);
-  if (!m) throw new Error('Missing function ' + name);
-  const start = m.index;
-  const brace = app.indexOf('{', m.index + m[0].length);
-  let depth = 0, state = 'normal', escaped = false;
-  for (let i = brace; i < app.length; i++) {
-    const ch = app[i], next = app[i + 1] || '';
-    if (state === 'line') { if (ch === '\n') state = 'normal'; continue; }
-    if (state === 'block') { if (ch === '*' && next === '/') { state = 'normal'; i++; } continue; }
-    if (state === 'single' || state === 'double' || state === 'template') {
-      if (escaped) { escaped = false; continue; }
-      if (ch === '\\') { escaped = true; continue; }
-      if ((state === 'single' && ch === "'") || (state === 'double' && ch === '"') || (state === 'template' && ch === '`')) state = 'normal';
-      continue;
-    }
-    if (ch === '/' && next === '/') { state = 'line'; i++; continue; }
-    if (ch === '/' && next === '*') { state = 'block'; i++; continue; }
-    if (ch === "'") { state = 'single'; continue; }
-    if (ch === '"') { state = 'double'; continue; }
-    if (ch === '`') { state = 'template'; continue; }
-    if (ch === '{') depth++;
-    if (ch === '}') {
-      depth--;
-      if (depth === 0) return app.slice(start, i + 1);
-    }
-  }
-  throw new Error('Unclosed function ' + name);
-}
-
-const ctx = vm.createContext({ console, structuredClone, Date, Math, JSON, Map, Set });
+const migrationModule = fs.readFileSync('js/core/migration.js', 'utf8');
+const ctx = vm.createContext({ console, structuredClone, Date, Math, JSON, Map, Set, window:{} });
 vm.runInContext(exercises, ctx);
+vm.runInContext(migrationModule, ctx);
 vm.runInContext(`
-const CURRENT_SCHEMA=18;
 const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
 const normalizeWeightUnit=u=>u==='lb'?'lb':'kg';
 const LB_PER_KG=2.2046226218;
 const toKg=(v,unit='kg')=>normalizeWeightUnit(unit)==='lb'?n(v)/LB_PER_KG:n(v);
-const isoToday=()=> '2026-09-13';
 let uidSeq=0; const uid=(p='id')=>p+'_test_'+(++uidSeq);
-`, ctx);
-
-for (const name of ['defaultLibrary','mergeSystemExercises','defaultTemplates','freshData','migrate','guessType','findOrCreateExercise']) {
-  vm.runInContext(functionSource(name), ctx);
-}
-
-const migrate = vm.runInContext('migrate', ctx);
-const freshData = vm.runInContext('freshData', ctx);
-const systemCount = vm.runInContext('SYSTEM_EXERCISES.length', ctx);
-const chestId = vm.runInContext("SYSTEM_EXERCISES.find(x=>x.id==='ex_chestpress').id", ctx);
+const migrationCore=window.TrainLogMigration.create({currentSchema:18,systemExercises:SYSTEM_EXERCISES,uid,today:()=> '2026-09-13',toKg,normalizeWeightUnit,num:n});
+`,ctx);
+const migrate=vm.runInContext('migrationCore.migrate',ctx);
+const freshData=vm.runInContext('migrationCore.freshData',ctx);
+const systemCount=vm.runInContext('SYSTEM_EXERCISES.length',ctx);
+const chestId=vm.runInContext("SYSTEM_EXERCISES.find(x=>x.id==='ex_chestpress').id",ctx);
 
 function approx(actual, expected, eps=1e-6) {
   assert(Math.abs(actual - expected) <= eps, `expected ${actual} ≈ ${expected}`);
