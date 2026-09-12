@@ -1,0 +1,232 @@
+name: Refactor Phase 2b - Stimulus and consistency
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase2b-analysis.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Extend analysis module and replace app implementations
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          app_path = Path('js/app.js')
+          module_path = Path('js/analysis/training-metrics.js')
+          app = app_path.read_text(encoding='utf-8')
+          module = module_path.read_text(encoding='utf-8')
+
+          def function_span(source: str, name: str):
+              m = re.search(r'(?m)^\s*function\s+' + re.escape(name) + r'\s*\(', source)
+              if not m:
+                  raise RuntimeError(f'Cannot find function {name}')
+              brace = source.find('{', m.end())
+              depth = 0; state='normal'; esc=False; i=brace
+              while i < len(source):
+                  ch=source[i]; nxt=source[i+1] if i+1<len(source) else ''
+                  if state=='line':
+                      if ch=='\n': state='normal'
+                      i+=1; continue
+                  if state=='block':
+                      if ch=='*' and nxt=='/': state='normal'; i+=2
+                      else: i+=1
+                      continue
+                  if state in ('single','double','template'):
+                      if esc: esc=False; i+=1; continue
+                      if ch=='\\': esc=True; i+=1; continue
+                      if (state=='single' and ch=="'") or (state=='double' and ch=='"') or (state=='template' and ch=='`'):
+                          state='normal'
+                      i+=1; continue
+                  if ch=='/' and nxt=='/': state='line'; i+=2; continue
+                  if ch=='/' and nxt=='*': state='block'; i+=2; continue
+                  if ch=="'": state='single'; i+=1; continue
+                  if ch=='"': state='double'; i+=1; continue
+                  if ch=='`': state='template'; i+=1; continue
+                  if ch=='{': depth+=1
+                  elif ch=='}':
+                      depth-=1
+                      if depth==0:
+                          end=i+1
+                          while end<len(source) and source[end] in ' \t\r': end+=1
+                          if end<len(source) and source[end]=='\n': end+=1
+                          return m.start(),end
+                  i+=1
+              raise RuntimeError(f'Unclosed function {name}')
+
+          additions = r'''
+
+            function stimulusMap(workouts, options = {}) {
+              const profileForExercise = typeof options.profileForExercise === 'function'
+                ? options.profileForExercise
+                : () => [];
+              const out = {};
+              (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise => {
+                const sets = completedWorkingSets(exercise);
+                if (!sets) return;
+                (profileForExercise(exercise) || []).forEach(item => {
+                  const muscle = item?.muscle;
+                  const weight = num(item?.weight);
+                  if (!muscle || weight <= 0) return;
+                  out[muscle] = (out[muscle] || 0) + sets * weight;
+                });
+              }));
+              return out;
+            }
+
+            function movementStats(workouts, options = {}) {
+              const patternForExercise = typeof options.patternForExercise === 'function'
+                ? options.patternForExercise
+                : () => '';
+              const ignored = new Set(['cardio', 'mobility', 'scapular_control']);
+              const out = {};
+              (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise => {
+                const sets = completedWorkingSets(exercise);
+                if (!sets) return;
+                const pattern = patternForExercise(exercise);
+                if (!pattern || ignored.has(pattern)) return;
+                out[pattern] = (out[pattern] || 0) + sets;
+              }));
+              return out;
+            }
+
+            function consistencyStats(workouts, days, options = {}) {
+              const list = workouts || [];
+              const numericDays = num(days);
+              const today = typeof options.today === 'function' ? options.today() : options.today;
+              const daysBetween = typeof options.daysBetween === 'function' ? options.daysBetween : () => 0;
+              const weekKeyForDate = typeof options.weekKeyForDate === 'function' ? options.weekKeyForDate : date => date;
+              const rollingStart = typeof options.rollingStart === 'function' ? options.rollingStart : () => today;
+
+              if (!list.length) {
+                return {
+                  days: 0,
+                  avgPerWeek: 0,
+                  weeks: 0,
+                  totalWeeks: days === 'all' ? 0 : Math.max(1, Math.ceil(numericDays / 7)),
+                  longestGap: null,
+                };
+              }
+
+              const uniq = [...new Set(list.map(workout => workout.date).filter(Boolean))].sort();
+              let spanDays = numericDays;
+              if (days === 'all') spanDays = Math.max(1, daysBetween(uniq[0], today) + 1);
+              const weekKeys = new Set(list.map(workout => weekKeyForDate(workout.date)));
+              let longest = 0;
+              const boundaries = [days === 'all' ? uniq[0] : rollingStart(days), ...uniq, today].filter(Boolean).sort();
+              const uniqueBounds = [...new Set(boundaries)];
+              for (let i = 1; i < uniqueBounds.length; i++) {
+                longest = Math.max(longest, Math.max(0, daysBetween(uniqueBounds[i - 1], uniqueBounds[i]) - 1));
+              }
+              return {
+                days: uniq.length,
+                avgPerWeek: list.length / (spanDays / 7),
+                weeks: weekKeys.size,
+                totalWeeks: Math.max(1, Math.ceil(spanDays / 7)),
+                longestGap: longest,
+              };
+            }
+          '''
+
+          if 'function stimulusMap(' not in module:
+              export_marker = '  window.TrainLogAnalysis = Object.freeze({'
+              pos = module.find(export_marker)
+              if pos < 0: raise RuntimeError('TrainLogAnalysis export marker missing')
+              module = module[:pos] + additions + '\n' + module[pos:]
+              module = module.replace(
+                  '    analysisConfidence,\n',
+                  '    analysisConfidence,\n    stimulusMap,\n    movementStats,\n    consistencyStats,\n',
+                  1
+              )
+          else:
+              raise RuntimeError('Phase 2b functions already exist in module')
+          module_path.write_text(module, encoding='utf-8')
+
+          replacements = {
+              'stimulusMap': "function stimulusMap(workouts){return window.TrainLogAnalysis.stimulusMap(workouts,{profileForExercise:exerciseStimulusProfile})}\n",
+              'movementStats': "function movementStats(workouts){return window.TrainLogAnalysis.movementStats(workouts,{patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}\n",
+              'consistencyStats': "function consistencyStats(workouts,days){return window.TrainLogAnalysis.consistencyStats(workouts,days,{today:isoToday,daysBetween,rollingStart,weekKeyForDate:date=>isoDate(weekStartDate(parseDate(date)))})}\n",
+          }
+          spans=[]
+          for name,repl in replacements.items():
+              start,end=function_span(app,name); spans.append((start,end,repl))
+          for start,end,repl in sorted(spans, reverse=True):
+              app=app[:start]+repl+app[end:]
+          app_path.write_text(app, encoding='utf-8')
+
+          readme = Path('js/analysis/README.md')
+          text = readme.read_text(encoding='utf-8')
+          if 'stimulusMap(workouts' not in text:
+              text += '''\n## Phase 2b\n\n新增 pure metrics：\n- `stimulusMap(workouts, options)`：依注入的 `profileForExercise` 計算肌群刺激組數。\n- `movementStats(workouts, options)`：依注入的 `patternForExercise` 統計動作模式。\n- `consistencyStats(workouts, days, options)`：訓練規律性；日期邏輯由呼叫端注入。\n\n這三個函式不直接讀 `data`、DOM 或 LocalStorage。\n'''
+          readme.write_text(text, encoding='utf-8')
+
+          refactor = Path('docs/REFACTOR.md')
+          rt = refactor.read_text(encoding='utf-8')
+          note = '''\n### Phase 2b\n- [x] `stimulusMap` 移出實作，使用 `profileForExercise` 注入。\n- [x] `movementStats` 移出實作，使用 `patternForExercise` 注入。\n- [x] `consistencyStats` 移出實作，日期 helper 改為注入。\n- [x] 補 fixture tests，避免暖身組與忽略 pattern 被誤計。\n'''
+          if '### Phase 2b' not in rt:
+              rt += note
+          refactor.write_text(rt, encoding='utf-8')
+
+      - name: Verify syntax
+        run: |
+          node --check js/analysis/training-metrics.js
+          node --check js/app.js
+
+      - name: Unit test Phase 2b metrics
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const ctx = vm.createContext({ window: {} });
+          vm.runInContext(fs.readFileSync('js/analysis/training-metrics.js','utf8'), ctx);
+          const A = ctx.window.TrainLogAnalysis;
+          const workouts = [{date:'2026-09-01',exercises:[
+            {id:'bench',type:'weight_reps',sets:[
+              {completed:true,kind:'working'},{completed:true,kind:'working'},{completed:true,kind:'warmup'}
+            ]},
+            {id:'mob',type:'weight_reps',sets:[{completed:true,kind:'working'}]}
+          ]},{date:'2026-09-08',exercises:[
+            {id:'bench',type:'weight_reps',sets:[{completed:true,kind:'working'}]}
+          ]}];
+
+          const stim=A.stimulusMap(workouts,{profileForExercise:e=>e.id==='bench'?[{muscle:'胸',weight:1},{muscle:'三頭',weight:.5}]:[]});
+          if(stim['胸']!==3 || stim['三頭']!==1.5) throw new Error('stimulusMap fixture failed: '+JSON.stringify(stim));
+
+          const moves=A.movementStats(workouts,{patternForExercise:e=>e.id==='bench'?'horizontal_push':'mobility'});
+          if(JSON.stringify(moves)!==JSON.stringify({horizontal_push:3})) throw new Error('movementStats fixture failed: '+JSON.stringify(moves));
+
+          const parse=s=>new Date(s+'T00:00:00Z');
+          const diff=(a,b)=>Math.round((parse(b)-parse(a))/86400000);
+          const cons=A.consistencyStats(workouts,14,{
+            today:()=> '2026-09-14',
+            daysBetween:diff,
+            rollingStart:()=> '2026-09-01',
+            weekKeyForDate:d=>d<'2026-09-08'?'2026-09-01':'2026-09-08'
+          });
+          if(cons.days!==2 || cons.weeks!==2 || cons.totalWeeks!==2 || cons.longestGap!==6) throw new Error('consistencyStats fixture failed: '+JSON.stringify(cons));
+          NODE
+
+      - name: Verify wrappers and commit
+        run: |
+          git diff --check
+          grep -q 'TrainLogAnalysis.stimulusMap' js/app.js
+          grep -q 'TrainLogAnalysis.movementStats' js/app.js
+          grep -q 'TrainLogAnalysis.consistencyStats' js/app.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/analysis docs/REFACTOR.md
+          git commit -m 'refactor: extract stimulus and consistency metrics'
+          git push
