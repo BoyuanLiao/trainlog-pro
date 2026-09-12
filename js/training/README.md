@@ -44,3 +44,10 @@
 - 至少 3 次可比較紀錄才啟用 plateau 趨勢判定。
 - 支援 unilateral，以左右側較弱一側的 reps / weight 作為進階判斷基準。
 - UI render、文字樣式與 app state 仍由 `app.js` 處理。
+
+## Phase 4e — Progression UI / Explainability
+
+- `progression-view.js`：把 engine action 統一轉成顯示標籤、tone、判斷原因與證據範圍。
+- 首頁、訓練動作卡、分析頁共用同一 formatter。
+- UI 明確顯示「增加次數／加重／降重／平台期／維持」與「參考最近 N 次紀錄」。
+- presentation module 不碰 DOM；HTML 組裝仍留在 `app.js`。

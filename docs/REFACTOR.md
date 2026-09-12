@@ -181,3 +181,10 @@
 - [x] unilateral 使用較弱側作為進階基準。
 - [x] `app.js` 的 `progressionAdvice()` 改為薄 wrapper。
 - 下一步：把 progression action 顯示成更清楚的 UI 標籤與理由／信心來源。
+
+
+### Phase 4e — Progression UI / Explainability
+- [x] 先建立 `tests/training/progression-ui.test.js` formatter contract。
+- [x] `js/training/progression-view.js` 統一 action label / tone / reason / evidence。
+- [x] 首頁、Active Workout、分析頁共用 formatter。
+- [x] 顯示 engine 使用的最近紀錄數與平台期／高強度訊號。

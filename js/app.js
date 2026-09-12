@@ -63,6 +63,7 @@ const trainingMetrics=window.TrainLogTrainingMetrics;
 const trainingLifecycle=window.TrainLogTrainingLifecycle;
 const trainingMutations=window.TrainLogTrainingMutations;
 const trainingProgression=window.TrainLogTrainingProgression;
+const trainingProgressionView=window.TrainLogProgressionView;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -307,6 +308,8 @@ function progressionAdvice(exId){
    limit:5
  })
 }
+function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv):null}
+function progressionToneClass(view){return view?.tone==='good'?'good':view?.tone==='warn'?'warn':''}
 function plateau(exId){
  const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(!s.completed)return;best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push({date:w.date,v:best})});
  if(pts.length<5)return false;const last=pts.slice(-5),min=Math.min(...last.map(x=>x.v)),max=Math.max(...last.map(x=>x.v));return min>0&&(max-min)/min<0.02
@@ -715,7 +718,7 @@ function renderHome(){
  const load=recentMuscleLoad(7),goals=data.settings.weeklyMuscleGoals||{};
  $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${m}</b><span>${val} / ${goal||'—'} 組</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
  const prog=[];data.exerciseLibrary.filter(ex=>['weight_reps','bodyweight','unilateral','duration'].includes(ex.type)).forEach(ex=>{const adv=progressionAdvice(ex.id);const best=bestSetForExercise(ex.id);if(best&&adv)prog.push({ex,adv,best})});prog.sort((a,b)=>b.best.date.localeCompare(a.best.date));
- $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>`<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">最近：${esc(p.best.date)}</div></div><span class="pill ${p.adv.state==='up'?'good':''}">${p.adv.state==='up'?'↑ 建議加重':p.adv.state==='down'?'↓ 考慮降重':'＝ 維持'}</span></div><div class="small" style="margin-top:8px">${esc(p.adv.text)}</div></div>`).join(''):'<div class="card empty">累積幾次訓練後，這裡會顯示進步建議。</div>';
+ $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">最近：${esc(p.best.date)} · ${esc(view.evidence)}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">判斷：${esc(view.reason)}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">累積幾次訓練後，這裡會顯示進步建議。</div>';
  const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||'動作')}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · 目標 ${fmtWeight(g.weight)} × ${g.reps}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
  $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):'<div class="card empty">還沒有完成的訓練紀錄。</div>';$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
 }
@@ -1065,7 +1068,7 @@ function sessionExerciseHtml(e,idx){
  const ex=getExercise(e.exerciseId)||{name:e.nameSnapshot,muscle:e.muscle,type:e.type,rest:data.settings.defaultRest,notes:''};
  const bodyMatch=bodyStatusExerciseMatch(ex,data.activeWorkout.date);
  const last=getLastExerciseRecord(e.exerciseId,wDateBefore(data.activeWorkout.date));
- const adv=progressionAdvice(e.exerciseId);
+ const adv=progressionAdvice(e.exerciseId),advView=progressionDisplay(adv);
  let body='';
  if(e.type==='cardio'){
    body=`<div class="grid2"><div class="field"><label>時間（分鐘）</label><input data-cardio="minutes" data-e="${idx}" type="number" min="0" value="${n(e.cardio?.minutes)}"></div><div class="field"><label>距離 km</label><input data-cardio="distanceKm" data-e="${idx}" type="number" step=".01" min="0" value="${n(e.cardio?.distanceKm)}"></div><div class="field"><label>平均速度 km/h</label><input data-cardio="speed" data-e="${idx}" type="number" step=".1" min="0" value="${n(e.cardio?.speed)}"></div><div class="field"><label>坡度 %</label><input data-cardio="incline" data-e="${idx}" type="number" step=".1" min="0" value="${n(e.cardio?.incline)}"></div></div>`
@@ -1076,7 +1079,7 @@ function sessionExerciseHtml(e,idx){
  const showNotes=data.settings.trainingNotes!==false,inputUnit=exerciseInputUnit(e);
  const unitTools=!['cardio','duration'].includes(e.type)?`<div class="exercise-unit-line"><span class="exercise-unit-label">器械重量標示</span><span class="exercise-unit-toggle"><button type="button" class="${inputUnit==='kg'?'on':''}" data-ex-unit="${idx},kg">kg</button><button type="button" class="${inputUnit==='lb'?'on':''}" data-ex-unit="${idx},lb">lb</button></span><span class="exercise-unit-note">${inputUnit==='lb'?'<b>輸入 lb</b>，App 會自動換算成 kg 標準值儲存；例如 100 lb ≈ 45.4 kg。':'<b>輸入 kg</b>，內部直接以 kg 標準值儲存。'}</span></div>`:'';
  return `<div class="workout-ex ${e.uiCollapsed?'collapsed':''}" data-exblock="${idx}">
-  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(e.muscle)}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="查看動作說明">ⓘ 說明</button></div></div>${unitTools}<div class="record-meta">上次：${esc(lastText)}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">今日相關部位：${esc(bodyMatch.text)}。${bodyMatch.strong?'先不要勉強加重；若動作引發疼痛或活動受限，可停止這個動作。':'先用輕重量暖身，確認活動舒服再決定是否照原計畫。'}</div>`:''}${adv?`<div class="small ${adv.state==='up'?'good':adv.state==='down'?'warn':''}" style="margin-top:5px">${esc(adv.text)}</div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">器材/動作備註：${esc(ex.notes)}</div>`:''}</div>
+  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(e.muscle)}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="查看動作說明">ⓘ 說明</button></div></div>${unitTools}<div class="record-meta">上次：${esc(lastText)}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">今日相關部位：${esc(bodyMatch.text)}。${bodyMatch.strong?'先不要勉強加重；若動作引發疼痛或活動受限，可停止這個動作。':'先用輕重量暖身，確認活動舒服再決定是否照原計畫。'}</div>`:''}${advView?`<div class="small ${progressionToneClass(advView)}" style="margin-top:5px;line-height:1.55"><b>${esc(advView.label)}</b> · ${esc(advView.reason)}<br>${esc(advView.text)}<br><span class="record-meta">${esc(advView.evidence)}</span></div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">器材/動作備註：${esc(ex.notes)}</div>`:''}</div>
   <div class="actions"><button class="btn small ghost exercise-collapse-btn" data-collapseex="${idx}" aria-label="${e.uiCollapsed?'展開':'收合'}">${e.uiCollapsed?'⌄':'⌃'}</button><button class="btn small ghost" data-replace="${idx}">替換</button><button class="btn small danger" data-removeex="${idx}">移除</button></div></div>
   <div class="workout-ex-body">${body}${showNotes?`<div class="field" style="margin-top:9px"><label>本次動作備註</label><input data-exnote="${idx}" value="${esc(e.notes||'')}" placeholder="例如：座椅 4、右肩有感"></div>`:''}</div>
  </div>`
@@ -1627,22 +1630,20 @@ function renderAnalysisMovementGaps(ws,days){
 function renderAnalysisProgressOpportunities(ws){
   const root=$('#analysisProgressOpportunities');if(!root)return;
   const ids=analysisExerciseIds(ws);
-  const rank={up:0,down:1,keep:3};
   const items=ids.map(id=>{
     const ex=getExercise(id),adv=progressionAdvice(id);
     if(!ex||!adv)return null;
-    const plateau=plateauDetail(id),best=bestSetForExercise(id);
-    let label=adv.state==='up'?'可考慮進階':adv.state==='down'?'先調整負重／難度':'維持並累積';
-    if(plateau?.state==='slow'&&adv.state!=='up')label='進步趨勢較慢';
-    return {id,ex,adv,plateau,best,label,order:(rank[adv.state]??2)+(plateau?.state==='slow'?.25:0)}
+    const view=progressionDisplay(adv),plateau=plateauDetail(id),best=bestSetForExercise(id);
+    return {id,ex,adv,view,plateau,best,order:view.priority+(plateau?.state==='slow'&&adv.action!=='increase_load'?.25:0)}
   }).filter(Boolean).sort((a,b)=>a.order-b.order||(b.best?.date||'').localeCompare(a.best?.date||'')).slice(0,5);
   if(!items.length){
     root.innerHTML='<div class="card empty">再累積幾次可比較的訓練後，這裡會整理下一步建議。</div>';return
   }
   root.innerHTML=`<div class="analysis-opportunity-grid">${items.map(x=>`<div class="card analysis-opportunity">
-    <div class="record-head"><div><div class="record-title">${esc(x.ex.name)}</div><div class="record-meta">${x.best?.date?`最近最佳：${esc(x.best.date)}`:'依目前紀錄'}</div></div><span class="pill ${x.adv.state==='up'?'good':x.adv.state==='down'?'warn':''}">${esc(x.label)}</span></div>
-    <div class="small" style="margin-top:8px;line-height:1.55">${esc(x.adv.text||'維持目前安排並持續紀錄。')}</div>
-    ${x.plateau?.state==='slow'?`<div class="analysis-note">近期多次可比較紀錄沒有明顯提升；這是趨勢提示，不代表已確定停滯。</div>`:''}
+    <div class="record-head"><div><div class="record-title">${esc(x.ex.name)}</div><div class="record-meta">${x.best?.date?`最近最佳：${esc(x.best.date)} · `:''}${esc(x.view.evidence)}</div></div><span class="pill ${progressionToneClass(x.view)}">${esc(x.view.label)}</span></div>
+    <div class="small" style="margin-top:8px;font-weight:800">判斷依據：${esc(x.view.reason)}</div>
+    <div class="small" style="margin-top:4px;line-height:1.55">${esc(x.view.text||'維持目前安排並持續紀錄。')}</div>
+    ${x.adv.action==='plateau'?`<div class="analysis-note">${x.adv.hardTrend?'最近 3 次趨勢接近平台，而且主觀強度也偏高。':'最近 3 次可比較紀錄的重量、次數與估算強度變化都很小。'}</div>`:x.plateau?.state==='slow'?`<div class="analysis-note">較長期趨勢的進步幅度偏低；這是趨勢提示，不代表已確定停滯。</div>`:''}
   </div>`).join('')}</div>`;
 }
 
