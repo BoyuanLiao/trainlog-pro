@@ -1,0 +1,36 @@
+name: Phase 4f - Progression action contract
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/training/progression-actions.test.js'
+      - '.github/workflows/phase4f-test-progression-actions.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify core migration
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify core storage
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify core utils
+        run: node tests/core/utils-characterization.test.js
+      - name: Verify training metrics
+        run: node tests/training/metrics-characterization.test.js
+      - name: Verify lifecycle
+        run: node tests/training/lifecycle-characterization.test.js
+      - name: Verify mutations
+        run: node tests/training/mutations-characterization.test.js
+      - name: Verify progression engine
+        run: node tests/training/progression-engine.test.js
+      - name: Verify progression UI
+        run: node tests/training/progression-ui.test.js
+      - name: Verify progression actions (expected red until implementation)
+        run: node tests/training/progression-actions.test.js
