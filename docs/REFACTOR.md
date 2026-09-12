@@ -24,18 +24,20 @@
 
 ## Phase 1：靜態資料
 
-目標：將不依賴 DOM / LocalStorage 的大型常數從 `app.js` 移出。
+狀態：**完成**
 
-預定：
-- `js/data/glossary.js`
-- `js/data/equipment.js`
-- `js/data/exercises.js`
-- `js/data/programs.js`
+已從 `js/app.js` 搬出：
+- [x] `js/data/glossary.js` — `GLOSSARY`
+- [x] `js/data/equipment.js` — `SYSTEM_EQUIPMENT`
+- [x] `js/data/exercises.js` — `SYSTEM_EXERCISES`
+- [x] `js/data/programs.js` — `SYSTEM_PROGRAMS`
+- [x] `index.html` 明確在 `app.js` 前載入 data scripts
+- [x] JavaScript syntax check
+- [x] 靜態資料同一 VM context 載入檢查
 
-驗證：
-- 動作數 / 器材數 / 課表數搬移前後一致。
-- 首頁、設定、課表推薦、動作庫能正常 render。
-- 不改既有 ID 與資料格式。
+重構原則：只搬位置，不改 ID、資料格式與內容語意。
+
+下一步進入 Phase 2：先抽可獨立驗證的分析 pure logic。
 
 ## Phase 2：分析邏輯
 
