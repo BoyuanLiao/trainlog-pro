@@ -59,18 +59,12 @@ function renderRecoveryBanner(){
 setTimeout(renderRecoveryBanner,0);
 function snapshot(reason){return storageCore.snapshot(data,reason)}
 function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,takeSnapshot,renderAll)}
-function workoutVolume(w){let sum=0;(w.exercises||[]).forEach(e=>{if(!['weight_reps','bodyweight','unilateral'].includes(e.type))return;(e.sets||[]).forEach(s=>{if(!s.completed)return;if(!data.settings.includeWarmup&&s.kind==='warmup')return;if(e.type==='unilateral')sum+=(n(s.leftWeight)*n(s.leftReps)+n(s.rightWeight)*n(s.rightReps));else sum+=n(s.weight)*n(s.reps)})});return sum}
-function effectiveSets(w,muscle){let c=0;(w.exercises||[]).forEach(e=>{if(muscle&&e.muscle!==muscle)return;(e.sets||[]).forEach(s=>{if(s.completed&&s.kind!=='warmup')c++})});return c}
-function cardioMinutes(w){let m=0;(w.exercises||[]).forEach(e=>{if(e.type==='cardio')m+=n(e.cardio?.minutes)});return m}
-function durationSeconds(w,muscle){let s=0;(w.exercises||[]).forEach(e=>{if(e.type==='duration'&&(!muscle||e.muscle===muscle))(e.sets||[]).forEach(x=>{if(x.completed)s+=n(x.seconds)})});return s}
-function bestSetForExercise(exId,workouts=data.workouts){
- let best=null;workouts.forEach(w=>(w.exercises||[]).filter(e=>e.exerciseId===exId).forEach(e=>(e.sets||[]).forEach(s=>{
-   if(!s.completed||e.type==='duration'||e.type==='cardio')return;
-   const weight=e.type==='unilateral'?Math.max(n(s.leftWeight),n(s.rightWeight)):n(s.weight);
-   const reps=e.type==='unilateral'?Math.max(n(s.leftReps),n(s.rightReps)):n(s.reps);const score=est1rm(weight,reps);
-   if(!best||score>best.score)best={weight,reps,score,date:w.date,kind:s.kind}
- })));return best
-}
+const trainingMetrics=window.TrainLogTrainingMetrics;
+function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
+function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
+function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
+function durationSeconds(w,muscle){return trainingMetrics.durationSeconds(w,muscle)}
+function bestSetForExercise(exId,workouts=data.workouts){return trainingMetrics.bestSetForExercise(exId,workouts)}
 function getExercise(id){return data.exerciseLibrary.find(e=>e.id===id)}
 function normGymName(name){return String(name||'').trim().replace(/\s+/g,' ').toLocaleLowerCase('zh-TW')}
 function gymByName(name){const key=normGymName(name);return key?data.gyms.find(g=>normGymName(g.name)===key):null}

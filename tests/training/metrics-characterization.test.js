@@ -2,27 +2,12 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
-const app=fs.readFileSync('js/app.js','utf8');
 const utils=fs.readFileSync('js/core/utils.js','utf8');
-function functionSource(name){
-  const re=new RegExp('function\\s+'+name+'\\s*\\(');const m=re.exec(app);if(!m)throw new Error('Missing '+name);
-  const start=m.index,brace=app.indexOf('{',m.index+m[0].length);let depth=0,state='normal',esc=false;
-  for(let i=brace;i<app.length;i++){
-    const ch=app[i],nx=app[i+1]||'';
-    if(state==='line'){if(ch==='\n')state='normal';continue}
-    if(state==='block'){if(ch==='*'&&nx==='/'){state='normal';i++}continue}
-    if(['single','double','template'].includes(state)){if(esc){esc=false;continue}if(ch==='\\'){esc=true;continue}if((state==='single'&&ch==="'")||(state==='double'&&ch==='"')||(state==='template'&&ch==='`'))state='normal';continue}
-    if(ch==='/'&&nx==='/'){state='line';i++;continue}if(ch==='/'&&nx==='*'){state='block';i++;continue}
-    if(ch==="'"){state='single';continue}if(ch==='"'){state='double';continue}if(ch==='`'){state='template';continue}
-    if(ch==='{')depth++;if(ch==='}'){depth--;if(depth===0)return app.slice(start,i+1)}
-  }
-  throw new Error('Unclosed '+name);
-}
-
+const metrics=fs.readFileSync('js/training/metrics.js','utf8');
 const ctx=vm.createContext({console,Math,Date,window:{}});
 vm.runInContext(utils,ctx);
-vm.runInContext("const n=window.TrainLogUtils.n; const est1rm=window.TrainLogUtils.est1rm; let data={settings:{includeWarmup:false},workouts:[]};",ctx);
-for(const name of ['workoutVolume','effectiveSets','cardioMinutes','durationSeconds','bestSetForExercise']) vm.runInContext(functionSource(name),ctx);
+vm.runInContext(metrics,ctx);
+vm.runInContext("const n=window.TrainLogUtils.n; const est1rm=window.TrainLogUtils.est1rm; const trainingMetrics=window.TrainLogTrainingMetrics; let data={settings:{includeWarmup:false},workouts:[]}; function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})} function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)} function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)} function durationSeconds(w,muscle){return trainingMetrics.durationSeconds(w,muscle)} function bestSetForExercise(exId,workouts=data.workouts){return trainingMetrics.bestSetForExercise(exId,workouts)}",ctx);
 const run=code=>vm.runInContext(code,ctx);
 
 const workout={exercises:[

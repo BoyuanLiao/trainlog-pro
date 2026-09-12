@@ -1,6 +1,9 @@
 # `js/training/`
 
-狀態：**重構骨架，訓練流程目前仍在 `app.js`。**
+狀態：**Phase 4 已開始；純訓練統計已從 `app.js` 抽離。**
+
+目前模組：
+- `metrics.js`：純訓練統計（volume、effective sets、cardio/duration、best set）。
 
 未來負責：
 - Active Workout 狀態與生命週期

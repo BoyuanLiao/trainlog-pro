@@ -152,3 +152,9 @@
 ### Phase 3c — Core utils（已完成）
 - `js/core/utils.js`：共用純函式。
 - `tests/core/utils-characterization.test.js`：重構前後 characterization tests。
+
+
+### Phase 4a — Training metrics
+- ✅ `js/training/metrics.js`：workoutVolume / effectiveSets / cardioMinutes / durationSeconds / bestSetForExercise
+- ✅ 實作前後 characterization tests
+- 下一步：Active Workout lifecycle 與 Progression Engine 前置資料整理。
