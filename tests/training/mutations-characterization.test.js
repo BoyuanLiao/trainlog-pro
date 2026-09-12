@@ -48,7 +48,7 @@ function openTrainingDrawer(){}
 function renderTimer(){}
 function renderTrainingDrawerVisibility(){}
 function maybeStartWorkoutTutorial(){}
-function startTimer() { timers.push([...arguments]); }
+function finishWorkout(){}
 let timerHidden=false,timerEnd=0;
 let data={settings:{trainingIntervalTimer:true,defaultRest:90},activeWorkout:{exercises:[]}};
 `,ctx);
