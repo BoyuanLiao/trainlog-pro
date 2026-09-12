@@ -1,0 +1,241 @@
+name: Refactor Phase 1 - Extract static data
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase1-data.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Extract static data modules
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          app_path = Path('js/app.js')
+          index_path = Path('index.html')
+          app = app_path.read_text(encoding='utf-8')
+
+          targets = [
+              ('GLOSSARY', Path('js/data/glossary.js')),
+              ('SYSTEM_EQUIPMENT', Path('js/data/equipment.js')),
+              ('SYSTEM_EXERCISES', Path('js/data/exercises.js')),
+              ('SYSTEM_PROGRAMS', Path('js/data/programs.js')),
+          ]
+
+          def find_const_decl(source: str, name: str):
+              m = re.search(r'(?m)^\s*const\s+' + re.escape(name) + r'\s*=', source)
+              if not m:
+                  raise RuntimeError(f'Cannot find declaration for {name}')
+
+              start = m.start()
+              i = m.end()
+              depth = 0
+              state = 'normal'
+              escaped = False
+
+              while i < len(source):
+                  ch = source[i]
+                  nxt = source[i + 1] if i + 1 < len(source) else ''
+
+                  if state == 'line_comment':
+                      if ch == '\n':
+                          state = 'normal'
+                      i += 1
+                      continue
+
+                  if state == 'block_comment':
+                      if ch == '*' and nxt == '/':
+                          state = 'normal'
+                          i += 2
+                      else:
+                          i += 1
+                      continue
+
+                  if state in ('single', 'double', 'template'):
+                      if escaped:
+                          escaped = False
+                          i += 1
+                          continue
+                      if ch == '\\':
+                          escaped = True
+                          i += 1
+                          continue
+                      if state == 'single' and ch == "'":
+                          state = 'normal'
+                      elif state == 'double' and ch == '"':
+                          state = 'normal'
+                      elif state == 'template' and ch == '`':
+                          state = 'normal'
+                      i += 1
+                      continue
+
+                  if ch == '/' and nxt == '/':
+                      state = 'line_comment'
+                      i += 2
+                      continue
+                  if ch == '/' and nxt == '*':
+                      state = 'block_comment'
+                      i += 2
+                      continue
+                  if ch == "'":
+                      state = 'single'
+                      i += 1
+                      continue
+                  if ch == '"':
+                      state = 'double'
+                      i += 1
+                      continue
+                  if ch == '`':
+                      state = 'template'
+                      i += 1
+                      continue
+
+                  if ch in '([{':
+                      depth += 1
+                  elif ch in ')]}':
+                      depth -= 1
+                      if depth < 0:
+                          raise RuntimeError(f'Unbalanced declaration while scanning {name}')
+                  elif ch == ';' and depth == 0:
+                      end = i + 1
+                      while end < len(source) and source[end] in ' \t':
+                          end += 1
+                      if end < len(source) and source[end] == '\r':
+                          end += 1
+                      if end < len(source) and source[end] == '\n':
+                          end += 1
+                      return start, end, source[start:end].strip()
+                  i += 1
+
+              raise RuntimeError(f'No terminating semicolon found for {name}')
+
+          found = []
+          for name, out_path in targets:
+              start, end, decl = find_const_decl(app, name)
+              found.append((start, end, name, out_path, decl))
+
+          spans = sorted((s, e, n) for s, e, n, _, _ in found)
+          for (s1, e1, n1), (s2, e2, n2) in zip(spans, spans[1:]):
+              if e1 > s2:
+                  raise RuntimeError(f'Overlapping declarations: {n1} / {n2}')
+
+          for _, _, name, out_path, decl in found:
+              out_path.parent.mkdir(parents=True, exist_ok=True)
+              out_path.write_text(
+                  '/**\n'
+                  f' * TrainLog Pro static data: {name}\n'
+                  ' * Extracted from js/app.js during refactor Phase 1.\n'
+                  ' * Keep identifiers and data shape backward compatible.\n'
+                  ' */\n\n'
+                  + decl + '\n',
+                  encoding='utf-8',
+              )
+
+          for start, end, *_ in sorted(found, key=lambda x: x[0], reverse=True):
+              app = app[:start] + app[end:]
+
+          for name, _ in targets:
+              if re.search(r'(?m)^\s*const\s+' + re.escape(name) + r'\s*=', app):
+                  raise RuntimeError(f'{name} still declared in app.js')
+
+          app_path.write_text(app, encoding='utf-8')
+
+          index = index_path.read_text(encoding='utf-8')
+          if 'js/data/glossary.js' in index:
+              raise RuntimeError('Data scripts already appear in index.html; refusing duplicate insertion')
+
+          app_script = re.search(r'(?P<indent>^[ \t]*)<script(?P<attrs>[^>]*?)src=["\']js/app\.js(?P<query>\?[^"\']*)?["\'](?P<tail>[^>]*)></script>', index, re.M)
+          if not app_script:
+              raise RuntimeError('Cannot find js/app.js script tag in index.html')
+
+          indent = app_script.group('indent')
+          attrs = app_script.group('attrs') or ''
+          tail = app_script.group('tail') or ''
+          query = app_script.group('query') or ''
+          defer = ' defer' if re.search(r'\bdefer\b', attrs + tail) else ''
+
+          data_tags = ''.join(
+              f'{indent}<script src="js/data/{filename}.js{query}"{defer}></script>\n'
+              for filename in ('glossary', 'equipment', 'exercises', 'programs')
+          )
+          index = index[:app_script.start()] + data_tags + index[app_script.start():]
+          index_path.write_text(index, encoding='utf-8')
+
+          Path('js/data/README.md').write_text('''# Static Data\n\nPhase 1 已完成：原本放在 `js/app.js` 的大型靜態資料已拆到本目錄。\n\n## 檔案\n\n- `glossary.js`：`GLOSSARY`，術語與說明資料。\n- `equipment.js`：`SYSTEM_EQUIPMENT`，系統器材清單。\n- `exercises.js`：`SYSTEM_EXERCISES`，系統動作資料庫。\n- `programs.js`：`SYSTEM_PROGRAMS`，內建課表資料。\n\n## 載入順序\n\n`index.html` 會先載入上述四個檔案，再載入 `js/app.js`。這些檔案目前使用 classic script 的全域 lexical binding，因此不要任意改成 ES module，除非同一輪把 `app.js` 的引用一起改完。\n\n## 維護規則\n\n- 不要任意改既有 ID；歷史 LocalStorage、課表與訓練紀錄會依賴它。\n- 不要改既有資料 shape 而不處理相容性。\n- 本目錄只放靜態資料，不放 DOM 操作、LocalStorage 或 render 邏輯。\n- 新增器材 / 動作 / 課表後，應跑 App self-check 與基本頁面 smoke test。\n- 修改後至少執行 `node --check`。\n''', encoding='utf-8')
+
+          refactor_path = Path('docs/REFACTOR.md')
+          refactor = refactor_path.read_text(encoding='utf-8')
+          phase1 = '''## Phase 1：靜態資料\n\n狀態：**完成**\n\n已從 `js/app.js` 搬出：\n- [x] `js/data/glossary.js` — `GLOSSARY`\n- [x] `js/data/equipment.js` — `SYSTEM_EQUIPMENT`\n- [x] `js/data/exercises.js` — `SYSTEM_EXERCISES`\n- [x] `js/data/programs.js` — `SYSTEM_PROGRAMS`\n- [x] `index.html` 明確在 `app.js` 前載入 data scripts\n- [x] JavaScript syntax check\n- [x] 靜態資料同一 VM context 載入檢查\n\n重構原則：只搬位置，不改 ID、資料格式與內容語意。\n\n下一步進入 Phase 2：先抽可獨立驗證的分析 pure logic。\n\n'''
+          refactor, count = re.subn(r'## Phase 1：靜態資料\n.*?(?=## Phase 2：)', phase1, refactor, count=1, flags=re.S)
+          if count != 1:
+              raise RuntimeError('Cannot update Phase 1 section in docs/REFACTOR.md')
+          refactor_path.write_text(refactor, encoding='utf-8')
+
+      - name: Verify JavaScript syntax
+        run: |
+          node --check js/data/glossary.js
+          node --check js/data/equipment.js
+          node --check js/data/exercises.js
+          node --check js/data/programs.js
+          node --check js/app.js
+
+      - name: Verify static data can share one script context
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const files = [
+            'js/data/glossary.js',
+            'js/data/equipment.js',
+            'js/data/exercises.js',
+            'js/data/programs.js',
+          ];
+          const ctx = vm.createContext({});
+          for (const file of files) {
+            vm.runInContext(fs.readFileSync(file, 'utf8'), ctx, { filename: file });
+          }
+          for (const name of ['GLOSSARY','SYSTEM_EQUIPMENT','SYSTEM_EXERCISES','SYSTEM_PROGRAMS']) {
+            if (vm.runInContext(`typeof ${name}`, ctx) === 'undefined') {
+              throw new Error(`${name} is unavailable after loading data scripts`);
+            }
+          }
+          NODE
+
+      - name: Verify diff
+        run: |
+          git diff --check
+          test -s js/data/glossary.js
+          test -s js/data/equipment.js
+          test -s js/data/exercises.js
+          test -s js/data/programs.js
+          grep -q 'js/data/glossary.js' index.html
+          grep -q 'js/data/programs.js' index.html
+
+      - name: Commit refactor
+        run: |
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/data index.html docs/REFACTOR.md
+          git commit -m 'refactor: extract static data from app bundle'
+          git push
