@@ -1,0 +1,22 @@
+name: Records page regression
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'js/app.js'
+      - 'tests/ui/records-page-regression.test.js'
+      - '.github/workflows/records-page-regression.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify records page UI
+        run: node tests/ui/records-page-regression.test.js
