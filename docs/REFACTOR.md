@@ -125,3 +125,9 @@
 3. 讀本文件
 4. 查看 main 最新 commit
 5. 若要拆 code，從 Phase 1 開始，不要直接從 UI 開刀
+
+### Phase 2b
+- [x] `stimulusMap` 移出實作，使用 `profileForExercise` 注入。
+- [x] `movementStats` 移出實作，使用 `patternForExercise` 注入。
+- [x] `consistencyStats` 移出實作，日期 helper 改為注入。
+- [x] 補 fixture tests，避免暖身組與忽略 pattern 被誤計。

@@ -83,9 +83,85 @@
     return { level, label, formal, workouts: list.length, effortRate, patternRate };
   }
 
+
+
+  function stimulusMap(workouts, options = {}) {
+    const profileForExercise = typeof options.profileForExercise === 'function'
+      ? options.profileForExercise
+      : () => [];
+    const out = {};
+    (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise => {
+      const sets = completedWorkingSets(exercise);
+      if (!sets) return;
+      (profileForExercise(exercise) || []).forEach(item => {
+        const muscle = item?.muscle;
+        const weight = num(item?.weight);
+        if (!muscle || weight <= 0) return;
+        out[muscle] = (out[muscle] || 0) + sets * weight;
+      });
+    }));
+    return out;
+  }
+
+  function movementStats(workouts, options = {}) {
+    const patternForExercise = typeof options.patternForExercise === 'function'
+      ? options.patternForExercise
+      : () => '';
+    const ignored = new Set(['cardio', 'mobility', 'scapular_control']);
+    const out = {};
+    (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise => {
+      const sets = completedWorkingSets(exercise);
+      if (!sets) return;
+      const pattern = patternForExercise(exercise);
+      if (!pattern || ignored.has(pattern)) return;
+      out[pattern] = (out[pattern] || 0) + sets;
+    }));
+    return out;
+  }
+
+  function consistencyStats(workouts, days, options = {}) {
+    const list = workouts || [];
+    const numericDays = num(days);
+    const today = typeof options.today === 'function' ? options.today() : options.today;
+    const daysBetween = typeof options.daysBetween === 'function' ? options.daysBetween : () => 0;
+    const weekKeyForDate = typeof options.weekKeyForDate === 'function' ? options.weekKeyForDate : date => date;
+    const rollingStart = typeof options.rollingStart === 'function' ? options.rollingStart : () => today;
+
+    if (!list.length) {
+      return {
+        days: 0,
+        avgPerWeek: 0,
+        weeks: 0,
+        totalWeeks: days === 'all' ? 0 : Math.max(1, Math.ceil(numericDays / 7)),
+        longestGap: null,
+      };
+    }
+
+    const uniq = [...new Set(list.map(workout => workout.date).filter(Boolean))].sort();
+    let spanDays = numericDays;
+    if (days === 'all') spanDays = Math.max(1, daysBetween(uniq[0], today) + 1);
+    const weekKeys = new Set(list.map(workout => weekKeyForDate(workout.date)));
+    let longest = 0;
+    const boundaries = [days === 'all' ? uniq[0] : rollingStart(days), ...uniq, today].filter(Boolean).sort();
+    const uniqueBounds = [...new Set(boundaries)];
+    for (let i = 1; i < uniqueBounds.length; i++) {
+      longest = Math.max(longest, Math.max(0, daysBetween(uniqueBounds[i - 1], uniqueBounds[i]) - 1));
+    }
+    return {
+      days: uniq.length,
+      avgPerWeek: list.length / (spanDays / 7),
+      weeks: weekKeys.size,
+      totalWeeks: Math.max(1, Math.ceil(spanDays / 7)),
+      longestGap: longest,
+    };
+  }
+
   window.TrainLogAnalysis = Object.freeze({
     completedWorkingSets,
     effortStats,
     analysisConfidence,
+    stimulusMap,
+    movementStats,
+    consistencyStats,
   });
 })();

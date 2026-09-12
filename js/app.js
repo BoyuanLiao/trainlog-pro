@@ -295,50 +295,11 @@ function exerciseStimulusProfile(exRecord){
  if(primary&&!['有氧','其他'].includes(primary)&&!base.some(x=>x.muscle===primary))base.unshift({muscle:primary,weight:1});
  return base
 }
-function stimulusMap(workouts){
- const out={};
- (workouts||[]).forEach(w=>(w.exercises||[]).forEach(e=>{
-   const sets=completedWorkingSets(e);if(!sets)return;
-   const basis=exerciseAnalysisBasis(e),profile=exerciseStimulusProfile(e);
-   profile.forEach(c=>{
-     const m=c.muscle;if(!m||m==='有氧'||m==='其他')return;
-     if(!out[m])out[m]={direct:0,indirect:0,total:0,sources:{}};
-     const direct=c.weight>=.999,amount=sets*c.weight;
-     if(direct)out[m].direct+=amount;else out[m].indirect+=amount;
-     out[m].total+=amount;
-     const key=e.exerciseId||e.nameSnapshot||'unknown';
-     if(!out[m].sources[key])out[m].sources[key]={name:e.nameSnapshot||basis.lib.name||'動作',direct:0,indirect:0,total:0,pattern:basis.pattern,equipment:basis.eq?.nameZh||''};
-     if(direct)out[m].sources[key].direct+=amount;else out[m].sources[key].indirect+=amount;
-     out[m].sources[key].total+=amount;
-   })
- }));
- return out
-}
+function stimulusMap(workouts){return window.TrainLogAnalysis.stimulusMap(workouts,{profileForExercise:exerciseStimulusProfile})}
 function formalSetCount(workouts){return (workouts||[]).reduce((sum,w)=>sum+effectiveSets(w),0)}
 function effortStats(workouts){return window.TrainLogAnalysis.effortStats(workouts)}
-function movementStats(workouts){
- const out={};
- (workouts||[]).forEach(w=>(w.exercises||[]).forEach(e=>{
-   const sets=completedWorkingSets(e);if(!sets)return;
-   const p=exerciseAnalysisBasis(e).pattern;if(!p||['cardio','mobility','scapular_control'].includes(p))return;
-   out[p]=(out[p]||0)+sets
- }));
- return out
-}
-function consistencyStats(workouts,days){
- if(!workouts.length)return{days:0,avgPerWeek:0,weeks:0,totalWeeks:days==='all'?0:Math.max(1,Math.ceil(n(days)/7)),longestGap:null};
- const uniq=[...new Set(workouts.map(w=>w.date))].sort();
- let spanDays=n(days);
- if(days==='all')spanDays=Math.max(1,daysBetween(uniq[0],isoToday())+1);
- const weekKeys=new Set(workouts.map(w=>{
-   const d=parseDate(w.date),s=weekStartDate(d);return isoDate(s)
- }));
- let longest=0;
- const boundaries=[days==='all'?uniq[0]:rollingStart(days),...uniq,isoToday()].sort();
- const uniqueBounds=[...new Set(boundaries)];
- for(let i=1;i<uniqueBounds.length;i++)longest=Math.max(longest,Math.max(0,daysBetween(uniqueBounds[i-1],uniqueBounds[i])-1));
- return{days:uniq.length,avgPerWeek:workouts.length/(spanDays/7),weeks:weekKeys.size,totalWeeks:Math.max(1,Math.ceil(spanDays/7)),longestGap:longest}
-}
+function movementStats(workouts){return window.TrainLogAnalysis.movementStats(workouts,{patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}
+function consistencyStats(workouts,days){return window.TrainLogAnalysis.consistencyStats(workouts,days,{today:isoToday,daysBetween,rollingStart,weekKeyForDate:date=>isoDate(weekStartDate(parseDate(date)))})}
 function fmtStim(v){const x=Math.round(n(v)*100)/100;return Number.isInteger(x)?String(x):x.toFixed(x*10===Math.round(x*10)?1:2).replace(/0+$/,'').replace(/\.$/,'')}
 function shiftIso(iso,days){const d=parseDate(iso);d.setDate(d.getDate()+days);return isoDate(d)}
 function previousPeriodWorkouts(days){

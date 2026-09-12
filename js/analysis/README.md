@@ -22,3 +22,12 @@ Phase 2 開始把分析邏輯從大型 `js/app.js` 移到可獨立測試的模�
 - 禁止直接讀取可變的全域 `data`。
 - App 專屬 resolver 由 `app.js` wrapper 注入。
 - 每次抽離一小組函式，同時補 Node fixture test。
+
+## Phase 2b
+
+新增 pure metrics：
+- `stimulusMap(workouts, options)`：依注入的 `profileForExercise` 計算肌群刺激組數。
+- `movementStats(workouts, options)`：依注入的 `patternForExercise` 統計動作模式。
+- `consistencyStats(workouts, days, options)`：訓練規律性；日期邏輯由呼叫端注入。
+
+這三個函式不直接讀 `data`、DOM 或 LocalStorage。
