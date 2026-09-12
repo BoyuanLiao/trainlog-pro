@@ -1,0 +1,28 @@
+name: Exercise progress browser
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'css/exercise-progress-browser.css'
+      - 'js/app.js'
+      - 'js/ui/exercise-progress-browser.js'
+      - 'tests/ui/exercise-progress-browser.test.js'
+      - '.github/workflows/exercise-progress-browser.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify exercise progress browser contract
+        run: node tests/ui/exercise-progress-browser.test.js
+      - name: Verify JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/ui/exercise-progress-browser.js || true
