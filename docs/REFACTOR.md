@@ -158,3 +158,9 @@
 - ✅ `js/training/metrics.js`：workoutVolume / effectiveSets / cardioMinutes / durationSeconds / bestSetForExercise
 - ✅ 實作前後 characterization tests
 - 下一步：Active Workout lifecycle 與 Progression Engine 前置資料整理。
+
+### Phase 4b — Active Workout lifecycle
+- ✅ `js/training/lifecycle.js`：空白／模板建立、一般完成、歷史編輯完成、workout 日期排序
+- ✅ `app.js` 保留 UI / confirm / save wrapper，不讓 lifecycle module 直接碰 DOM 或 LocalStorage
+- ✅ 實作前後 lifecycle characterization tests
+- 下一步：set 操作與 Active Workout mutation，再銜接 Smart Progression Engine。

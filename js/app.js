@@ -60,6 +60,7 @@ setTimeout(renderRecoveryBanner,0);
 function snapshot(reason){return storageCore.snapshot(data,reason)}
 function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,takeSnapshot,renderAll)}
 const trainingMetrics=window.TrainLogTrainingMetrics;
+const trainingLifecycle=window.TrainLogTrainingLifecycle;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -1208,8 +1209,16 @@ function openStartModal(){
    $('#startBlank').onclick=()=>{const d=$('#startDate').value;closeModal();startBlank(d)};$('#startBrowseSystem').onclick=()=>{closeModal();goPage('settingsPage');setTimeout(()=>$('#programSearch')?.focus(),50)}
  })
 }
-function startTemplate(id,date=isoToday()){if(data.activeWorkout){goPage('trainPage');return}const t=data.templates.find(x=>x.id===id);if(!t)return;data.activeWorkout={id:uid('w'),date,name:t.name,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',programDayMeta:t.dayMeta?JSON.parse(JSON.stringify(t.dayMeta)):null,gymId:'',gymNameSnapshot:'',deload:false,preStatus:{},pain:'',exercises:t.items.map(it=>{const ex=getExercise(it.exerciseId);return ex?makeSessionExercise({...ex,...it},date):null}).filter(Boolean)};save('開始訓練',true);openSessionMeta(true);goPage('trainPage')}
-function startBlank(date=isoToday()){data.activeWorkout={id:uid('w'),date,name:'自由訓練',duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:false,preStatus:{},pain:'',exercises:[]};save('開始訓練',true);openSessionMeta(true);goPage('trainPage')}
+function startTemplate(id,date=isoToday()){
+ if(data.activeWorkout){goPage('trainPage');return}
+ const t=data.templates.find(x=>x.id===id);if(!t)return;
+ data.activeWorkout=trainingLifecycle.createTemplateWorkout(t,{id:uid('w'),date,startedAt:new Date().toISOString(),resolveExercise:getExercise,makeSessionExercise});
+ save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+}
+function startBlank(date=isoToday()){
+ data.activeWorkout=trainingLifecycle.createBlankWorkout({id:uid('w'),date,startedAt:new Date().toISOString()});
+ save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+}
 function openSessionMeta(first=false){
  const w=data.activeWorkout,p=w.preStatus||{};
  openModal(first?'訓練前狀態':'訓練設定',`<div class="grid2">
@@ -1227,22 +1236,18 @@ function finishWorkout(){
  if(editingId){
    const idx=data.workouts.findIndex(x=>x.id===editingId);if(idx<0){alert('找不到原本的訓練紀錄，無法儲存修改。');return}
    snapshot('歷史訓練編輯前');
-   const updated=JSON.parse(JSON.stringify(w));
-   delete updated.editingWorkoutId;
-   updated.id=editingId;
-   updated.status='completed';
-   updated.duration=clamp(updated.duration,0,1440);
-   data.workouts[idx]=updated;
-   data.workouts.sort((a,b)=>b.date.localeCompare(a.date));
+   const updated=trainingLifecycle.finalizeHistoryEdit(w,editingId);
+   const next=[...data.workouts];next[idx]=updated;data.workouts=trainingLifecycle.sortWorkouts(next);
    data.activeWorkout=null;
    save('編輯訓練內容',false);
    const summary=`${updated.exercises.length} 個動作 · ${effectiveSets(updated)} 正式組 · ${fmtKg(workoutVolume(updated))} · 有氧 ${Math.round(cardioMinutes(updated))} 分`;
    openModal('修改已儲存',`<div class="card"><div class="record-title">${esc(updated.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">完成</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('recordsPage')});
    return;
  }
- const started=w.startedAt?new Date(w.startedAt):null;w.endedAt=new Date().toISOString();w.status='completed';w.duration=w.duration||Math.max(1,Math.round((new Date(w.endedAt)-started)/60000));w.bodyStatusSnapshot=JSON.parse(JSON.stringify(todayBodyStatus(w.date)));data.workouts.push(JSON.parse(JSON.stringify(w)));data.workouts.sort((a,b)=>b.date.localeCompare(a.date));data.activeWorkout=null;save('完成訓練',true);
- const prs=countPRsInWorkout(w),summary=`${w.exercises.length} 個動作 · ${effectiveSets(w)} 正式組 · ${fmtKg(workoutVolume(w))} · 有氧 ${Math.round(cardioMinutes(w))} 分${prs?' · '+prs+' 個 PR':''}`;
- openModal('訓練完成',`<div class="card"><div class="record-title">${esc(w.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">完成</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('homePage')})
+ const completed=trainingLifecycle.finalizeWorkout(w,{endedAt:new Date().toISOString(),bodyStatusSnapshot:todayBodyStatus(w.date)});
+ data.workouts=trainingLifecycle.appendCompletedWorkout(data.workouts,completed);data.activeWorkout=null;save('完成訓練',true);
+ const prs=countPRsInWorkout(completed),summary=`${completed.exercises.length} 個動作 · ${effectiveSets(completed)} 正式組 · ${fmtKg(workoutVolume(completed))} · 有氧 ${Math.round(cardioMinutes(completed))} 分${prs?' · '+prs+' 個 PR':''}`;
+ openModal('訓練完成',`<div class="card"><div class="record-title">${esc(completed.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">完成</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('homePage')})
 }
 function openExercisePicker(onPick){
  const state={q:'',scope:'all',muscles:new Set(),resistance:'all'};

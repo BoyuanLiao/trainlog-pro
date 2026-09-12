@@ -12,7 +12,13 @@
 4. `data/exercises.js`
 5. `data/programs.js`
 6. `analysis/training-metrics.js`
-7. `app.js`
+7. `analysis/progress.js`
+8. `core/utils.js`
+9. `core/migration.js`
+10. `core/storage.js`
+11. `training/metrics.js`
+12. `training/lifecycle.js`
+13. `app.js`
 
 `app.js` 仍包在 IIFE 內，因此之後拆模組時要注意：IIFE 內的 helper 對外部檔案不可見。新的外部模組不得偷偷依賴 `app.js` 內部變數；應使用純函式或明確 dependency injection。
 
@@ -62,6 +68,14 @@ TrainLog Pro 目前的主要應用程式。
 
 目前：
 - `training-metrics.js`：完成組數、RIR/RPE effort 統計、分析可信度
+
+
+### `training/`
+訓練流程中的可測試狀態與計算。
+
+目前：
+- `metrics.js`：訓練量、正式組、有氧分鐘、計時秒數、最佳組
+- `lifecycle.js`：Active Workout 建立／完成／歷史編輯完成等純狀態轉換
 
 ### `motion-gifs.js`
 動作庫動畫 / GIF 對應與顯示相關邏輯。

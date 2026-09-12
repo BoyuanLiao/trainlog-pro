@@ -17,3 +17,12 @@
 - 不直接處理 LocalStorage migration，交給 core。
 - 訓練計算與 HTML render 盡量分離。
 - 任何會改變歷史訓練資料格式的修改，都要同步評估 schema migration。
+
+## 已完成
+
+- `metrics.js`：訓練量、正式組、有氧／計時與最佳組純計算。
+- `lifecycle.js`：空白／模板 Active Workout 建立、一般完成、歷史編輯完成、日期排序。
+- `tests/training/metrics-characterization.test.js`
+- `tests/training/lifecycle-characterization.test.js`
+
+目前 UI confirm / modal / save 副作用仍留在 `app.js`，由 wrapper 呼叫 pure lifecycle。
