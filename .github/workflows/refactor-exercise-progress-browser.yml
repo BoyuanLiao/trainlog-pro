@@ -1,0 +1,75 @@
+name: Refactor exercise progress browser
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/refactor_exercise_progress_browser.py'
+      - '.github/workflows/refactor-exercise-progress-browser.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify existing UI/core/training regressions before refactor
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Apply BDE exercise progress browser
+        run: python scripts/refactor_exercise_progress_browser.py
+      - name: Verify JavaScript syntax
+        run: |
+          node --check js/app.js
+          node --check js/ui/exercise-progress-browser.js
+      - name: Verify exercise progress browser contract
+        run: node tests/ui/exercise-progress-browser.test.js
+      - name: Verify all regressions after refactor
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Verify integration and commit
+        run: |
+          grep -q 'exercise-progress-browser.css?v=2.10.3' index.html
+          grep -q 'js/ui/exercise-progress-browser.js?v=2.10.3' index.html
+          grep -q 'id="analysisExerciseSearch"' index.html
+          grep -q 'id="analysisExercise" hidden' index.html
+          grep -q "const APP_VERSION='2.10.3'" js/app.js
+          grep -q 'renderAnalysisExerciseBrowser' js/app.js
+          git diff --check
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js
+          git commit -m 'feat: replace exercise progress dropdown with browser'
+          git push
