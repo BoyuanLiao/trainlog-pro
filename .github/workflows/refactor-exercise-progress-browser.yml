@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'scripts/refactor_exercise_progress_browser_v3.py'
+      - 'scripts/refactor_exercise_progress_browser_v4.py'
       - '.github/workflows/refactor-exercise-progress-browser.yml'
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
           node tests/training/progression-ui.test.js
           node tests/training/progression-actions.test.js
       - name: Apply BDE exercise progress browser
-        run: python scripts/refactor_exercise_progress_browser_v3.py
+        run: python scripts/refactor_exercise_progress_browser_v4.py
       - name: Verify JavaScript syntax
         run: |
           node --check js/app.js
