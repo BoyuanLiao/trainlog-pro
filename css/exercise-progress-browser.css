@@ -1,0 +1,28 @@
+.exercise-progress-browser{display:grid;gap:14px}
+.exercise-browser-block{display:grid;gap:8px}
+.exercise-browser-title{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px;font-weight:900;color:#dce7ed}
+.exercise-browser-title span:last-child{font-size:10px;color:var(--muted);font-weight:700}
+.exercise-recent-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.exercise-recent-card,.exercise-progress-card{width:100%;text-align:left;border:1px solid var(--line);background:rgba(255,255,255,.025);color:var(--text);border-radius:13px;padding:10px 11px;min-height:0}
+.exercise-recent-card{display:grid;gap:4px}
+.exercise-recent-card.on,.exercise-progress-card.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(21,155,246,.12);background:rgba(21,155,246,.08)}
+.exercise-card-name{font-size:13px;font-weight:900;line-height:1.3}
+.exercise-card-meta{font-size:10px;color:var(--muted);line-height:1.4}
+.exercise-card-status{display:inline-flex;width:max-content;max-width:100%;align-items:center;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.06);font-size:9px;font-weight:900;color:#cbd7de}
+.exercise-card-status.good{color:#8de0ad;background:rgba(68,166,105,.12)}
+.exercise-card-status.warn{color:#ffd48a;background:rgba(217,151,48,.12)}
+.exercise-card-status.accent{color:#8ed3ff;background:rgba(21,155,246,.12)}
+.exercise-muscle-filters{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.exercise-muscle-filters::-webkit-scrollbar{display:none}
+.exercise-muscle-filters button{flex:0 0 auto;border:1px solid var(--line);background:#111d24;color:var(--muted);border-radius:999px;min-height:34px;padding:6px 11px;font-size:11px;font-weight:850}
+.exercise-muscle-filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.exercise-attention-grid,.exercise-browser-list{display:grid;gap:8px}
+.exercise-progress-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 10px;align-items:start}
+.exercise-progress-main{min-width:0}
+.exercise-progress-side{text-align:right;display:grid;justify-items:end;gap:4px}
+.exercise-progress-reason{grid-column:1/-1;font-size:10px;line-height:1.45;color:var(--muted)}
+.exercise-browser-empty{border:1px dashed var(--line);border-radius:12px;padding:13px;text-align:center;color:var(--muted);font-size:11px}
+.exercise-browser-count{font-size:10px;color:var(--muted)}
+.exercise-detail-section{margin-top:20px}
+@media(max-width:520px){.exercise-recent-grid{grid-template-columns:1fr 1fr}.exercise-progress-card{grid-template-columns:minmax(0,1fr) auto}.exercise-progress-reason{font-size:9px}}
+@media(max-width:390px){.exercise-recent-grid{grid-template-columns:1fr}.exercise-progress-card{grid-template-columns:1fr}.exercise-progress-side{text-align:left;justify-items:start}.exercise-progress-reason{grid-column:auto}}
