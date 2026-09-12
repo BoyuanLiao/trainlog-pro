@@ -1,0 +1,195 @@
+name: Refactor Phase 2d - Progress analysis
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase2d-progress.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Extract progress analysis logic
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          p=Path('js/analysis/progress.js')
+          p.write_text(r'''/** TrainLog Pro progress / plateau analysis. Pure logic only. */
+          (()=>{
+            'use strict';
+            const num=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
+
+            function comparePct(cur,prev){
+              cur=num(cur);prev=num(prev);
+              if(prev===0)return cur===0?null:{pct:null,dir:'up',text:'前期 0'};
+              const pct=(cur-prev)/Math.abs(prev)*100;
+              return{pct,dir:Math.abs(pct)<1?'same':pct>0?'up':'down',text:`${pct>0?'+':''}${Math.round(pct)}%`};
+            }
+
+            function progressSignals(prev,cur){
+              const signals=[];
+              if(!prev||!cur||prev.type!==cur.type)return signals;
+              if(cur.type==='cardio'){
+                if(num(cur.minutes)>num(prev.minutes)+2)signals.push({key:'time',text:'有氧時間增加'});
+                if(num(cur.distance)>num(prev.distance)+.1)signals.push({key:'distance',text:'距離增加'});
+                if(num(cur.speed)>num(prev.speed)+.2)signals.push({key:'speed',text:'速度增加'});
+                return signals;
+              }
+              if(cur.type==='duration'){
+                if(num(cur.maxSeconds)>num(prev.maxSeconds)+2)signals.push({key:'time',text:'持續時間增加'});
+                return signals;
+              }
+              if(num(cur.maxWeight)>num(prev.maxWeight)+.001)signals.push({key:'weight',text:'重量增加'});
+              const curRep=cur.repByWeight||{},prevRep=prev.repByWeight||{};
+              const common=Object.keys(curRep).filter(k=>Object.prototype.hasOwnProperty.call(prevRep,k));
+              if(common.some(k=>num(curRep[k])>num(prevRep[k])))signals.push({key:'reps',text:'同重量次數增加'});
+              if(num(prev.bestE1rm)>0&&num(cur.bestE1rm)>num(prev.bestE1rm)*1.015)signals.push({key:'e1rm',text:'估算力量提高'});
+              if(num(prev.volume)>0&&num(cur.volume)>num(prev.volume)*1.03)signals.push({key:'volume',text:'完成量增加'});
+              const similarPerf=num(prev.bestE1rm)>0&&Math.abs(num(cur.bestE1rm)-num(prev.bestE1rm))/num(prev.bestE1rm)<=.02;
+              if(similarPerf&&prev.rir!=null&&cur.rir!=null&&num(cur.rir)-num(prev.rir)>=.8)signals.push({key:'effort',text:'相近表現更有餘裕'});
+              if(similarPerf&&prev.rpe!=null&&cur.rpe!=null&&num(prev.rpe)-num(cur.rpe)>=.8)signals.push({key:'effort',text:'相近表現更輕鬆'});
+              return signals;
+            }
+
+            function overloadSummaryFromSessions(sessions){
+              const ss=sessions||[];
+              if(ss.length<2)return{count:0,transitions:0,lastSignals:[],sessions:ss};
+              const recent=ss.slice(-5),transitions=[];let count=0;
+              for(let i=1;i<recent.length;i++){
+                const signals=progressSignals(recent[i-1],recent[i]);
+                if(signals.length)count++;
+                transitions.push({date:recent[i].date,signals});
+              }
+              return{count,transitions:Math.max(0,recent.length-1),lastSignals:transitions.at(-1)?.signals||[],sessions:ss};
+            }
+
+            function plateauFromSessions(sessions){
+              const ss=(sessions||[]).filter(s=>!['cardio','duration'].includes(s.type));
+              if(ss.length<4)return{state:'insufficient',text:'至少需要 4 次可比較的訓練才能判斷進步是否趨緩。'};
+              const last=ss.slice(-5),first=last[0],end=last.at(-1),signals=[];
+              for(let i=1;i<last.length;i++)signals.push(...progressSignals(last[i-1],last[i]));
+              const strong=new Set(signals.map(x=>x.key));
+              const e1rmGain=num(first.bestE1rm)>0?(num(end.bestE1rm)-num(first.bestE1rm))/num(first.bestE1rm):0;
+              const volumeGain=num(first.volume)>0?(num(end.volume)-num(first.volume))/num(first.volume):0;
+              const improving=strong.has('weight')||strong.has('reps')||e1rmGain>.02||volumeGain>.05||strong.has('effort');
+              if(improving)return{state:'progress',text:'最近幾次仍有重量、次數、估算力量、完成量或主觀餘裕的進步訊號。'};
+              return{state:'slow',text:`最近 ${last.length} 次在重量、次數、估算力量與完成量上都沒有明顯改善，近期進步趨勢可能趨緩。`};
+            }
+
+            window.TrainLogProgress=Object.freeze({comparePct,progressSignals,overloadSummaryFromSessions,plateauFromSessions});
+          })();
+          ''',encoding='utf-8')
+
+          app_path=Path('js/app.js'); app=app_path.read_text(encoding='utf-8')
+
+          def function_span(src,name):
+            m=re.search(r'(?m)^\s*function\s+'+re.escape(name)+r'\s*\(',src)
+            if not m: raise RuntimeError('missing '+name)
+            b=src.find('{',m.end()); depth=0; state='normal'; esc=False; i=b
+            while i<len(src):
+              ch=src[i]; nx=src[i+1] if i+1<len(src) else ''
+              if state=='line':
+                if ch=='\n': state='normal'
+                i+=1; continue
+              if state=='block':
+                if ch=='*' and nx=='/': state='normal'; i+=2
+                else:i+=1
+                continue
+              if state in ('s','d','t'):
+                if esc: esc=False;i+=1;continue
+                if ch=='\\':esc=True;i+=1;continue
+                if (state=='s' and ch=="'") or (state=='d' and ch=='"') or (state=='t' and ch=='`'):state='normal'
+                i+=1;continue
+              if ch=='/' and nx=='/':state='line';i+=2;continue
+              if ch=='/' and nx=='*':state='block';i+=2;continue
+              if ch=="'":state='s';i+=1;continue
+              if ch=='"':state='d';i+=1;continue
+              if ch=='`':state='t';i+=1;continue
+              if ch=='{':depth+=1
+              elif ch=='}':
+                depth-=1
+                if depth==0:
+                  e=i+1
+                  while e<len(src) and src[e] in ' \t\r':e+=1
+                  if e<len(src) and src[e]=='\n':e+=1
+                  return m.start(),e
+              i+=1
+            raise RuntimeError('unclosed '+name)
+
+          replacements={
+            'comparePct':"function comparePct(cur,prev){return window.TrainLogProgress.comparePct(cur,prev)}\n",
+            'progressSignals':"function progressSignals(prev,cur){return window.TrainLogProgress.progressSignals(prev,cur)}\n",
+            'overloadSummary':"function overloadSummary(exId){return window.TrainLogProgress.overloadSummaryFromSessions(exerciseSessionMetrics(exId))}\n",
+            'plateauDetail':"function plateauDetail(exId){return window.TrainLogProgress.plateauFromSessions(exerciseSessionMetrics(exId))}\n",
+          }
+          spans=[]
+          for name,repl in replacements.items():
+            s,e=function_span(app,name);spans.append((s,e,repl,name))
+          for s,e,repl,name in sorted(spans,reverse=True):app=app[:s]+repl+app[e:]
+          app_path.write_text(app,encoding='utf-8')
+
+          idx=Path('index.html'); text=idx.read_text(encoding='utf-8')
+          if 'js/analysis/progress.js' not in text:
+            marker=re.search(r'(?P<i>^[ \t]*)<script[^>]*src=["\']js/app\.js(?P<q>\?[^"\']*)?["\'][^>]*></script>',text,re.M)
+            if not marker:raise RuntimeError('app script not found')
+            tag=f'{marker.group("i")}<script src="js/analysis/progress.js{marker.group("q") or ""}"></script>\n'
+            text=text[:marker.start()]+tag+text[marker.start():]
+            idx.write_text(text,encoding='utf-8')
+
+          readme=Path('js/analysis/README.md')
+          r=readme.read_text(encoding='utf-8')
+          if '## `progress.js`' not in r:
+            r += '''\n## `progress.js`\n\n純進步判斷模組，不讀取 App state：\n- `comparePct(cur, prev)`：期間百分比比較。\n- `progressSignals(prev, cur)`：兩次同動作訓練的進步訊號。\n- `overloadSummaryFromSessions(sessions)`：最近 5 次漸進超負荷摘要。\n- `plateauFromSessions(sessions)`：近期進步趨緩判斷。\n\n`exerciseSessionMetrics()` 目前仍留在 `app.js`，負責把 App workout state 轉成 session metrics。這是刻意保留的 adapter boundary。\n'''
+            readme.write_text(r,encoding='utf-8')
+
+          ref=Path('docs/REFACTOR.md'); rt=ref.read_text(encoding='utf-8')
+          if 'Phase 2d' not in rt:
+            rt += '''\n### Phase 2d：Progress / Plateau\n\n- [x] `comparePct` 搬至 `js/analysis/progress.js`\n- [x] `progressSignals` 搬出\n- [x] overload summary 改成 pure session input\n- [x] plateau 判斷改成 pure session input\n- [ ] `exerciseSessionMetrics` adapter 待 Core/Data boundary 更清楚後再搬\n'''
+            ref.write_text(rt,encoding='utf-8')
+
+      - name: Verify syntax
+        run: |
+          node --check js/analysis/progress.js
+          node --check js/app.js
+
+      - name: Unit test progress analysis
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm');const ctx=vm.createContext({window:{}});
+          vm.runInContext(fs.readFileSync('js/analysis/progress.js','utf8'),ctx);const P=ctx.window.TrainLogProgress;
+          if(!P)throw new Error('TrainLogProgress missing');
+          const cmp=P.comparePct(110,100);if(Math.round(cmp.pct)!==10||cmp.dir!=='up')throw new Error('comparePct');
+          const a={type:'weight_reps',maxWeight:50,bestE1rm:60,volume:1500,repByWeight:{50:8},rir:1,rpe:null};
+          const b={type:'weight_reps',maxWeight:52.5,bestE1rm:62,volume:1600,repByWeight:{50:10},rir:2,rpe:null,date:'2026-09-01'};
+          const keys=P.progressSignals(a,b).map(x=>x.key);
+          for(const k of ['weight','reps','e1rm','volume'])if(!keys.includes(k))throw new Error('missing '+k);
+          const sessions=[0,1,2,3].map(i=>({...a,date:`2026-09-0${i+1}`}));
+          if(P.plateauFromSessions(sessions).state!=='slow')throw new Error('plateau slow fixture');
+          const improved=[...sessions.slice(0,3),{...b,date:'2026-09-04'}];
+          if(P.plateauFromSessions(improved).state!=='progress')throw new Error('plateau progress fixture');
+          const summary=P.overloadSummaryFromSessions([a,b]);if(summary.count!==1||summary.transitions!==1)throw new Error('overload summary');
+          NODE
+
+      - name: Verify wrappers and commit
+        run: |
+          git diff --check
+          grep -q 'js/analysis/progress.js' index.html
+          grep -q 'TrainLogProgress.progressSignals' js/app.js
+          grep -q 'TrainLogProgress.plateauFromSessions' js/app.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/analysis index.html docs/REFACTOR.md
+          git commit -m 'refactor: extract progress analysis logic'
+          git push
