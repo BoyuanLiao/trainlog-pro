@@ -31,3 +31,9 @@ Phase 2 開始把分析邏輯從大型 `js/app.js` 移到可獨立測試的模�
 - `consistencyStats(workouts, days, options)`：訓練規律性；日期邏輯由呼叫端注入。
 
 這三個函式不直接讀 `data`、DOM 或 LocalStorage。
+
+## Phase 2c
+
+- `STIMULUS_BY_PATTERN` 已移入 analysis module。
+- `exerciseStimulusProfile(exercise, options)` 已移入 analysis module。
+- App 端只注入 `analysisBasis(exercise)`，因此器材/動作庫查找仍留在 App data boundary。

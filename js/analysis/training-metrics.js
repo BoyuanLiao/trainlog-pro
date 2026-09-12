@@ -7,6 +7,28 @@
 (() => {
   'use strict';
 
+
+  const STIMULUS_BY_PATTERN={
+   horizontal_push:[['胸',1],['三頭',.5],['肩膀',.5]],
+   shoulder_horizontal_adduction:[['胸',1],['肩膀',.25]],
+   vertical_push:[['肩膀',1],['三頭',.5]],
+   horizontal_pull:[['背',1],['二頭',.5],['肩膀',.25]],
+   vertical_pull:[['背',1],['二頭',.5]],
+   shoulder_extension:[['背',1],['二頭',.25]],
+   shoulder_abduction:[['肩膀',1]],
+   elbow_flexion:[['二頭',1]],
+   elbow_extension:[['三頭',1]],
+   knee_dominant:[['腿',1]],
+   knee_extension:[['腿',1]],
+   knee_flexion:[['腿',1]],
+   hip_extension:[['腿',1]],
+   hip_abduction:[['腿',1]],
+   hip_adduction:[['腿',1]],
+   plantar_flexion:[['腿',1]],
+   core_flexion:[['腹部',1]],
+   core_stability:[['腹部',1]],
+   rotation:[['腹部',1]]
+  };
   const num = value => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
@@ -156,6 +178,28 @@
     };
   }
 
+
+
+  function exerciseStimulusProfile(exercise, options = {}) {
+    if (!exercise || exercise.type === 'cardio') return [];
+    const analysisBasis = typeof options.analysisBasis === 'function'
+      ? options.analysisBasis
+      : () => ({ lib: {}, pattern: '', primary: exercise?.muscle || '其他' });
+    const { lib = {}, pattern = '', primary = exercise?.muscle || '其他' } = analysisBasis(exercise) || {};
+    if (Array.isArray(lib.stimulus) && lib.stimulus.length) {
+      return lib.stimulus
+        .map(item => ({ muscle: item?.muscle, weight: num(item?.weight) }))
+        .filter(item => item.muscle && item.weight > 0);
+    }
+    if (['mobility', 'scapular_control'].includes(pattern)) return [];
+    const base = (STIMULUS_BY_PATTERN[pattern] || []).map(([muscle, weight]) => ({ muscle, weight }));
+    if (!base.length && primary && !['有氧', '其他'].includes(primary)) return [{ muscle: primary, weight: 1 }];
+    if (primary && !['有氧', '其他'].includes(primary) && !base.some(item => item.muscle === primary)) {
+      base.unshift({ muscle: primary, weight: 1 });
+    }
+    return base;
+  }
+
   window.TrainLogAnalysis = Object.freeze({
     completedWorkingSets,
     effortStats,
@@ -163,5 +207,6 @@
     stimulusMap,
     movementStats,
     consistencyStats,
+    exerciseStimulusProfile,
   });
 })();

@@ -259,42 +259,12 @@ function rangeDateLabel(days){
  return `${fmtDate(rollingStart(days))} – ${fmtDate(isoToday())}`;
 }
 function completedWorkingSets(ex){return window.TrainLogAnalysis.completedWorkingSets(ex)}
-const STIMULUS_BY_PATTERN={
- horizontal_push:[['胸',1],['三頭',.5],['肩膀',.5]],
- shoulder_horizontal_adduction:[['胸',1],['肩膀',.25]],
- vertical_push:[['肩膀',1],['三頭',.5]],
- horizontal_pull:[['背',1],['二頭',.5],['肩膀',.25]],
- vertical_pull:[['背',1],['二頭',.5]],
- shoulder_extension:[['背',1],['二頭',.25]],
- shoulder_abduction:[['肩膀',1]],
- elbow_flexion:[['二頭',1]],
- elbow_extension:[['三頭',1]],
- knee_dominant:[['腿',1]],
- knee_extension:[['腿',1]],
- knee_flexion:[['腿',1]],
- hip_extension:[['腿',1]],
- hip_abduction:[['腿',1]],
- hip_adduction:[['腿',1]],
- plantar_flexion:[['腿',1]],
- core_flexion:[['腹部',1]],
- core_stability:[['腹部',1]],
- rotation:[['腹部',1]]
-};
 function exerciseAnalysisBasis(exRecord){
  const lib=getExercise(exRecord?.exerciseId)||{};
  const eq=SYSTEM_EQUIPMENT.find(x=>x.id===(lib.equipmentId||exRecord?.equipmentId));
  return {lib,eq,pattern:lib.pattern||eq?.pattern||'',primary:lib.muscle||exRecord?.muscle||'其他'}
 }
-function exerciseStimulusProfile(exRecord){
- if(!exRecord||exRecord.type==='cardio')return[];
- const {lib,pattern,primary}=exerciseAnalysisBasis(exRecord);
- if(Array.isArray(lib.stimulus)&&lib.stimulus.length)return lib.stimulus.map(x=>({muscle:x.muscle,weight:n(x.weight)})).filter(x=>x.muscle&&x.weight>0);
- if(['mobility','scapular_control'].includes(pattern))return[];
- const base=(STIMULUS_BY_PATTERN[pattern]||[]).map(([muscle,weight])=>({muscle,weight}));
- if(!base.length&&primary&&!['有氧','其他'].includes(primary))return[{muscle:primary,weight:1}];
- if(primary&&!['有氧','其他'].includes(primary)&&!base.some(x=>x.muscle===primary))base.unshift({muscle:primary,weight:1});
- return base
-}
+function exerciseStimulusProfile(exRecord){return window.TrainLogAnalysis.exerciseStimulusProfile(exRecord,{analysisBasis:exerciseAnalysisBasis})}
 function stimulusMap(workouts){return window.TrainLogAnalysis.stimulusMap(workouts,{profileForExercise:exerciseStimulusProfile})}
 function formalSetCount(workouts){return (workouts||[]).reduce((sum,w)=>sum+effectiveSets(w),0)}
 function effortStats(workouts){return window.TrainLogAnalysis.effortStats(workouts)}

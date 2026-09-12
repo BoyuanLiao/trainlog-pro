@@ -131,3 +131,8 @@
 - [x] `movementStats` 移出實作，使用 `patternForExercise` 注入。
 - [x] `consistencyStats` 移出實作，日期 helper 改為注入。
 - [x] 補 fixture tests，避免暖身組與忽略 pattern 被誤計。
+
+### Phase 2c
+- [x] `STIMULUS_BY_PATTERN` 移到 analysis module。
+- [x] `exerciseStimulusProfile` 改成 pure function + `analysisBasis` dependency injection。
+- [x] App 只保留 resolver wrapper。
