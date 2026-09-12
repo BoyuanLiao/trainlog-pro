@@ -1,0 +1,46 @@
+name: Refactor Phase 3b - Storage core
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase3b-storage.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify migration before refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify storage before refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Apply storage-core refactor
+        run: python scripts/refactor_phase3b_storage.py
+      - name: Verify syntax after refactor
+        run: |
+          node --check js/core/storage.js
+          node --check js/core/migration.js
+          node --check js/app.js
+      - name: Verify migration after refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify storage after refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify integration and commit
+        run: |
+          git diff --check
+          grep -q 'js/core/storage.js' index.html
+          grep -q 'window.TrainLogStorage.create' js/app.js
+          grep -q 'storageCore.loadData' js/app.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/core/storage.js js/core/README.md docs/REFACTOR.md index.html tests/core/storage-characterization.test.js
+          git commit -m 'refactor: extract storage and recovery core'
+          git push
