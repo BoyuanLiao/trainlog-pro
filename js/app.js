@@ -64,6 +64,7 @@ const trainingLifecycle=window.TrainLogTrainingLifecycle;
 const trainingMutations=window.TrainLogTrainingMutations;
 const trainingProgression=window.TrainLogTrainingProgression;
 const trainingProgressionView=window.TrainLogProgressionView;
+const trainingProgressionActions=window.TrainLogProgressionActions;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -310,6 +311,13 @@ function progressionAdvice(exId){
 }
 function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv):null}
 function progressionToneClass(view){return view?.tone==='good'?'good':view?.tone==='warn'?'warn':''}
+function progressionApplyLabel(adv,ex,e){
+ if(!adv||!trainingProgressionActions.canApply(adv))return'';
+ if(adv.action==='add_reps')return'套用：未完成正式組每組 +1 下';
+ if(adv.action==='increase_time')return`套用：未完成正式組每組 +${n(ex?.increment)||5} 秒`;
+ const unit=exerciseInputUnit(e),inc=machineIncrementForUnit(ex,unit),sign=adv.action==='reduce_load'?'−':'+';
+ return`套用：未完成正式組 ${sign}${cleanWeightNumber(inc)} ${unit}`
+}
 function plateau(exId){
  const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(!s.completed)return;best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push({date:w.date,v:best})});
  if(pts.length<5)return false;const last=pts.slice(-5),min=Math.min(...last.map(x=>x.v)),max=Math.max(...last.map(x=>x.v));return min>0&&(max-min)/min<0.02
@@ -1079,7 +1087,7 @@ function sessionExerciseHtml(e,idx){
  const showNotes=data.settings.trainingNotes!==false,inputUnit=exerciseInputUnit(e);
  const unitTools=!['cardio','duration'].includes(e.type)?`<div class="exercise-unit-line"><span class="exercise-unit-label">器械重量標示</span><span class="exercise-unit-toggle"><button type="button" class="${inputUnit==='kg'?'on':''}" data-ex-unit="${idx},kg">kg</button><button type="button" class="${inputUnit==='lb'?'on':''}" data-ex-unit="${idx},lb">lb</button></span><span class="exercise-unit-note">${inputUnit==='lb'?'<b>輸入 lb</b>，App 會自動換算成 kg 標準值儲存；例如 100 lb ≈ 45.4 kg。':'<b>輸入 kg</b>，內部直接以 kg 標準值儲存。'}</span></div>`:'';
  return `<div class="workout-ex ${e.uiCollapsed?'collapsed':''}" data-exblock="${idx}">
-  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(e.muscle)}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="查看動作說明">ⓘ 說明</button></div></div>${unitTools}<div class="record-meta">上次：${esc(lastText)}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">今日相關部位：${esc(bodyMatch.text)}。${bodyMatch.strong?'先不要勉強加重；若動作引發疼痛或活動受限，可停止這個動作。':'先用輕重量暖身，確認活動舒服再決定是否照原計畫。'}</div>`:''}${advView?`<div class="small ${progressionToneClass(advView)}" style="margin-top:5px;line-height:1.55"><b>${esc(advView.label)}</b> · ${esc(advView.reason)}<br>${esc(advView.text)}<br><span class="record-meta">${esc(advView.evidence)}</span></div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">器材/動作備註：${esc(ex.notes)}</div>`:''}</div>
+  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(e.muscle)}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="查看動作說明">ⓘ 說明</button></div></div>${unitTools}<div class="record-meta">上次：${esc(lastText)}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">今日相關部位：${esc(bodyMatch.text)}。${bodyMatch.strong?'先不要勉強加重；若動作引發疼痛或活動受限，可停止這個動作。':'先用輕重量暖身，確認活動舒服再決定是否照原計畫。'}</div>`:''}${advView?`<div class="small ${progressionToneClass(advView)}" style="margin-top:5px;line-height:1.55"><b>${esc(advView.label)}</b> · ${esc(advView.reason)}<br>${esc(advView.text)}<br><span class="record-meta">${esc(advView.evidence)}</span>${trainingProgressionActions.canApply(adv)?`<div style="margin-top:7px"><button class="btn small primary" type="button" data-apply-progression="${idx}">${esc(progressionApplyLabel(adv,ex,e))}</button></div>`:''}</div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">器材/動作備註：${esc(ex.notes)}</div>`:''}</div>
   <div class="actions"><button class="btn small ghost exercise-collapse-btn" data-collapseex="${idx}" aria-label="${e.uiCollapsed?'展開':'收合'}">${e.uiCollapsed?'⌄':'⌃'}</button><button class="btn small ghost" data-replace="${idx}">替換</button><button class="btn small danger" data-removeex="${idx}">移除</button></div></div>
   <div class="workout-ex-body">${body}${showNotes?`<div class="field" style="margin-top:9px"><label>本次動作備註</label><input data-exnote="${idx}" value="${esc(e.notes||'')}" placeholder="例如：座椅 4、右肩有感"></div>`:''}</div>
  </div>`
@@ -1121,6 +1129,7 @@ function bindSessionEvents(){
  $$('#activeWorkout [data-kind]').forEach(el=>el.onchange=()=>{const [ei,si]=el.dataset.kind.split(',').map(Number);trainingMutations.setKind(data.activeWorkout.exercises[ei],si,el.value);saveActiveOnly(true)});
  $$('#activeWorkout [data-simple-effort]').forEach(b=>b.onclick=()=>{const [ei,si,feel]=b.dataset.simpleEffort.split(',');trainingMutations.applySimpleEffort(data.activeWorkout.exercises[n(ei)],n(si),feel);saveActiveOnly(true);toast(feel==='easy'?'已記錄：太輕鬆':feel==='ok'?'已記錄：剛剛好':'已記錄：太吃力')});
  $$('#activeWorkout [data-removeex]').forEach(b=>b.onclick=()=>{if(confirm('移除此動作？')){trainingMutations.removeExercise(data.activeWorkout.exercises,n(b.dataset.removeex));saveActiveOnly(true)}});
+ $$('#activeWorkout [data-apply-progression]').forEach(b=>b.onclick=()=>{const ei=n(b.dataset.applyProgression),e=data.activeWorkout.exercises[ei],ex=getExercise(e?.exerciseId),adv=e?progressionAdvice(e.exerciseId):null;if(!e||!ex||!adv||!trainingProgressionActions.canApply(adv))return;if(!confirm('將這項建議套用到所有未完成的正式組？已完成組、暖身組與 Drop / Failure / Back-off 不會修改。'))return;const unit=exerciseInputUnit(e),inc=machineIncrementForUnit(ex,unit),result=trainingProgressionActions.applyAdvice(e,adv,{weightDeltaKg:toKg(inc,unit),repDelta:1,secondsDelta:n(ex.increment)||5});if(!result.applied){toast('沒有可套用的未完成正式組');return}saveActiveOnly(true);toast(`已套用到 ${result.changedSets} 組`) });
  $$('#activeWorkout [data-replace]').forEach(b=>b.onclick=()=>openReplaceModal(n(b.dataset.replace)));
  $$('#activeWorkout [data-ex-info]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.exInfo)],ex=getExercise(e?.exerciseId);if(ex)showExerciseDetail(ex.id)});
  $('#sessionAddEx').onclick=()=>openExercisePicker(ex=>{const added=makeSessionExercise(ex,data.activeWorkout.date);data.activeWorkout.exercises.push(added);saveActiveOnly(true)});

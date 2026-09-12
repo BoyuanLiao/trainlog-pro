@@ -188,3 +188,10 @@
 - [x] `js/training/progression-view.js` 統一 action label / tone / reason / evidence。
 - [x] 首頁、Active Workout、分析頁共用 formatter。
 - [x] 顯示 engine 使用的最近紀錄數與平台期／高強度訊號。
+
+
+### Phase 4f — Apply progression actions
+- [x] 先用 `tests/training/progression-actions.test.js` 鎖住資料 mutation contract。
+- [x] `js/training/progression-actions.js` 僅修改未完成 working sets。
+- [x] Active Workout 提供明確的「套用建議」按鈕與二次確認。
+- [x] kg / lb 顯示增量會在 UI adapter 轉回 kg 標準值後才寫入資料。

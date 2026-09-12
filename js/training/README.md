@@ -51,3 +51,10 @@
 - 首頁、訓練動作卡、分析頁共用同一 formatter。
 - UI 明確顯示「增加次數／加重／降重／平台期／維持」與「參考最近 N 次紀錄」。
 - presentation module 不碰 DOM；HTML 組裝仍留在 `app.js`。
+
+## Phase 4f
+
+- `progression-actions.js`：把可執行的 progression action 套到 Active Workout 未完成的 working sets。
+- 只自動套用 `increase_load`、`add_reps`、`reduce_load`、`increase_time`。
+- 暖身、已完成組、Drop / Failure / Back-off 不會被自動修改。
+- `plateau` / `maintain` / `new` 保持建議文字，不自動改訓練資料。
