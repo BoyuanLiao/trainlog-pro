@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 APP=Path('js/app.js')
 INDEX=Path('index.html')
@@ -21,23 +20,24 @@ app=replace_once(
 )
 
 replacements={
-    'addset': " $$('#activeWorkout [data-addset]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.addset)];trainingMutations.addSet(e,{id:uid('s')});saveActiveOnly(true)});",
-    'delset': " $$('#activeWorkout [data-delset]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.delset.split(',').map(Number);trainingMutations.removeSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});",
-    'delta': " $$('#activeWorkout [data-delta]').forEach(b=>b.onclick=()=>{const [ei,si,key,delta]=b.dataset.delta.split(',');trainingMutations.applyDelta(data.activeWorkout.exercises[n(ei)].sets[n(si)],key,delta);saveActiveOnly(true)});",
-    'weight-delta': " $$('#activeWorkout [data-weight-delta]').forEach(b=>b.onclick=()=>{const [ei,si,delta]=b.dataset.weightDelta.split(','),ex=data.activeWorkout.exercises[n(ei)],s=ex.sets[n(si)];trainingMutations.applyWeightDelta(s,toKg(delta,exerciseInputUnit(ex)));saveActiveOnly(true)});",
-    'copy': " $$('#activeWorkout [data-copy]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.copy.split(',').map(Number);trainingMutations.copyPreviousSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});",
-    'complete': " $$('#activeWorkout [data-complete]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.complete.split(',').map(Number),e=data.activeWorkout.exercises[ei],completed=trainingMutations.toggleCompleted(e,si);saveActiveOnly(true);if(completed&&data.settings.trainingIntervalTimer!==false){const ex=getExercise(e.exerciseId),nextNo=si+2;startTimer(n(ex?.rest)||n(data.settings.defaultRest)||90,`${ex?.name||e.nameSnapshot} · 準備第 ${nextNo} 組`)}});",
-    'kind': " $$('#activeWorkout [data-kind]').forEach(el=>el.onchange=()=>{const [ei,si]=el.dataset.kind.split(',').map(Number);trainingMutations.setKind(data.activeWorkout.exercises[ei],si,el.value);saveActiveOnly(true)});",
-    'simple-effort': " $$('#activeWorkout [data-simple-effort]').forEach(b=>b.onclick=()=>{const [ei,si,feel]=b.dataset.simpleEffort.split(',');trainingMutations.applySimpleEffort(data.activeWorkout.exercises[n(ei)],n(si),feel);saveActiveOnly(true);toast(feel==='easy'?'已記錄：太輕鬆':feel==='ok'?'已記錄：剛剛好':'已記錄：太吃力')});",
-    'removeex': " $$('#activeWorkout [data-removeex]').forEach(b=>b.onclick=()=>{if(confirm('移除此動作？')){trainingMutations.removeExercise(data.activeWorkout.exercises,n(b.dataset.removeex));saveActiveOnly(true)}});",
+    'data-addset': " $$('#activeWorkout [data-addset]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.addset)];trainingMutations.addSet(e,{id:uid('s')});saveActiveOnly(true)});",
+    'data-delset': " $$('#activeWorkout [data-delset]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.delset.split(',').map(Number);trainingMutations.removeSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});",
+    'data-delta': " $$('#activeWorkout [data-delta]').forEach(b=>b.onclick=()=>{const [ei,si,key,delta]=b.dataset.delta.split(',');trainingMutations.applyDelta(data.activeWorkout.exercises[n(ei)].sets[n(si)],key,delta);saveActiveOnly(true)});",
+    'data-weight-delta': " $$('#activeWorkout [data-weight-delta]').forEach(b=>b.onclick=()=>{const [ei,si,delta]=b.dataset.weightDelta.split(','),ex=data.activeWorkout.exercises[n(ei)],s=ex.sets[n(si)];trainingMutations.applyWeightDelta(s,toKg(delta,exerciseInputUnit(ex)));saveActiveOnly(true)});",
+    'data-copy': " $$('#activeWorkout [data-copy]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.copy.split(',').map(Number);trainingMutations.copyPreviousSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});",
+    'data-complete': " $$('#activeWorkout [data-complete]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.complete.split(',').map(Number),e=data.activeWorkout.exercises[ei],completed=trainingMutations.toggleCompleted(e,si);saveActiveOnly(true);if(completed&&data.settings.trainingIntervalTimer!==false){const ex=getExercise(e.exerciseId),nextNo=si+2;startTimer(n(ex?.rest)||n(data.settings.defaultRest)||90,`${ex?.name||e.nameSnapshot} · 準備第 ${nextNo} 組`)}});",
+    'data-kind': " $$('#activeWorkout [data-kind]').forEach(el=>el.onchange=()=>{const [ei,si]=el.dataset.kind.split(',').map(Number);trainingMutations.setKind(data.activeWorkout.exercises[ei],si,el.value);saveActiveOnly(true)});",
+    'data-simple-effort': " $$('#activeWorkout [data-simple-effort]').forEach(b=>b.onclick=()=>{const [ei,si,feel]=b.dataset.simpleEffort.split(',');trainingMutations.applySimpleEffort(data.activeWorkout.exercises[n(ei)],n(si),feel);saveActiveOnly(true);toast(feel==='easy'?'已記錄：太輕鬆':feel==='ok'?'已記錄：剛剛好':'已記錄：太吃力')});",
+    'data-removeex': " $$('#activeWorkout [data-removeex]').forEach(b=>b.onclick=()=>{if(confirm('移除此動作？')){trainingMutations.removeExercise(data.activeWorkout.exercises,n(b.dataset.removeex));saveActiveOnly(true)}});",
 }
 
-for key,newline in replacements.items():
-    pattern=rf"^ \\$\\$\\('#activeWorkout \\[data-{re.escape(key)}\\]'\\).*;$"
-    app,count=re.subn(pattern,newline,app,count=1,flags=re.M)
-    if count!=1:
-        raise SystemExit(f'expected one handler for {key}, got {count}')
-
+lines=app.splitlines()
+for marker,newline in replacements.items():
+    matches=[i for i,line in enumerate(lines) if f'[{marker}]' in line and "$$('#activeWorkout" in line]
+    if len(matches)!=1:
+        raise SystemExit(f'expected one handler for {marker}, got {len(matches)}')
+    lines[matches[0]]=newline
+app='\n'.join(lines)+'\n'
 APP.write_text(app,encoding='utf-8')
 
 index=INDEX.read_text(encoding='utf-8')
