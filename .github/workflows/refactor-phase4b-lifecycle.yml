@@ -1,0 +1,71 @@
+name: Refactor Phase 4b - Active workout lifecycle
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase4b-lifecycle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Verify core migration before refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify core storage before refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify core utils before refactor
+        run: node tests/core/utils-characterization.test.js
+      - name: Verify training metrics before refactor
+        run: node tests/training/metrics-characterization.test.js
+      - name: Verify lifecycle before refactor
+        run: node tests/training/lifecycle-characterization.test.js
+
+      - name: Apply lifecycle refactor
+        run: python scripts/refactor_phase4b_lifecycle.py
+
+      - name: Verify syntax after refactor
+        run: |
+          node --check js/training/lifecycle.js
+          node --check js/training/metrics.js
+          node --check js/core/utils.js
+          node --check js/core/migration.js
+          node --check js/core/storage.js
+          node --check js/app.js
+
+      - name: Verify core migration after refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify core storage after refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify core utils after refactor
+        run: node tests/core/utils-characterization.test.js
+      - name: Verify training metrics after refactor
+        run: node tests/training/metrics-characterization.test.js
+      - name: Verify lifecycle after refactor
+        run: node tests/training/lifecycle-characterization.test.js
+
+      - name: Verify integration and commit
+        run: |
+          grep -q 'js/training/lifecycle.js' index.html
+          grep -q 'TrainLogTrainingLifecycle' js/training/lifecycle.js
+          grep -q 'trainingLifecycle.createBlankWorkout' js/app.js
+          grep -q 'trainingLifecycle.finalizeWorkout' js/app.js
+          git diff --check
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js index.html js/README.md js/training/README.md docs/REFACTOR.md
+          git commit -m 'refactor: extract active workout lifecycle'
+          git push
