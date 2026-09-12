@@ -136,3 +136,11 @@
 - [x] `STIMULUS_BY_PATTERN` 移到 analysis module。
 - [x] `exerciseStimulusProfile` 改成 pure function + `analysisBasis` dependency injection。
 - [x] App 只保留 resolver wrapper。
+
+### Phase 2d：Progress / Plateau
+
+- [x] `comparePct` 搬至 `js/analysis/progress.js`
+- [x] `progressSignals` 搬出
+- [x] overload summary 改成 pure session input
+- [x] plateau 判斷改成 pure session input
+- [ ] `exerciseSessionMetrics` adapter 待 Core/Data boundary 更清楚後再搬

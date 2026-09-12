@@ -282,12 +282,7 @@ function previousPeriodLabel(days){
  const d=Math.max(1,n(days)),curStart=rollingStart(d),prevEnd=shiftIso(curStart,-1),prevStart=shiftIso(prevEnd,-(d-1));
  return `${fmtDate(prevStart)} – ${fmtDate(prevEnd)}`
 }
-function comparePct(cur,prev){
- cur=n(cur);prev=n(prev);
- if(prev===0)return cur===0?null:{pct:null,dir:'up',text:'前期 0'};
- const pct=(cur-prev)/Math.abs(prev)*100;
- return{pct,dir:Math.abs(pct)<1?'same':pct>0?'up':'down',text:`${pct>0?'+':''}${Math.round(pct)}%`}
-}
+function comparePct(cur,prev){return window.TrainLogProgress.comparePct(cur,prev)}
 function compareBadge(cur,prev){
  const c=comparePct(cur,prev);if(!c)return'';
  const arrow=c.dir==='up'?'↑':c.dir==='down'?'↓':'→';
@@ -328,48 +323,9 @@ function exerciseSessionMetrics(exId){
  });
  return sessions
 }
-function progressSignals(prev,cur){
- const signals=[];if(!prev||!cur||prev.type!==cur.type)return signals;
- if(cur.type==='cardio'){
-   if(cur.minutes>prev.minutes+2)signals.push({key:'time',text:'有氧時間增加'});
-   if(cur.distance>prev.distance+.1)signals.push({key:'distance',text:'距離增加'});
-   if(cur.speed>prev.speed+.2)signals.push({key:'speed',text:'速度增加'});
-   return signals
- }
- if(cur.type==='duration'){
-   if(cur.bestSeconds>prev.bestSeconds+2)signals.push({key:'duration',text:'最佳時間增加'});
-   if(cur.totalSeconds>prev.totalSeconds*1.03)signals.push({key:'volume',text:'總持續時間增加'});
-   return signals
- }
- if(cur.maxWeight>prev.maxWeight+.001)signals.push({key:'weight',text:'重量增加'});
- const common=Object.keys(cur.repByWeight||{}).filter(k=>Object.prototype.hasOwnProperty.call(prev.repByWeight||{},k));
- if(common.some(k=>n(cur.repByWeight[k])>n(prev.repByWeight[k])))signals.push({key:'reps',text:'同重量次數增加'});
- if(prev.bestE1rm>0&&cur.bestE1rm>prev.bestE1rm*1.015)signals.push({key:'e1rm',text:'估算力量提高'});
- if(prev.volume>0&&cur.volume>prev.volume*1.03)signals.push({key:'volume',text:'完成量增加'});
- const similarPerf=prev.bestE1rm>0&&Math.abs(cur.bestE1rm-prev.bestE1rm)/prev.bestE1rm<=.02;
- if(similarPerf&&prev.rir!=null&&cur.rir!=null&&cur.rir-prev.rir>=.8)signals.push({key:'effort',text:'相近表現更有餘裕'});
- if(similarPerf&&prev.rpe!=null&&cur.rpe!=null&&prev.rpe-cur.rpe>=.8)signals.push({key:'effort',text:'相近表現更輕鬆'});
- return signals
-}
-function overloadSummary(exId){
- const ss=exerciseSessionMetrics(exId);if(ss.length<2)return{count:0,transitions:0,lastSignals:[],sessions:ss};
- const recent=ss.slice(-5);let count=0;const transitions=[];
- for(let i=1;i<recent.length;i++){const sig=progressSignals(recent[i-1],recent[i]);if(sig.length)count++;transitions.push({date:recent[i].date,signals:sig})}
- return{count,transitions:Math.max(0,recent.length-1),lastSignals:transitions.at(-1)?.signals||[],sessions:ss}
-}
-function plateauDetail(exId){
- const ss=exerciseSessionMetrics(exId).filter(s=>!['cardio','duration'].includes(s.type));
- if(ss.length<4)return{state:'insufficient',text:'至少需要 4 次可比較的訓練才能判斷進步是否趨緩。'};
- const last=ss.slice(-5),first=last[0],end=last.at(-1);
- const anySignals=[];for(let i=1;i<last.length;i++)anySignals.push(...progressSignals(last[i-1],last[i]));
- const strong=new Set(anySignals.map(x=>x.key));
- const e1rmGain=first.bestE1rm>0?(end.bestE1rm-first.bestE1rm)/first.bestE1rm:0;
- const weightGain=end.maxWeight-first.maxWeight;
- const volumeGain=first.volume>0?(end.volume-first.volume)/first.volume:0;
- const improving=strong.has('weight')||strong.has('reps')||e1rmGain>.02||volumeGain>.05||strong.has('effort');
- if(improving)return{state:'progress',text:'最近幾次仍有重量、次數、估算力量、完成量或主觀餘裕的進步訊號。'};
- return{state:'slow',text:`最近 ${last.length} 次在重量、次數、估算力量與完成量上都沒有明顯改善，近期進步趨勢可能趨緩。`}
-}
+function progressSignals(prev,cur){return window.TrainLogProgress.progressSignals(prev,cur)}
+function overloadSummary(exId){return window.TrainLogProgress.overloadSummaryFromSessions(exerciseSessionMetrics(exId))}
+function plateauDetail(exId){return window.TrainLogProgress.plateauFromSessions(exerciseSessionMetrics(exId))}
 function movementMatrixHtml(moves){
  const cell=p=>`<div class="pattern-cell"><b>${n(moves[p]||0)}</b><span>${esc(patternDisplayName(p))}</span></div>`;
  const groups=[

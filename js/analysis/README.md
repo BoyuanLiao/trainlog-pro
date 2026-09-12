@@ -37,3 +37,13 @@ Phase 2 開始把分析邏輯從大型 `js/app.js` 移到可獨立測試的模�
 - `STIMULUS_BY_PATTERN` 已移入 analysis module。
 - `exerciseStimulusProfile(exercise, options)` 已移入 analysis module。
 - App 端只注入 `analysisBasis(exercise)`，因此器材/動作庫查找仍留在 App data boundary。
+
+## `progress.js`
+
+純進步判斷模組，不讀取 App state：
+- `comparePct(cur, prev)`：期間百分比比較。
+- `progressSignals(prev, cur)`：兩次同動作訓練的進步訊號。
+- `overloadSummaryFromSessions(sessions)`：最近 5 次漸進超負荷摘要。
+- `plateauFromSessions(sessions)`：近期進步趨緩判斷。
+
+`exerciseSessionMetrics()` 目前仍留在 `app.js`，負責把 App workout state 轉成 session metrics。這是刻意保留的 adapter boundary。
