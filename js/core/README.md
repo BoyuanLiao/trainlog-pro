@@ -22,3 +22,7 @@
 - 最多 5 份 snapshot。
 - save/persist，render callback 由 App 注入。
 - 對應測試：`tests/core/storage-characterization.test.js`。
+
+## Phase 3c 測試
+- `tests/core/utils-characterization.test.js`：鎖定數值、日期、kg/lb、重量格式與 e1RM 行為。
+- 重構流程固定為：實作前測試 → 搬移 → 同一組測試再次驗證。

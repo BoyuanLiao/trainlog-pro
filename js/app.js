@@ -12,23 +12,8 @@ const PATTERN_INFO={horizontal_push:'horizontal_push',horizontal_pull:'horizonta
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
-const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0};
-const clamp=(v,min,max)=>Math.min(max,Math.max(min,n(v)));
+const {n,clamp,isoToday,parseDate,isoDate,daysBetween,monthKey,fmtDate,LB_PER_KG,normalizeWeightUnit,toKg,fromKg,cleanWeightNumber,est1rm}=window.TrainLogUtils;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const isoToday=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
-const parseDate=s=>{const [y,m,d]=(s||'').split('-').map(Number);return new Date(y,m-1,d)};
-const isoDate=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-const daysBetween=(a,b)=>Math.round((parseDate(b)-parseDate(a))/86400000);
-const monthKey=()=>isoToday().slice(0,7);
-const fmtDate=s=>s?`${Number(s.slice(5,7))}/${Number(s.slice(8,10))}`:'';
-const LB_PER_KG=2.2046226218;
-const normalizeWeightUnit=u=>u==='lb'?'lb':'kg';
-const toKg=(v,unit='kg')=>normalizeWeightUnit(unit)==='lb'?n(v)/LB_PER_KG:n(v);
-const fromKg=(v,unit='kg')=>normalizeWeightUnit(unit)==='lb'?n(v)*LB_PER_KG:n(v);
-function cleanWeightNumber(v){
- const x=Math.round(n(v)*10)/10;
- return Number.isInteger(x)?String(x):x.toFixed(1)
-}
 function fmtWeightNumber(weightKg,unit=(data?.settings?.unit||'kg')){return cleanWeightNumber(fromKg(weightKg,unit))}
 function fmtWeight(weightKg,unit=(data?.settings?.unit||'kg')){return `${fmtWeightNumber(weightKg,unit)} ${normalizeWeightUnit(unit)}`}
 function exerciseInputUnit(e){return normalizeWeightUnit(e?.inputUnit||data?.settings?.unit||'kg')}
@@ -78,7 +63,6 @@ function workoutVolume(w){let sum=0;(w.exercises||[]).forEach(e=>{if(!['weight_r
 function effectiveSets(w,muscle){let c=0;(w.exercises||[]).forEach(e=>{if(muscle&&e.muscle!==muscle)return;(e.sets||[]).forEach(s=>{if(s.completed&&s.kind!=='warmup')c++})});return c}
 function cardioMinutes(w){let m=0;(w.exercises||[]).forEach(e=>{if(e.type==='cardio')m+=n(e.cardio?.minutes)});return m}
 function durationSeconds(w,muscle){let s=0;(w.exercises||[]).forEach(e=>{if(e.type==='duration'&&(!muscle||e.muscle===muscle))(e.sets||[]).forEach(x=>{if(x.completed)s+=n(x.seconds)})});return s}
-function est1rm(weight,reps){return reps>0?weight*(1+reps/30):0}
 function bestSetForExercise(exId,workouts=data.workouts){
  let best=null;workouts.forEach(w=>(w.exercises||[]).filter(e=>e.exerciseId===exId).forEach(e=>(e.sets||[]).forEach(s=>{
    if(!s.completed||e.type==='duration'||e.type==='cardio')return;

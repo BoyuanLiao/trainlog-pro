@@ -148,3 +148,7 @@
 - [x] overload summary 改成 pure session input
 - [x] plateau 判斷改成 pure session input
 - [ ] `exerciseSessionMetrics` adapter 待 Core/Data boundary 更清楚後再搬
+
+### Phase 3c — Core utils（已完成）
+- `js/core/utils.js`：共用純函式。
+- `tests/core/utils-characterization.test.js`：重構前後 characterization tests。
