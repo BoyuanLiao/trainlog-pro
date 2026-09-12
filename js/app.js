@@ -1707,7 +1707,194 @@ function showMuscleStimulusDetail(muscle,workouts){
  </div>
  <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):'<div class="empty">這個期間沒有相關訓練。</div>'}</div>`);
 }
+// TrainLog Pro v2.10.0 analysis intelligence
+let analysisTabState='overview';
+
+function analysisRangeWeeks(days,ws){
+  if(String(days)==='all'){
+    if(!ws?.length)return 1;
+    const times=ws.map(w=>new Date(`${w.date}T12:00:00`).getTime()).filter(Number.isFinite);
+    if(!times.length)return 1;
+    return Math.max(1,(Math.max(...times)-Math.min(...times))/(7*864e5)+1);
+  }
+  return Math.max(1,(n(days)||30)/7);
+}
+function analysisExerciseIds(ws){
+  return [...new Set((ws||[]).flatMap(w=>(w.exercises||[]).map(e=>e.exerciseId).filter(Boolean)))];
+}
+function analysisWeekStart(dateStr){
+  const d=new Date(`${dateStr}T12:00:00`);
+  if(Number.isNaN(d.getTime()))return dateStr;
+  const offset=(d.getDay()+6)%7;
+  d.setDate(d.getDate()-offset);
+  return d.toISOString().slice(0,10);
+}
+function analysisWeekLabel(start){
+  const d=new Date(`${start}T12:00:00`);
+  if(Number.isNaN(d.getTime()))return start;
+  return `${d.getMonth()+1}/${d.getDate()} 起`;
+}
+function analysisAverage(values){
+  const a=(values||[]).filter(v=>Number.isFinite(v));
+  return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
+}
+function showAnalysisTab(tab){
+  analysisTabState=tab||'overview';
+  $$('#analysisTabs [data-analysis-tab]').forEach(b=>b.classList.toggle('on',b.dataset.analysisTab===analysisTabState));
+  $$('[data-analysis-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.analysisPanel!==analysisTabState));
+}
+function bindAnalysisTabs(){
+  const root=$('#analysisTabs');if(!root)return;
+  root.querySelectorAll('[data-analysis-tab]').forEach(b=>b.onclick=()=>showAnalysisTab(b.dataset.analysisTab));
+  showAnalysisTab(analysisTabState);
+}
+
+function renderAnalysisLoadTrend(ws,days){
+  const root=$('#analysisLoadTrend');if(!root)return;
+  if(!ws?.length){
+    root.innerHTML='<div class="empty">這個期間還沒有訓練紀錄。</div>';return
+  }
+  const byWeek=new Map();
+  ws.forEach(w=>{
+    const key=analysisWeekStart(w.date);
+    if(!byWeek.has(key))byWeek.set(key,{key,workouts:0,sets:0,volume:0,cardio:0,rirs:[]});
+    const row=byWeek.get(key);
+    row.workouts++;
+    row.sets+=formalSetCount(w);
+    row.volume+=workoutVolume(w);
+    row.cardio+=cardioMinutes(w);
+    (w.exercises||[]).forEach(e=>(e.sets||[]).forEach(s=>{
+      if(!s.completed||s.kind==='warmup'||s.rir===''||s.rir==null)return;
+      const v=Number(s.rir);if(Number.isFinite(v))row.rirs.push(v)
+    }));
+  });
+  const rows=[...byWeek.values()].sort((a,b)=>a.key.localeCompare(b.key)).slice(-6);
+  rows.forEach(r=>r.avgRir=analysisAverage(r.rirs));
+  const maxSets=Math.max(1,...rows.map(r=>r.sets));
+  let summary='再累積幾週資料後，會更容易判斷負荷趨勢。';
+  if(rows.length>=4){
+    const prev=rows.slice(-4,-2),cur=rows.slice(-2);
+    const avg=(a,k)=>a.reduce((s,x)=>s+n(x[k]),0)/Math.max(1,a.length);
+    const ps=avg(prev,'sets'),cs=avg(cur,'sets'),pv=avg(prev,'volume'),cv=avg(cur,'volume');
+    const setChange=ps?((cs-ps)/ps):0,volChange=pv?((cv-pv)/pv):0;
+    if(setChange>.15&&volChange>.15)summary='最近兩週的正式組與訓練量都高於前兩週。';
+    else if(setChange<-.15&&volChange<-.15)summary='最近兩週的正式組與訓練量都低於前兩週。';
+    else summary='最近四週的整體訓練負荷沒有明顯同方向變化。';
+    const pr=analysisAverage(prev.map(x=>x.avgRir)),cr=analysisAverage(cur.map(x=>x.avgRir));
+    if(pr!=null&&cr!=null&&cr<pr-.7)summary+=' 同時平均 RIR 較低，主觀餘裕也較少。';
+  }
+  root.innerHTML=`<div class="analysis-summary-strip">${esc(summary)}</div>`+
+    rows.map(r=>`<div class="analysis-week-row">
+      <div class="analysis-week-copy"><b>${esc(analysisWeekLabel(r.key))}</b><span>${r.workouts} 次 · ${r.sets} 正式組 · ${fmtKg(r.volume)}${r.avgRir==null?'':` · 平均 RIR ${r.avgRir.toFixed(1)}`}</span></div>
+      <div class="analysis-week-bar"><i style="width:${Math.max(4,Math.round(r.sets/maxSets*100))}%"></i></div>
+    </div>`).join('')+
+    '<div class="analysis-note">這裡呈現紀錄中的訓練負荷趨勢，不把它換算成假的「恢復百分比」。不同器械的重量也不應直接互相比較。</div>';
+}
+
+function renderAnalysisMuscleTargets(ws,days){
+  const root=$('#analysisMuscleTargets');if(!root)return;
+  const goals=data.settings.weeklyMuscleGoals||{},weeks=analysisRangeWeeks(days,ws),stim=stimulusMap(ws||[]);
+  const muscles=MUSCLES.filter(m=>!['有氧','其他'].includes(m));
+  if(!ws?.length){
+    root.innerHTML='<div class="empty">這個期間還沒有足夠紀錄可比較肌群目標。</div>';return
+  }
+  root.innerHTML=muscles.map(m=>{
+    const goal=n(goals[m]),actual=n(stim[m]?.total)/weeks;
+    let status='未設定',cls='same';
+    if(goal>0){
+      const ratio=actual/goal;
+      if(ratio<.65){status='低於目前目標';cls='down'}
+      else if(ratio>1.35){status='高於目前目標';cls='up'}
+      else {status='接近目前目標';cls='same'}
+    }
+    const pct=goal?Math.min(100,actual/goal*100):0;
+    return `<div class="analysis-target-row">
+      <div class="topline"><b>${esc(m)}</b><span>${fmtStim(actual)} / ${goal?fmtStim(goal):'—'} 組／週</span></div>
+      ${goal?`<div class="progress"><i style="width:${pct}%"></i></div>`:''}
+      <span class="compare-badge ${cls}">${esc(status)}</span>
+    </div>`
+  }).join('')+
+  '<div class="analysis-note">「實際」為本期估算肌群刺激換算成每週平均；「目標」來自你的訓練偏好設定。這是依目前計畫比較，不代表生理上的最佳訓練量。</div>';
+}
+
+function renderAnalysisMovementGaps(ws,days){
+  const root=$('#analysisMovementGaps');if(!root)return;
+  const major=['horizontal_push','horizontal_pull','vertical_push','vertical_pull','knee_dominant','hip_extension','knee_flexion','knee_extension'];
+  const stats=movementStats(ws||[]),weeks=analysisRangeWeeks(days,ws);
+  const rows=major.map(k=>({key:k,sets:n(stats[k]),perWeek:n(stats[k])/weeks}));
+  const max=Math.max(0,...rows.map(x=>x.sets));
+  if(!max){
+    root.innerHTML='<div class="empty">這個期間還沒有可辨識的主要動作模式紀錄。</div>';return
+  }
+  const gaps=rows.filter(x=>x.sets===0||(max>=4&&x.sets<max*.25))
+    .sort((a,b)=>a.sets-b.sets).slice(0,4);
+  root.innerHTML=`<div class="analysis-pattern-chips">${rows.map(x=>`<span class="tag">${esc(patternDisplayName(x.key))} · ${fmtStim(x.perWeek)} 組/週</span>`).join('')}</div>`+
+    (gaps.length?`<div class="analysis-gap-list">${gaps.map(x=>`<div class="analysis-gap-item"><b>${esc(patternDisplayName(x.key))}</b><span>${x.sets===0?'本期沒有紀錄':'相對於本期其他主要模式較少'}</span></div>`).join('')}</div>`:'<div class="good" style="margin-top:10px;font-weight:850">主要動作模式都有出現，沒有明顯的「未記錄」缺口。</div>')+
+    '<div class="analysis-note">缺口只依「本期是否有紀錄」與相對分布提示，不表示每種動作模式都需要相同組數。</div>';
+}
+
+function renderAnalysisProgressOpportunities(ws){
+  const root=$('#analysisProgressOpportunities');if(!root)return;
+  const ids=analysisExerciseIds(ws);
+  const rank={up:0,down:1,keep:3};
+  const items=ids.map(id=>{
+    const ex=getExercise(id),adv=progressionAdvice(id);
+    if(!ex||!adv)return null;
+    const plateau=plateauDetail(id),best=bestSetForExercise(id);
+    let label=adv.state==='up'?'可考慮進階':adv.state==='down'?'先調整負重／難度':'維持並累積';
+    if(plateau?.state==='slow'&&adv.state!=='up')label='進步趨勢較慢';
+    return {id,ex,adv,plateau,best,label,order:(rank[adv.state]??2)+(plateau?.state==='slow'?.25:0)}
+  }).filter(Boolean).sort((a,b)=>a.order-b.order||(b.best?.date||'').localeCompare(a.best?.date||'')).slice(0,5);
+  if(!items.length){
+    root.innerHTML='<div class="card empty">再累積幾次可比較的訓練後，這裡會整理下一步建議。</div>';return
+  }
+  root.innerHTML=`<div class="analysis-opportunity-grid">${items.map(x=>`<div class="card analysis-opportunity">
+    <div class="record-head"><div><div class="record-title">${esc(x.ex.name)}</div><div class="record-meta">${x.best?.date?`最近最佳：${esc(x.best.date)}`:'依目前紀錄'}</div></div><span class="pill ${x.adv.state==='up'?'good':x.adv.state==='down'?'warn':''}">${esc(x.label)}</span></div>
+    <div class="small" style="margin-top:8px;line-height:1.55">${esc(x.adv.text||'維持目前安排並持續紀錄。')}</div>
+    ${x.plateau?.state==='slow'?`<div class="analysis-note">近期多次可比較紀錄沒有明顯提升；這是趨勢提示，不代表已確定停滯。</div>`:''}
+  </div>`).join('')}</div>`;
+}
+
+function analysisPrEvents(ws){
+  const periodDates=new Set((ws||[]).map(w=>w.date)),events=[];
+  analysisExerciseIds(ws).forEach(id=>{
+    const ex=getExercise(id);if(!ex)return;
+    const sessions=exerciseSessionMetrics(id).slice().sort((a,b)=>a.date.localeCompare(b.date));
+    let bestWeight=0,bestE1rm=0,bestVolume=0,started=false;
+    sessions.forEach(s=>{
+      const oldW=bestWeight,oldE=bestE1rm,oldV=bestVolume;
+      const w=n(s.maxWeight),e=n(s.bestE1rm),v=n(s.volume);
+      let event=null;
+      if(started&&periodDates.has(s.date)){
+        if(w>oldW+.0001)event={kind:'重量 PR',value:fmtWeight(w)};
+        else if(e>0&&oldE>0&&e>oldE*1.01)event={kind:'估算力量 PR',value:`e1RM ${fmtWeight(e)}`};
+        else if(v>0&&oldV>0&&v>oldV*1.05)event={kind:'單次完成量 PR',value:fmtKg(v)};
+      }
+      bestWeight=Math.max(bestWeight,w);bestE1rm=Math.max(bestE1rm,e);bestVolume=Math.max(bestVolume,v);
+      if(w>0||e>0||v>0)started=true;
+      if(event)events.push({date:s.date,name:ex.name,...event})
+    })
+  });
+  return events.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
+}
+function renderAnalysisPrTimeline(ws){
+  const root=$('#analysisPrTimeline');if(!root)return;
+  const events=analysisPrEvents(ws);
+  root.innerHTML=events.length?`<div class="analysis-pr-list">${events.map(e=>`<div class="analysis-pr-item">
+    <div class="analysis-pr-dot">★</div><div><b>${esc(e.name)}</b><div class="record-meta">${esc(e.date)} · ${esc(e.kind)}</div><div class="analysis-pr-value">${esc(e.value)}</div></div>
+  </div>`).join('')}</div><div class="analysis-note">e1RM 為公式估算，只適合同一動作、相似器械下觀察自己的長期趨勢。</div>`:
+  '<div class="empty">這個期間還沒有新的可辨識 PR；第一次紀錄會作為基準，不會直接算成 PR。</div>';
+}
+function renderV210Analysis(ws,days){
+  renderAnalysisLoadTrend(ws,days);
+  renderAnalysisMuscleTargets(ws,days);
+  renderAnalysisMovementGaps(ws,days);
+  renderAnalysisProgressOpportunities(ws);
+  renderAnalysisPrTimeline(ws);
+}
+
 function renderAnalysis(){
+ const __v210days=data.settings.analysisRange||30;renderV210Analysis(workoutsInRange(__v210days),__v210days);bindAnalysisTabs();
  const ws=selectedAnalysisWorkouts(),days=analysisRange==='all'?'all':n(analysisRange),prevWs=previousPeriodWorkouts(days);
  const stim=stimulusMap(ws),prevStim=stimulusMap(prevWs),effort=effortStats(ws),moves=movementStats(ws),cons=consistencyStats(ws,days),confidence=analysisConfidence(ws);
  const totalMinutes=ws.reduce((a,w)=>a+n(w.duration),0),volume=ws.reduce((a,w)=>a+workoutVolume(w),0),formal=formalSetCount(ws),cardio=Math.round(ws.reduce((a,w)=>a+cardioMinutes(w),0));
