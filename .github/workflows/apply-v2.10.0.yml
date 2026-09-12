@@ -1,0 +1,44 @@
+name: Apply TrainLog Pro v2.10.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v2.10.0.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply analysis upgrade
+        shell: bash
+        run: |
+          python3 -m py_compile scripts/apply_v210_analysis.py
+          python3 scripts/apply_v210_analysis.py
+          node --check js/app.js
+          grep -F 'TrainLog Pro v2.10.0' index.html
+          grep -F 'id="analysisTabs"' index.html
+          grep -F 'id="analysisLoadTrend"' index.html
+          grep -F 'id="analysisMuscleTargets"' index.html
+          grep -F 'id="analysisMovementGaps"' index.html
+          grep -F 'id="analysisProgressOpportunities"' index.html
+          grep -F 'id="analysisPrTimeline"' index.html
+          grep -F 'function renderAnalysisPrTimeline' js/app.js
+
+      - name: Commit v2.10.0
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-v2.10.0.yml
+          rm -f scripts/apply_v210_analysis.py scripts/v210_helpers.js.txt scripts/v210_analysis_section.html.txt scripts/v210_analysis.css.txt
+          rmdir scripts 2>/dev/null || true
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html css/app.css js/app.js .github/workflows/apply-v2.10.0.yml scripts || true
+          git commit -m 'feat: TrainLog Pro v2.10.0 analysis upgrade'
+          git push origin HEAD:main
