@@ -1,0 +1,54 @@
+name: Fix records page manual-entry button
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fix_records_page_manual_button.py'
+      - '.github/workflows/fix-records-page-manual-button.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply records page UI fix
+        run: python scripts/fix_records_page_manual_button.py
+      - name: Verify JavaScript syntax
+        run: node --check js/app.js
+      - name: Verify records page regression
+        run: node tests/ui/records-page-regression.test.js
+      - name: Verify core regression
+        run: |
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+      - name: Verify training regression
+        run: |
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Verify integration and commit
+        run: |
+          ! grep -q 'manualFromRecords' index.html
+          ! grep -q 'manualFromRecords' js/app.js
+          grep -q 'id="quickManual"' index.html
+          grep -q "\$('#quickManual').onclick=manualEntry" js/app.js
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js
+          git commit -m 'fix: remove duplicate records manual-entry button'
+          git push
