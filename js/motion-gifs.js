@@ -1,4 +1,4 @@
-// TrainLog Pro v2.9.24 - Exercise Library animated exercise demos
+// TrainLog Pro v2.10.1 - Exercise Library animated exercise demos
 (function(){
 'use strict';
 

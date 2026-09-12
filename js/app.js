@@ -1,5 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
+const APP_VERSION='2.10.1';
 const CURRENT_SCHEMA=18;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
@@ -63,7 +64,7 @@ function mergeSystemExercises(existing){
 function defaultTemplates(){ return []; }
 function freshData(){return{
  schemaVersion:CURRENT_SCHEMA,
- settings:{unit:'kg',intensity:'RIR',defaultRest:90,weeklySessions:3,weeklyCardio:60,weekStart:1,includeWarmup:false,show1RM:true,uiLevel:'standard',trainingGoal:'general',sessionMinutes:60,experienceLevel:'beginner',equipmentPreference:'machine',blockWeeks:6,priorityMuscles:[],availableWeekdays:[],allowConsecutiveDays:false,preferredGymId:'',preferencesSetupCompleted:false,tutorialCompleted:false,workoutTutorialCompleted:false,pageTutorials:{home:false,trainLanding:false,workout:false,records:false,analysis:false,settings:false},trainingNotes:true,trainingAutoLoad:true,trainingIntervalTimer:true,restTimerPosition:'top',restTimerSound:true,trainingDrawerTabTop:8,weeklyMuscleGoals:{胸:6,背:6,腿:8,肩膀:4,二頭:4,三頭:4,腹部:4}},
+ settings:{unit:'kg',intensity:'RIR',defaultRest:90,weeklySessions:3,weeklyCardio:60,weekStart:1,includeWarmup:false,show1RM:true,uiLevel:'standard',trainingGoal:'general',sessionMinutes:60,experienceLevel:'beginner',equipmentPreference:'machine',blockWeeks:6,priorityMuscles:[],availableWeekdays:[],allowConsecutiveDays:false,preferredGymId:'',preferencesSetupCompleted:false,tutorialCompleted:false,workoutTutorialCompleted:false,pageTutorials:{home:false,trainLanding:false,workout:false,records:false,analysis:false,settings:false},trainingNotes:true,trainingAutoLoad:true,trainingIntervalTimer:true,restTimerPosition:'top',restTimerSound:true,trainingDrawerTabTop:8,analysisRange:'30',analysisTab:'overview',weeklyMuscleGoals:{胸:6,背:6,腿:8,肩膀:4,二頭:4,三頭:4,腹部:4}},
  gyms:[],equipment:[],exerciseLibrary:defaultLibrary(),templates:defaultTemplates(),workouts:[],activeWorkout:null,currentPlan:null,todayAdjustment:null,bodyStatus:[],trash:[],snapshots:[],strengthGoals:[]
 }}
 function migrate(raw){
@@ -118,8 +119,40 @@ function findOrCreateExercise(name,muscle,type,library){
  const nm=name||'未命名動作',lib=library||[];let ex=lib.find(x=>x.name===nm||(x.aliases||[]).includes(nm));if(ex)return ex.id;
  const id=uid('legacy');lib.push({id,name:nm,aliases:[],muscle:muscle||'其他',type:type||'weight_reps',increment:2.5,targetSets:3,repMin:8,repMax:12,intMin:2,intMax:3,rest:90,notes:'從舊版資料自動建立',equipmentId:'',gymId:'',alternatives:[]});return id;
 }
-function loadData(){try{const cur=localStorage.getItem(APP_KEY);if(cur)return migrate(JSON.parse(cur));const legacy=localStorage.getItem('fitnessRecordsV1');if(legacy){const d=migrate({schemaVersion:1,records:JSON.parse(legacy)});localStorage.setItem(APP_KEY,JSON.stringify(d));return d}return freshData()}catch{return freshData()}}
+let recoveryIssue=null;
+function loadData(){
+ const cur=localStorage.getItem(APP_KEY);
+ if(cur){
+  try{return migrate(JSON.parse(cur))}
+  catch(err){
+   try{
+    const recoveryKey=APP_KEY+'_recovery_latest';
+    localStorage.setItem(recoveryKey,cur);
+    recoveryIssue={key:recoveryKey,raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')};
+   }catch{recoveryIssue={key:'',raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')}}
+   return freshData()
+  }
+ }
+ try{
+  const legacy=localStorage.getItem('fitnessRecordsV1');
+  if(legacy){const d=migrate({schemaVersion:1,records:JSON.parse(legacy)});localStorage.setItem(APP_KEY,JSON.stringify(d));return d}
+ }catch(err){
+  try{localStorage.setItem('fitnessRecordsV1_recovery_latest',localStorage.getItem('fitnessRecordsV1')||'')}catch{}
+ }
+ return freshData()
+}
 let data=loadData();
+function registerTrainLogServiceWorker(){
+ navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`).catch(()=>{});
+}
+if('serviceWorker' in navigator)window.addEventListener('load',registerTrainLogServiceWorker,{once:true});
+function renderRecoveryBanner(){
+ const box=document.getElementById('dataRecoveryBanner');if(!box||!recoveryIssue)return;
+ box.innerHTML=`<div class="card warnbox"><b>⚠ 偵測到本機資料異常</b><div class="small" style="margin-top:6px;line-height:1.55">原始 LocalStorage 內容已先保留為救援副本，App 暫時以空白資料啟動。建議先下載原始資料，再進行匯入或其他操作。</div><div class="actions" style="margin-top:10px"><button class="btn small warn" id="downloadRecoveryData">下載原始救援資料</button><button class="btn small ghost" id="dismissRecoveryData">先隱藏</button></div></div>`;
+ const dl=document.getElementById('downloadRecoveryData');if(dl)dl.onclick=()=>download(`trainlog-pro-recovery-${isoToday()}.json`,recoveryIssue.raw,'application/json');
+ const dismiss=document.getElementById('dismissRecoveryData');if(dismiss)dismiss.onclick=()=>{box.innerHTML=''};
+}
+setTimeout(renderRecoveryBanner,0);
 
 function snapshot(reason){
  const copy=JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key])=>key!=='snapshots'))));
@@ -1694,7 +1727,7 @@ function manualEntry(){
  })
 }
 
-let analysisRange='30';
+let analysisRange=['7','30','90','all'].includes(String(data.settings.analysisRange))?String(data.settings.analysisRange):'30';
 function selectedAnalysisWorkouts(){
  return analysisRange==='all'?data.workouts:workoutsLastDays(n(analysisRange))
 }
@@ -1708,7 +1741,7 @@ function showMuscleStimulusDetail(muscle,workouts){
  <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):'<div class="empty">這個期間沒有相關訓練。</div>'}</div>`);
 }
 // TrainLog Pro v2.10.0 analysis intelligence
-let analysisTabState='overview';
+let analysisTabState=['overview','muscle','exercise','load'].includes(data.settings.analysisTab)?data.settings.analysisTab:'overview';
 
 function analysisRangeWeeks(days,ws){
   if(String(days)==='all'){
@@ -1725,7 +1758,8 @@ function analysisExerciseIds(ws){
 function analysisWeekStart(dateStr){
   const d=new Date(`${dateStr}T12:00:00`);
   if(Number.isNaN(d.getTime()))return dateStr;
-  const offset=(d.getDay()+6)%7;
+  const start=((n(data.settings.weekStart)%7)+7)%7;
+  const offset=(d.getDay()-start+7)%7;
   d.setDate(d.getDate()-offset);
   return d.toISOString().slice(0,10);
 }
@@ -1739,7 +1773,10 @@ function analysisAverage(values){
   return a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 }
 function showAnalysisTab(tab){
-  analysisTabState=tab||'overview';
+  const next=['overview','muscle','exercise','load'].includes(tab)?tab:'overview';
+  const changed=data.settings.analysisTab!==next;
+  analysisTabState=next;data.settings.analysisTab=next;
+  if(changed){try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}}
   $$('#analysisTabs [data-analysis-tab]').forEach(b=>b.classList.toggle('on',b.dataset.analysisTab===analysisTabState));
   $$('[data-analysis-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.analysisPanel!==analysisTabState));
 }
@@ -2375,19 +2412,20 @@ function editTemplate(id=''){
 }
 
 function download(name,text,type){const blob=new Blob([text],{type}),a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
-function buildBackupPayload(){return{...JSON.parse(JSON.stringify(data)),backupMeta:{format:'trainlog-pro-full-backup',version:1,appVersion:'2.9.15',exportedAt:new Date().toISOString(),includes:['訓練紀錄','目前訓練計畫','訓練偏好與目標','我的課表','自訂動作','健身房與器材','進行中的訓練','身體狀態','力量目標','回收筒','自動備份紀錄']},app:'TrainLog Pro'}}
+function buildBackupPayload(){return{...JSON.parse(JSON.stringify(data)),backupMeta:{format:'trainlog-pro-full-backup',version:1,appVersion:APP_VERSION,exportedAt:new Date().toISOString(),includes:['訓練紀錄','目前訓練計畫','訓練偏好與目標','我的課表','自訂動作','健身房與器材','進行中的訓練','身體狀態','力量目標','回收筒','自動備份紀錄']},app:'TrainLog Pro'}}
 function exportJSON(){download('trainlog-pro-'+isoToday()+'.json',JSON.stringify(buildBackupPayload(),null,2),'application/json');toast('完整備份已下載')}
 function mergeById(a,b){const m=new Map((a||[]).map(x=>[x.id,x]));(b||[]).forEach(x=>m.set(x.id,x));return[...m.values()]}
 function mergeSnapshots(a,b){const m=new Map();[...(a||[]),...(b||[])].forEach(x=>{if(x?.id&&!m.has(x.id))m.set(x.id,x)});return[...m.values()].sort((x,y)=>String(y.at||'').localeCompare(String(x.at||''))).slice(0,5)}
 function mergeBodyStatus(a,b){const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]).forEach(x=>{if(x?.date)m.set(x.date,x)});return[...m.values()].sort((x,y)=>String(y.date||'').localeCompare(String(x.date||'')))}
-function importSummaryHtml(migrated,type,newCount,dup){
- const hasSettings=type==='json'&&!!migrated.settings,hasPlan=type==='json'&&!!migrated.currentPlan,hasActive=type==='json'&&!!migrated.activeWorkout;
+function importSummaryHtml(migrated,type,newCount,dup,source=null){
+ const raw=source&&typeof source==='object'?source:{};
+ const hasSettings=type==='json'&&!!raw.settings&&typeof raw.settings==='object',hasPlan=type==='json'&&!!raw.currentPlan,hasActive=type==='json'&&!!raw.activeWorkout;
  return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>訓練紀錄</span></div><div class="stat"><b>${newCount}</b><span>新增紀錄</span></div><div class="stat"><b>${dup}</b><span>相同 ID</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?'<span class="tag good">訓練偏好 ✓</span>':''}${hasPlan?'<span class="tag good">目前計畫 ✓</span>':''}${hasActive?'<span class="tag">未完成訓練 ✓</span>':''}</div>${type==='csv'?'<div class="small" style="margin-top:10px">CSV 只包含訓練表格資料，不會覆蓋訓練偏好、目前計畫或 App 設定。</div>':'<div class="small" style="margin-top:10px">完整 JSON 備份可恢復訓練偏好、目前計畫、器材、課表與其他個人資料。</div>'}</div>`
 }
 function previewImport(incoming,type,fileName){
  const migrated=migrate(incoming),existing=new Map(data.workouts.map(w=>[w.id,w])),newCount=migrated.workouts.filter(w=>!existing.has(w.id)).length,dup=migrated.workouts.length-newCount;
  const modeOptions=type==='json'?`<option value="restore">完整還原備份（包含偏好、目前計畫與其他設定）</option><option value="merge">只合併訓練資料，不修改目前設定</option><option value="skip">只加入新的訓練資料，略過相同 ID</option>`:`<option value="merge">合併 CSV 訓練資料</option><option value="skip">只加入新的 CSV 訓練資料</option>`;
- openModal('匯入預覽',`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的${type==='json'?'完整備份':'表格資料'}</div></div>${importSummaryHtml(migrated,type,newCount,dup)}<div class="field"><label>匯入方式</label><select id="impMode">${modeOptions}</select><div class="hint">完整還原會先自動保存目前狀態，之後仍可從自動備份紀錄恢復。</div></div><button class="btn primary" id="impConfirm">確認匯入</button>`,()=>$('#impConfirm').onclick=()=>{
+ openModal('匯入預覽',`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的${type==='json'?'完整備份':'表格資料'}</div></div>${importSummaryHtml(migrated,type,newCount,dup,incoming)}<div class="field"><label>匯入方式</label><select id="impMode">${modeOptions}</select><div class="hint">完整還原會先自動保存目前狀態，之後仍可從自動備份紀錄恢復。</div></div><button class="btn primary" id="impConfirm">確認匯入</button>`,()=>$('#impConfirm').onclick=()=>{
    const mode=$('#impMode').value;snapshot('匯入前');const beforeSnapshots=[...(data.snapshots||[])];
    if(mode==='restore'&&type==='json'){
      const importedSnapshots=[...(migrated.snapshots||[])];data=migrated;data.snapshots=mergeSnapshots(beforeSnapshots,importedSnapshots);
@@ -2421,7 +2459,7 @@ $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecor
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
 $('#analysisExercise').onchange=e=>renderExerciseAnalysis(e.target.value);
-$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{analysisRange=b.dataset.analysisRange;renderAnalysis()});
+$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
 $('#addTemplateBtn').onclick=()=>editTemplate();$('#addExerciseLibBtn').onclick=()=>editExerciseLib();$('#libSearch').oninput=renderLibrary;
 $$('[data-settings-view]').forEach(b=>b.onclick=()=>showSettingsView(b.dataset.settingsView));
 $$('.settings-back').forEach(b=>b.onclick=()=>showSettingsView('hub'));
