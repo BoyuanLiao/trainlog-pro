@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.10.2';
+const APP_VERSION='2.10.3';
 const CURRENT_SCHEMA=18;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
@@ -65,6 +65,7 @@ const trainingMutations=window.TrainLogTrainingMutations;
 const trainingProgression=window.TrainLogTrainingProgression;
 const trainingProgressionView=window.TrainLogProgressionView;
 const trainingProgressionActions=window.TrainLogProgressionActions;
+const exerciseProgressBrowser=window.TrainLogExerciseProgressBrowser;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -1756,7 +1757,13 @@ function renderAnalysis(){
    <div class="analysis-note">這裡只描述訓練規律性，不代表恢復程度或健康評分。</div>`:
    `<div class="empty">這個期間沒有訓練紀錄。</div>`;
 
- const sel=$('#analysisExercise'),prev=sel.value;
+ const performed=analysisPerformedExercises();
+ renderAnalysisExerciseBrowser(performed)
+}
+let analysisExerciseBrowserQuery='';
+let analysisExerciseBrowserMuscle='';
+
+function analysisPerformedExercises(){
  const performedMap=new Map();
  data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).forEach(w=>{
    (w.exercises||[]).forEach(e=>{
@@ -1766,15 +1773,45 @@ function renderAnalysis(){
      const sysEq=SYSTEM_EQUIPMENT.find(x=>x.id===equipmentId);
      const myEq=data.equipment.find(x=>x.id===equipmentId);
      const equipmentName=sysEq?.nameZh||myEq?.name||'';
-     performedMap.set(e.exerciseId,{id:e.exerciseId,name:e.nameSnapshot||lib.name||'已做過的動作',equipmentName,lastDate:w.date});
+     performedMap.set(e.exerciseId,{id:e.exerciseId,name:e.nameSnapshot||lib.name||'已做過的動作',muscle:e.muscle||lib.muscle||'其他',equipmentName,lastDate:w.date});
    })
  });
- const performed=[...performedMap.values()].sort((a,b)=>b.lastDate.localeCompare(a.lastDate)||a.name.localeCompare(b.name,'zh-Hant'));
- sel.innerHTML='<option value="">'+(performed.length?'選擇做過的動作':'尚無已訓練動作')+'</option>'+
-   performed.map(e=>`<option value="${e.id}">${esc(e.name)}${e.equipmentName&&e.equipmentName!==e.name?`｜${esc(e.equipmentName)}`:''}</option>`).join('');
- if(performed.some(e=>e.id===prev))sel.value=prev;else sel.value='';
+ const attentionWeight={reduce_load:50,plateau:40,increase_load:30,add_reps:20,increase_time:20};
+ return [...performedMap.values()].sort((a,b)=>b.lastDate.localeCompare(a.lastDate)||a.name.localeCompare(b.name,'zh-Hant')).map(item=>{
+   const sessions=exerciseSessionMetrics(item.id),last=sessions.at(-1);
+   const adv=progressionAdvice(item.id),view=progressionDisplay(adv);
+   return {...item,lastSummary:last?.label||'',action:adv?.action||'',statusLabel:view?.label||'',statusTone:view?.tone||'',statusReason:view?.reason||'',attentionPriority:(attentionWeight[adv?.action]||0)+(Number(view?.priority)||0)/10}
+ })
+}
+
+function analysisExerciseStatusClass(item){return item?.statusTone==='good'?'good':item?.statusTone==='warn'?'warn':item?.statusTone==='accent'?'accent':''}
+
+function analysisExerciseBrowserCard(item,compact=false){
+ const selected=$('#analysisExercise')?.value===item.id;
+ const status=item.statusLabel?`<span class="exercise-card-status ${analysisExerciseStatusClass(item)}">${esc(item.statusLabel)}</span>`:'';
+ if(compact)return `<button type="button" class="exercise-recent-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span>${status}</button>`;
+ return `<button type="button" class="exercise-progress-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-progress-main"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.equipmentName?` · ${esc(item.equipmentName)}`:''}<br>最近 ${fmtDate(item.lastDate)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span></span><span class="exercise-progress-side">${status}</span>${item.statusReason?`<span class="exercise-progress-reason">${esc(item.statusReason)}</span>`:''}</button>`
+}
+
+function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
+ const search=$('#analysisExerciseSearch'),recent=$('#analysisExerciseRecent'),muscles=$('#analysisExerciseMuscles'),attention=$('#analysisExerciseAttention'),list=$('#analysisExerciseList'),count=$('#analysisExerciseCount'),sel=$('#analysisExercise');
+ if(!search||!recent||!muscles||!attention||!list||!sel)return;
+ const previous=sel.value;
+ sel.innerHTML='<option value=""></option>'+items.map(item=>`<option value="${item.id}">${esc(item.name)}</option>`).join('');
+ sel.value=items.some(item=>item.id===previous)?previous:(items[0]?.id||'');
+ search.value=analysisExerciseBrowserQuery;
+ const view=exerciseProgressBrowser.buildViewModel(items,{query:analysisExerciseBrowserQuery,muscle:analysisExerciseBrowserMuscle,recentLimit:6,attentionLimit:4});
+ recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):'<div class="exercise-browser-empty" style="grid-column:1/-1">還沒有已完成的動作紀錄。</div>';
+ muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">全部</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
+ attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):'<div class="exercise-browser-empty">目前沒有特別需要處理的進步訊號，照原計畫持續記錄即可。</div>';
+ list.innerHTML=view.filtered.length?view.filtered.map(item=>analysisExerciseBrowserCard(item)).join(''):'<div class="exercise-browser-empty">找不到符合搜尋或肌群條件的動作。</div>';
+ if(count)count.textContent=`${view.filtered.length} / ${items.length}`;
+ search.oninput=()=>{analysisExerciseBrowserQuery=search.value;renderAnalysisExerciseBrowser(items)};
+ $$('[data-analysis-muscle]').forEach(button=>button.onclick=()=>{analysisExerciseBrowserMuscle=button.dataset.analysisMuscle||'';renderAnalysisExerciseBrowser(items)});
+ $$('[data-analysis-exercise-id]').forEach(button=>button.onclick=()=>{sel.value=button.dataset.analysisExerciseId;renderAnalysisExerciseBrowser(items);requestAnimationFrame(()=>$('#exerciseAnalysis')?.scrollIntoView({behavior:'smooth',block:'start'}))});
  renderExerciseAnalysis(sel.value)
 }
+
 function renderExerciseAnalysis(id){
  const box=$('#exerciseAnalysis');
  if(!id){box.innerHTML='<div class="empty">選擇一個動作查看歷史、進步訊號與 PR。</div>';return}
@@ -2221,7 +2258,7 @@ $('#quickStart').onclick=()=>data.activeWorkout?goPage('trainPage'):openStartMod
 $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecords;
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
-$('#analysisExercise').onchange=e=>renderExerciseAnalysis(e.target.value);
+const analysisExerciseCompat=$('#analysisExercise');if(analysisExerciseCompat)analysisExerciseCompat.onchange=e=>renderExerciseAnalysis(e.target.value);
 $$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
 $('#addTemplateBtn').onclick=()=>editTemplate();$('#addExerciseLibBtn').onclick=()=>editExerciseLib();$('#libSearch').oninput=renderLibrary;
 $$('[data-settings-view]').forEach(b=>b.onclick=()=>showSettingsView(b.dataset.settingsView));

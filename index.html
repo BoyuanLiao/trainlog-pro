@@ -5,14 +5,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10171d">
-<title>TrainLog Pro v2.10.2</title>
-<link rel="stylesheet" href="css/app.css?v=2.10.2">
-<link rel="stylesheet" href="css/motion-gifs.css?v=2.10.2">
+<title>TrainLog Pro v2.10.3</title>
+<link rel="stylesheet" href="css/app.css?v=2.10.3">
+<link rel="stylesheet" href="css/exercise-progress-browser.css?v=2.10.3">
+<link rel="stylesheet" href="css/motion-gifs.css?v=2.10.3">
 </head>
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">TrainLog Pro <span class="source-pill">v2.10.2</span></div><div class="subtitle" id="todayText"></div></div>
+    <div><div class="brand">TrainLog Pro <span class="source-pill">v2.10.3</span></div><div class="subtitle" id="todayText"></div></div>
     <div class="actions"><button class="btn small ghost" id="quickManual">手動補登</button><button class="btn small primary" id="quickStart">開始訓練</button></div>
   </div>
   <div id="resumeBanner"></div>
@@ -102,7 +103,32 @@
 
     <div class="analysis-panel hidden" data-analysis-panel="exercise">
       <div class="section">動作進步與個人最佳（PR） <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明">i</button></div>
-      <div class="card"><div class="field"><label>選擇做過的動作</label><select id="analysisExercise"></select><div class="hint">只列出訓練紀錄中實際做過的動作，最近做過的會排在前面。</div></div><div id="exerciseAnalysis"></div></div>
+      <div class="card exercise-progress-browser">
+        <div class="field">
+          <label for="analysisExerciseSearch">搜尋做過的動作</label>
+          <input id="analysisExerciseSearch" type="search" placeholder="搜尋動作、器械或肌群..." autocomplete="off">
+          <div class="hint">不用下拉選單；可以從最近做過、肌群或值得關注的動作直接進入分析。</div>
+        </div>
+        <select id="analysisExercise" hidden aria-hidden="true" tabindex="-1"></select>
+        <div class="exercise-browser-block">
+          <div class="exercise-browser-title"><span>最近做過</span><span>快速切換</span></div>
+          <div id="analysisExerciseRecent" class="exercise-recent-grid"></div>
+        </div>
+        <div class="exercise-browser-block">
+          <div class="exercise-browser-title"><span>依肌群</span><span>篩選全部動作</span></div>
+          <div id="analysisExerciseMuscles" class="exercise-muscle-filters"></div>
+        </div>
+        <div class="exercise-browser-block">
+          <div class="exercise-browser-title"><span>值得關注</span><span>依進步建議排序</span></div>
+          <div id="analysisExerciseAttention" class="exercise-attention-grid"></div>
+        </div>
+        <div class="exercise-browser-block">
+          <div class="exercise-browser-title"><span>全部做過的動作</span><span id="analysisExerciseCount" class="exercise-browser-count"></span></div>
+          <div id="analysisExerciseList" class="exercise-browser-list"></div>
+        </div>
+      </div>
+      <div class="section exercise-detail-section">動作詳細分析</div>
+      <div class="card"><div id="exerciseAnalysis"></div></div>
     </div>
 
     <div class="analysis-panel hidden" data-analysis-panel="load">
@@ -449,22 +475,23 @@
 <div class="modalwrap" id="modalWrap"><div class="modal"><div class="modalhead"><h2 id="modalTitle"></h2><button class="btn small ghost" id="modalClose">✕</button></div><div id="modalBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
 
-<script src="js/motion-gifs.js?v=2.10.2"></script>
-<script src="js/data/glossary.js?v=2.10.2"></script>
-<script src="js/data/equipment.js?v=2.10.2"></script>
-<script src="js/data/exercises.js?v=2.10.2"></script>
-<script src="js/data/programs.js?v=2.10.2"></script>
-<script src="js/analysis/training-metrics.js?v=2.10.2"></script>
-<script src="js/analysis/progress.js?v=2.10.2"></script>
-<script src="js/core/utils.js?v=2.10.2"></script>
-<script src="js/core/migration.js?v=2.10.2"></script>
-<script src="js/core/storage.js?v=2.10.2"></script>
-<script src="js/training/metrics.js?v=2.10.2"></script>
-<script src="js/training/lifecycle.js?v=2.10.2"></script>
-<script src="js/training/mutations.js?v=2.10.2"></script>
-<script src="js/training/progression.js?v=2.10.2"></script>
-<script src="js/training/progression-actions.js?v=2.10.2"></script>
-<script src="js/training/progression-view.js?v=2.10.2"></script>
-<script src="js/app.js?v=2.10.2"></script>
+<script src="js/motion-gifs.js?v=2.10.3"></script>
+<script src="js/data/glossary.js?v=2.10.3"></script>
+<script src="js/data/equipment.js?v=2.10.3"></script>
+<script src="js/data/exercises.js?v=2.10.3"></script>
+<script src="js/data/programs.js?v=2.10.3"></script>
+<script src="js/analysis/training-metrics.js?v=2.10.3"></script>
+<script src="js/analysis/progress.js?v=2.10.3"></script>
+<script src="js/core/utils.js?v=2.10.3"></script>
+<script src="js/core/migration.js?v=2.10.3"></script>
+<script src="js/core/storage.js?v=2.10.3"></script>
+<script src="js/training/metrics.js?v=2.10.3"></script>
+<script src="js/training/lifecycle.js?v=2.10.3"></script>
+<script src="js/training/mutations.js?v=2.10.3"></script>
+<script src="js/training/progression.js?v=2.10.3"></script>
+<script src="js/training/progression-actions.js?v=2.10.3"></script>
+<script src="js/training/progression-view.js?v=2.10.3"></script>
+<script src="js/ui/exercise-progress-browser.js?v=2.10.3"></script>
+<script src="js/app.js?v=2.10.3"></script>
 </body>
 </html>
