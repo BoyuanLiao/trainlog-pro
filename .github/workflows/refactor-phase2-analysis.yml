@@ -1,0 +1,268 @@
+name: Refactor Phase 2 - Extract analysis metrics
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase2-analysis.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Extract pure analysis metrics behind module boundary
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          module_path = Path('js/analysis/training-metrics.js')
+          module_path.parent.mkdir(parents=True, exist_ok=True)
+          module_path.write_text(r'''/**
+           * TrainLog Pro analysis metrics.
+           *
+           * Pure/testable analysis logic. This file must not access DOM,
+           * LocalStorage, or mutable app state directly.
+           */
+          (() => {
+            'use strict';
+
+            const num = value => {
+              const parsed = Number(value);
+              return Number.isFinite(parsed) ? parsed : 0;
+            };
+
+            function completedWorkingSets(exercise) {
+              return (exercise?.sets || []).filter(set => set.completed && set.kind !== 'warmup').length;
+            }
+
+            function effortStats(workouts) {
+              const stats = { high: 0, mid: 0, low: 0, missing: 0, total: 0 };
+              (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise =>
+                (exercise.sets || []).forEach(set => {
+                  if (!set.completed || set.kind === 'warmup' || exercise.type === 'cardio') return;
+                  stats.total++;
+                  const hasRir = set.rir !== '' && set.rir != null;
+                  const hasRpe = set.rpe !== '' && set.rpe != null;
+                  if (!hasRir && !hasRpe) {
+                    stats.missing++;
+                    return;
+                  }
+                  if (hasRir) {
+                    const value = num(set.rir);
+                    if (value <= 1) stats.high++;
+                    else if (value <= 3) stats.mid++;
+                    else stats.low++;
+                  } else {
+                    const value = num(set.rpe);
+                    if (value >= 9) stats.high++;
+                    else if (value >= 7) stats.mid++;
+                    else stats.low++;
+                  }
+                })
+              ));
+              return stats;
+            }
+
+            function analysisConfidence(workouts, options = {}) {
+              const list = workouts || [];
+              const formal = typeof options.formalSetCount === 'function'
+                ? options.formalSetCount(list)
+                : 0;
+              const patternForExercise = typeof options.patternForExercise === 'function'
+                ? options.patternForExercise
+                : () => '';
+              const effort = effortStats(list);
+              let exTotal = 0;
+              let recognized = 0;
+
+              list.forEach(workout => (workout.exercises || []).forEach(exercise => {
+                const sets = completedWorkingSets(exercise);
+                if (!sets || exercise.type === 'cardio') return;
+                exTotal += sets;
+                if (patternForExercise(exercise)) recognized += sets;
+              }));
+
+              const effortRecorded = effort.high + effort.mid + effort.low;
+              const effortRate = effort.total ? effortRecorded / effort.total : 0;
+              const patternRate = exTotal ? recognized / exTotal : 0;
+              let level = 'low';
+              let label = '低';
+
+              if (list.length < 2 || formal < 6) {
+                level = 'insufficient';
+                label = '資料不足';
+              } else if (list.length >= 6 && formal >= 30 && effortRate >= 0.6 && patternRate >= 0.75) {
+                level = 'high';
+                label = '高';
+              } else if (list.length >= 3 && formal >= 15 && patternRate >= 0.5) {
+                level = 'medium';
+                label = '中';
+              }
+
+              return { level, label, formal, workouts: list.length, effortRate, patternRate };
+            }
+
+            window.TrainLogAnalysis = Object.freeze({
+              completedWorkingSets,
+              effortStats,
+              analysisConfidence,
+            });
+          })();
+          ''', encoding='utf-8')
+
+          app_path = Path('js/app.js')
+          app = app_path.read_text(encoding='utf-8')
+
+          def function_span(source: str, name: str):
+              match = re.search(r'(?m)^\s*function\s+' + re.escape(name) + r'\s*\(', source)
+              if not match:
+                  raise RuntimeError(f'Cannot find function {name}')
+              brace = source.find('{', match.end())
+              if brace < 0:
+                  raise RuntimeError(f'Cannot find opening brace for {name}')
+              depth = 0
+              state = 'normal'
+              escaped = False
+              i = brace
+              while i < len(source):
+                  ch = source[i]
+                  nxt = source[i+1] if i+1 < len(source) else ''
+                  if state == 'line_comment':
+                      if ch == '\n': state = 'normal'
+                      i += 1; continue
+                  if state == 'block_comment':
+                      if ch == '*' and nxt == '/': state = 'normal'; i += 2
+                      else: i += 1
+                      continue
+                  if state in ('single','double','template'):
+                      if escaped: escaped = False; i += 1; continue
+                      if ch == '\\': escaped = True; i += 1; continue
+                      if (state == 'single' and ch == "'") or (state == 'double' and ch == '"') or (state == 'template' and ch == '`'):
+                          state = 'normal'
+                      i += 1; continue
+                  if ch == '/' and nxt == '/': state = 'line_comment'; i += 2; continue
+                  if ch == '/' and nxt == '*': state = 'block_comment'; i += 2; continue
+                  if ch == "'": state = 'single'; i += 1; continue
+                  if ch == '"': state = 'double'; i += 1; continue
+                  if ch == '`': state = 'template'; i += 1; continue
+                  if ch == '{': depth += 1
+                  elif ch == '}':
+                      depth -= 1
+                      if depth == 0:
+                          end = i + 1
+                          while end < len(source) and source[end] in ' \t\r': end += 1
+                          if end < len(source) and source[end] == '\n': end += 1
+                          return match.start(), end
+                  i += 1
+              raise RuntimeError(f'Unclosed function {name}')
+
+          replacements = {
+              'completedWorkingSets': "function completedWorkingSets(ex){return window.TrainLogAnalysis.completedWorkingSets(ex)}\n",
+              'effortStats': "function effortStats(workouts){return window.TrainLogAnalysis.effortStats(workouts)}\n",
+              'analysisConfidence': "function analysisConfidence(workouts){return window.TrainLogAnalysis.analysisConfidence(workouts,{formalSetCount,patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}\n",
+          }
+
+          spans = []
+          for name, replacement in replacements.items():
+              start, end = function_span(app, name)
+              spans.append((start, end, name, replacement))
+
+          for start, end, name, replacement in sorted(spans, reverse=True):
+              app = app[:start] + replacement + app[end:]
+
+          for name in replacements:
+              if app.count(f'window.TrainLogAnalysis.{name}') != 1:
+                  raise RuntimeError(f'Expected exactly one TrainLogAnalysis wrapper for {name}')
+          app_path.write_text(app, encoding='utf-8')
+
+          index_path = Path('index.html')
+          index = index_path.read_text(encoding='utf-8')
+          if 'js/analysis/training-metrics.js' in index:
+              raise RuntimeError('Analysis script already present in index.html')
+          app_script = re.search(r'(?P<indent>^[ \t]*)<script[^>]*src=["\']js/app\.js(?P<query>\?[^"\']*)?["\'][^>]*></script>', index, re.M)
+          if not app_script:
+              raise RuntimeError('Cannot find app.js script tag')
+          indent = app_script.group('indent')
+          query = app_script.group('query') or ''
+          tag = f'{indent}<script src="js/analysis/training-metrics.js{query}"></script>\n'
+          index = index[:app_script.start()] + tag + index[app_script.start():]
+          index_path.write_text(index, encoding='utf-8')
+
+          Path('js/analysis/README.md').write_text('''# Analysis 模組\n\nPhase 2 開始把分析邏輯從大型 `js/app.js` 移到可獨立測試的模組。\n\n## `training-metrics.js`\n\n目前提供 `window.TrainLogAnalysis`：\n- `completedWorkingSets(exercise)`：完成且非暖身的組數。\n- `effortStats(workouts)`：依 RIR / RPE 分類 high / mid / low / missing。\n- `analysisConfidence(workouts, options)`：分析可信度分級。\n\n`analysisConfidence` 不直接讀 App state；需要由呼叫端注入：\n- `formalSetCount(workouts)`\n- `patternForExercise(exercise)`\n\n這是刻意的依賴反轉，避免外部模組反向依賴 `app.js` IIFE 內部函式。\n\n## 規則\n\n- 本目錄優先放 pure logic。\n- 禁止直接操作 DOM / LocalStorage。\n- 禁止直接讀取可變的全域 `data`。\n- App 專屬 resolver 由 `app.js` wrapper 注入。\n- 每次抽離一小組函式，同時補 Node fixture test。\n''', encoding='utf-8')
+
+          refactor_path = Path('docs/REFACTOR.md')
+          refactor = refactor_path.read_text(encoding='utf-8')
+          marker = '## Phase 2：分析邏輯'
+          if marker not in refactor:
+              raise RuntimeError('Phase 2 heading missing')
+          phase2_note = '''## Phase 2：分析邏輯\n\n狀態：**進行中**\n\n已完成第一批 pure/testable boundary：\n- [x] `js/analysis/training-metrics.js`\n- [x] `completedWorkingSets` 移出實作，`app.js` 保留薄 wrapper\n- [x] `effortStats` 移出實作，`app.js` 保留薄 wrapper\n- [x] `analysisConfidence` 移出實作，以 callback 注入 App-specific dependency\n- [x] Node fixture tests 驗證 RIR/RPE 分類與可信度門檻\n\n下一批候選：`STIMULUS_BY_PATTERN` / `stimulusMap` / `movementStats`。先處理依賴注入，再搬實作。\n\n'''
+          refactor = refactor.replace(marker + '\n', phase2_note, 1)
+          refactor_path.write_text(refactor, encoding='utf-8')
+
+      - name: Verify syntax
+        run: |
+          node --check js/analysis/training-metrics.js
+          node --check js/app.js
+
+      - name: Unit test analysis metrics
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const vm = require('vm');
+          const ctx = vm.createContext({ window: {} });
+          vm.runInContext(fs.readFileSync('js/analysis/training-metrics.js','utf8'), ctx);
+          const A = ctx.window.TrainLogAnalysis;
+          if (!A) throw new Error('TrainLogAnalysis was not exported');
+
+          const workout = {
+            exercises: [{
+              type: 'weight_reps', pattern: 'horizontal_push',
+              sets: [
+                { completed: true, kind: 'working', rir: 1, rpe: '' },
+                { completed: true, kind: 'working', rir: 3, rpe: '' },
+                { completed: true, kind: 'working', rir: '', rpe: 6 },
+                { completed: true, kind: 'working', rir: '', rpe: '' },
+                { completed: true, kind: 'warmup', rir: 0, rpe: 10 },
+              ]
+            }]
+          };
+          const effort = A.effortStats([workout]);
+          const expected = JSON.stringify({ high:1, mid:1, low:1, missing:1, total:4 });
+          if (JSON.stringify(effort) !== expected) throw new Error(`Unexpected effortStats: ${JSON.stringify(effort)}`);
+          if (A.completedWorkingSets(workout.exercises[0]) !== 4) throw new Error('completedWorkingSets mismatch');
+
+          const six = Array.from({length:6}, () => workout);
+          const confidence = A.analysisConfidence(six, {
+            formalSetCount: () => 30,
+            patternForExercise: () => 'horizontal_push',
+          });
+          if (confidence.level !== 'high') throw new Error(`Expected high confidence, got ${confidence.level}`);
+
+          const insufficient = A.analysisConfidence([workout], {
+            formalSetCount: () => 4,
+            patternForExercise: () => 'horizontal_push',
+          });
+          if (insufficient.level !== 'insufficient') throw new Error('Insufficient-data threshold changed');
+          NODE
+
+      - name: Verify diff and commit
+        run: |
+          git diff --check
+          grep -q 'js/analysis/training-metrics.js' index.html
+          grep -q 'window.TrainLogAnalysis.effortStats' js/app.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/analysis index.html docs/REFACTOR.md
+          git commit -m 'refactor: extract pure analysis metrics'
+          git push
