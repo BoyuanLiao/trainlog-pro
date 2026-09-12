@@ -171,3 +171,13 @@
 - [x] `js/training/mutations.js`：新增／刪除／複製 set、delta、完成狀態、kind、simple effort、移除動作。
 - [x] save / confirm / rest timer / toast 保持在 `app.js`。
 - 下一步：Progression Engine 前置資料模型與建議規則。
+
+
+### Phase 4d — Smart Progression Engine 基礎層
+- [x] 先以 characterization tests 鎖住既有 `progressionAdvice()` 單次紀錄行為。
+- [x] 先建立 engine fixtures，再實作 `js/training/progression.js`。
+- [x] 最近最多 5 次紀錄；至少 3 次才做 plateau 趨勢判定。
+- [x] action：加重、增加次數、降重、平台期、維持、增加時間。
+- [x] unilateral 使用較弱側作為進階基準。
+- [x] `app.js` 的 `progressionAdvice()` 改為薄 wrapper。
+- 下一步：把 progression action 顯示成更清楚的 UI 標籤與理由／信心來源。

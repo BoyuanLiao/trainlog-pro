@@ -62,6 +62,7 @@ function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,
 const trainingMetrics=window.TrainLogTrainingMetrics;
 const trainingLifecycle=window.TrainLogTrainingLifecycle;
 const trainingMutations=window.TrainLogTrainingMutations;
+const trainingProgression=window.TrainLogTrainingProgression;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -297,18 +298,14 @@ function latestMuscleDate(m){
  let d='';data.workouts.forEach(w=>{if((w.exercises||[]).some(e=>e.muscle===m)&&w.date>d)d=w.date});return d
 }
 function progressionAdvice(exId){
- const ex=getExercise(exId);if(!ex)return null;const rec=getLastExerciseRecord(exId);if(!rec)return{state:'new',text:'第一次紀錄，先以保留 2–3 下餘裕找到工作重量。'};
- const inputUnit=exerciseInputUnit(rec.exercise);
- const sets=(rec.exercise.sets||[]).filter(s=>s.completed&&s.kind!=='warmup');if(!sets.length)return null;
- if(ex.type==='duration'){const avg=sets.reduce((a,s)=>a+n(s.seconds),0)/sets.length;if(avg>=ex.repMax)return{state:'up',text:`上次平均 ${Math.round(avg)} 秒，已達目標上限，可嘗試每組增加約 ${ex.increment||5} 秒。`};return{state:'same',text:`上次平均 ${Math.round(avg)} 秒，先維持並逐步接近 ${ex.repMax} 秒。`}}
- if(ex.type==='cardio')return{state:'same',text:'有氧建議優先穩定時間與感受，再逐步增加時間、距離或坡度。'};
- const working=sets.filter(s=>n(s.reps)>0);if(!working.length)return null;
- const allTop=working.every(s=>n(s.reps)>=n(ex.repMax||12));
- const intensityOK=working.every(s=>data.settings.intensity==='RIR'?(s.rir===''||n(s.rir)>=n(ex.intMin||2)):(s.rpe===''||n(s.rpe)<=8.5));
- const minRep=Math.min(...working.map(s=>n(s.reps)));
- if(allTop&&intensityOK){const inc=machineIncrementForUnit(ex,inputUnit);return{state:'up',text:`上次所有正式組達 ${ex.repMax} 下且強度可控，建議下次嘗試增加約 ${cleanWeightNumber(inc)} ${inputUnit}。`}};
- if(minRep<(ex.repMin||8)-1)return{state:'down',text:`上次有組數低於目標範圍，建議維持或小幅降重，優先完成 ${ex.repMin}–${ex.repMax} 下。`};
- return{state:'same',text:`上次仍在 ${ex.repMin}–${ex.repMax} 下範圍內，建議維持重量並增加完成次數。`}
+ const ex=getExercise(exId);if(!ex)return null;
+ return trainingProgression.recommend(ex,data.workouts,{
+   intensity:data.settings.intensity,
+   inputUnitForExercise:exerciseInputUnit,
+   incrementForUnit:machineIncrementForUnit,
+   cleanNumber:cleanWeightNumber,
+   limit:5
+ })
 }
 function plateau(exId){
  const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(!s.completed)return;best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push({date:w.date,v:best})});

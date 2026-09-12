@@ -6,6 +6,7 @@
 - `metrics.js`：純訓練統計（volume、effective sets、cardio/duration、best set）。
 - `lifecycle.js`：Active Workout 建立與完成狀態轉換。
 - `mutations.js`：set / exercise 資料變更（新增、刪除、複製、完成、組別、簡易強度）。
+- `progression.js`：最近 3–5 次同動作紀錄的 Smart Progression Engine。
 
 未來負責：
 - Active Workout 狀態與生命週期
@@ -34,3 +35,12 @@
 - `mutations.js` 不處理 DOM、save、confirm、timer 或 toast。
 - `app.js` 保留 UI event binding 與副作用，只把資料 mutation 委派給 module。
 - `tests/training/mutations-characterization.test.js` 會在抽離前後驗證同一組行為。
+
+## Phase 4d
+
+- `progression.js` 讀取最多最近 5 次同動作紀錄。
+- action：`new` / `increase_load` / `add_reps` / `reduce_load` / `plateau` / `maintain` / `increase_time`。
+- 單次紀錄的加重／維持／降重規則優先保持既有行為。
+- 至少 3 次可比較紀錄才啟用 plateau 趨勢判定。
+- 支援 unilateral，以左右側較弱一側的 reps / weight 作為進階判斷基準。
+- UI render、文字樣式與 app state 仍由 `app.js` 處理。
