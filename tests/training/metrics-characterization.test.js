@@ -3,6 +3,7 @@ const vm=require('vm');
 const assert=require('assert');
 
 const app=fs.readFileSync('js/app.js','utf8');
+const utils=fs.readFileSync('js/core/utils.js','utf8');
 function functionSource(name){
   const re=new RegExp('function\\s+'+name+'\\s*\\(');const m=re.exec(app);if(!m)throw new Error('Missing '+name);
   const start=m.index,brace=app.indexOf('{',m.index+m[0].length);let depth=0,state='normal',esc=false;
@@ -18,9 +19,10 @@ function functionSource(name){
   throw new Error('Unclosed '+name);
 }
 
-const ctx=vm.createContext({console,Math,Date});
-vm.runInContext("const n=v=>{const x=Number(v);return Number.isFinite(x)?x:0}; let data={settings:{includeWarmup:false},workouts:[]};",ctx);
-for(const name of ['workoutVolume','effectiveSets','cardioMinutes','durationSeconds','est1rm','bestSetForExercise']) vm.runInContext(functionSource(name),ctx);
+const ctx=vm.createContext({console,Math,Date,window:{}});
+vm.runInContext(utils,ctx);
+vm.runInContext("const n=window.TrainLogUtils.n; const est1rm=window.TrainLogUtils.est1rm; let data={settings:{includeWarmup:false},workouts:[]};",ctx);
+for(const name of ['workoutVolume','effectiveSets','cardioMinutes','durationSeconds','bestSetForExercise']) vm.runInContext(functionSource(name),ctx);
 const run=code=>vm.runInContext(code,ctx);
 
 const workout={exercises:[
