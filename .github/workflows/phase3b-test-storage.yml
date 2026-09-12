@@ -1,0 +1,22 @@
+name: Phase 3b - Storage characterization tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/core/storage-characterization.test.js'
+      - '.github/workflows/phase3b-test-storage.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run migration characterization tests
+        run: node tests/core/migration-characterization.test.js
+      - name: Run storage characterization tests
+        run: node tests/core/storage-characterization.test.js
