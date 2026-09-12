@@ -1,0 +1,68 @@
+name: Refactor Phase 4c - Training mutations
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase4c-mutations.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify core migration before refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify core storage before refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify core utils before refactor
+        run: node tests/core/utils-characterization.test.js
+      - name: Verify training metrics before refactor
+        run: node tests/training/metrics-characterization.test.js
+      - name: Verify lifecycle before refactor
+        run: node tests/training/lifecycle-characterization.test.js
+      - name: Verify mutations before refactor
+        run: node tests/training/mutations-characterization.test.js
+      - name: Apply mutation refactor
+        run: python scripts/refactor_phase4c_mutations.py
+      - name: Verify syntax after refactor
+        run: |
+          node --check js/training/mutations.js
+          node --check js/training/lifecycle.js
+          node --check js/training/metrics.js
+          node --check js/app.js
+      - name: Verify core migration after refactor
+        run: node tests/core/migration-characterization.test.js
+      - name: Verify core storage after refactor
+        run: node tests/core/storage-characterization.test.js
+      - name: Verify core utils after refactor
+        run: node tests/core/utils-characterization.test.js
+      - name: Verify training metrics after refactor
+        run: node tests/training/metrics-characterization.test.js
+      - name: Verify lifecycle after refactor
+        run: node tests/training/lifecycle-characterization.test.js
+      - name: Verify mutations after refactor
+        run: node tests/training/mutations-characterization.test.js
+      - name: Verify integration and commit
+        run: |
+          grep -q 'js/training/mutations.js' index.html
+          grep -q 'TrainLogTrainingMutations' js/app.js
+          grep -q 'trainingMutations.addSet' js/app.js
+          grep -q 'trainingMutations.toggleCompleted' js/app.js
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js index.html js/training/mutations.js js/training/README.md docs/REFACTOR.md tests/training/mutations-characterization.test.js scripts/refactor_phase4c_mutations.py
+          if git diff --cached --quiet; then
+            echo 'No changes to commit'
+          else
+            git commit -m 'refactor: extract training set mutations'
+            git push
+          fi
