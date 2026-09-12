@@ -61,6 +61,7 @@ function snapshot(reason){return storageCore.snapshot(data,reason)}
 function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,takeSnapshot,renderAll)}
 const trainingMetrics=window.TrainLogTrainingMetrics;
 const trainingLifecycle=window.TrainLogTrainingLifecycle;
+const trainingMutations=window.TrainLogTrainingMutations;
 function workoutVolume(w){return trainingMetrics.workoutVolume(w,{includeWarmup:!!data.settings.includeWarmup})}
 function effectiveSets(w,muscle){return trainingMetrics.effectiveSets(w,muscle)}
 function cardioMinutes(w){return trainingMetrics.cardioMinutes(w)}
@@ -1109,17 +1110,17 @@ function bindSessionEvents(){
  $$('#activeWorkout [data-set]').forEach(el=>el.addEventListener('change',()=>{const ei=n(el.dataset.e),si=n(el.dataset.s),key=el.dataset.set,ex=data.activeWorkout.exercises[ei],set=ex.sets[si],weightKeys=['weight','leftWeight','rightWeight'];set[key]=el.value===''?'':(weightKeys.includes(key)?toKg(el.value,exerciseInputUnit(ex)):n(el.value));saveActiveOnly()}));
  $$('#activeWorkout [data-cardio]').forEach(el=>el.addEventListener('change',()=>{data.activeWorkout.exercises[n(el.dataset.e)].cardio[el.dataset.cardio]=n(el.value);saveActiveOnly()}));
  $$('#activeWorkout [data-exnote]').forEach(el=>el.addEventListener('change',()=>{data.activeWorkout.exercises[n(el.dataset.exnote)].notes=el.value;saveActiveOnly()}));
- $$('#activeWorkout [data-addset]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.addset)],prev=e.sets[e.sets.length-1]||{};e.sets.push({id:uid('s'),kind:'working',weight:n(prev.weight),reps:n(prev.reps),rir:'',rpe:'',seconds:n(prev.seconds),leftWeight:n(prev.leftWeight),rightWeight:n(prev.rightWeight),leftReps:n(prev.leftReps),rightReps:n(prev.rightReps),completed:false});saveActiveOnly(true)});
- $$('#activeWorkout [data-delset]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.delset.split(',').map(Number);data.activeWorkout.exercises[ei].sets.splice(si,1);saveActiveOnly(true)});
- $$('#activeWorkout [data-delta]').forEach(b=>b.onclick=()=>{const [ei,si,key,delta]=b.dataset.delta.split(',');const s=data.activeWorkout.exercises[n(ei)].sets[n(si)];s[key]=Math.max(0,n(s[key])+n(delta));saveActiveOnly(true)});
- $$('#activeWorkout [data-weight-delta]').forEach(b=>b.onclick=()=>{const [ei,si,delta]=b.dataset.weightDelta.split(','),ex=data.activeWorkout.exercises[n(ei)],s=ex.sets[n(si)];s.weight=Math.max(0,n(s.weight)+toKg(delta,exerciseInputUnit(ex)));saveActiveOnly(true)});
+ $$('#activeWorkout [data-addset]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.addset)];trainingMutations.addSet(e,{id:uid('s')});saveActiveOnly(true)});
+ $$('#activeWorkout [data-delset]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.delset.split(',').map(Number);trainingMutations.removeSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});
+ $$('#activeWorkout [data-delta]').forEach(b=>b.onclick=()=>{const [ei,si,key,delta]=b.dataset.delta.split(',');trainingMutations.applyDelta(data.activeWorkout.exercises[n(ei)].sets[n(si)],key,delta);saveActiveOnly(true)});
+ $$('#activeWorkout [data-weight-delta]').forEach(b=>b.onclick=()=>{const [ei,si,delta]=b.dataset.weightDelta.split(','),ex=data.activeWorkout.exercises[n(ei)],s=ex.sets[n(si)];trainingMutations.applyWeightDelta(s,toKg(delta,exerciseInputUnit(ex)));saveActiveOnly(true)});
  $$('#activeWorkout [data-ex-unit]').forEach(b=>b.onclick=()=>{const [ei,unit]=b.dataset.exUnit.split(','),ex=data.activeWorkout.exercises[n(ei)];ex.inputUnit=normalizeWeightUnit(unit);saveActiveOnly(true);toast(`這個動作改用 ${ex.inputUnit} 輸入，實際重量會自動換算`)});
 
- $$('#activeWorkout [data-copy]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.copy.split(',').map(Number);if(si<1)return;const prev=data.activeWorkout.exercises[ei].sets[si-1],cur=data.activeWorkout.exercises[ei].sets[si];['weight','reps','seconds','leftWeight','rightWeight','leftReps','rightReps'].forEach(k=>cur[k]=prev[k]);saveActiveOnly(true)});
- $$('#activeWorkout [data-complete]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.complete.split(',').map(Number),e=data.activeWorkout.exercises[ei],s=e.sets[si];s.completed=!s.completed;saveActiveOnly(true);if(s.completed&&data.settings.trainingIntervalTimer!==false){const ex=getExercise(e.exerciseId),nextNo=si+2;startTimer(n(ex?.rest)||n(data.settings.defaultRest)||90,`${ex?.name||e.nameSnapshot} · 準備第 ${nextNo} 組`)}});
- $$('#activeWorkout [data-kind]').forEach(el=>el.onchange=()=>{const [ei,si]=el.dataset.kind.split(',').map(Number);data.activeWorkout.exercises[ei].sets[si].kind=el.value;saveActiveOnly(true)});
- $$('#activeWorkout [data-simple-effort]').forEach(b=>b.onclick=()=>{const [ei,si,feel]=b.dataset.simpleEffort.split(','),s=data.activeWorkout.exercises[n(ei)].sets[n(si)];s.rir=feel==='easy'?4:feel==='ok'?2:0;s.rpe='';saveActiveOnly(true);toast(feel==='easy'?'已記錄：太輕鬆':feel==='ok'?'已記錄：剛剛好':'已記錄：太吃力')});
- $$('#activeWorkout [data-removeex]').forEach(b=>b.onclick=()=>{if(confirm('移除此動作？')){data.activeWorkout.exercises.splice(n(b.dataset.removeex),1);saveActiveOnly(true)}});
+ $$('#activeWorkout [data-copy]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.copy.split(',').map(Number);trainingMutations.copyPreviousSet(data.activeWorkout.exercises[ei],si);saveActiveOnly(true)});
+ $$('#activeWorkout [data-complete]').forEach(b=>b.onclick=()=>{const [ei,si]=b.dataset.complete.split(',').map(Number),e=data.activeWorkout.exercises[ei],completed=trainingMutations.toggleCompleted(e,si);saveActiveOnly(true);if(completed&&data.settings.trainingIntervalTimer!==false){const ex=getExercise(e.exerciseId),nextNo=si+2;startTimer(n(ex?.rest)||n(data.settings.defaultRest)||90,`${ex?.name||e.nameSnapshot} · 準備第 ${nextNo} 組`)}});
+ $$('#activeWorkout [data-kind]').forEach(el=>el.onchange=()=>{const [ei,si]=el.dataset.kind.split(',').map(Number);trainingMutations.setKind(data.activeWorkout.exercises[ei],si,el.value);saveActiveOnly(true)});
+ $$('#activeWorkout [data-simple-effort]').forEach(b=>b.onclick=()=>{const [ei,si,feel]=b.dataset.simpleEffort.split(',');trainingMutations.applySimpleEffort(data.activeWorkout.exercises[n(ei)],n(si),feel);saveActiveOnly(true);toast(feel==='easy'?'已記錄：太輕鬆':feel==='ok'?'已記錄：剛剛好':'已記錄：太吃力')});
+ $$('#activeWorkout [data-removeex]').forEach(b=>b.onclick=()=>{if(confirm('移除此動作？')){trainingMutations.removeExercise(data.activeWorkout.exercises,n(b.dataset.removeex));saveActiveOnly(true)}});
  $$('#activeWorkout [data-replace]').forEach(b=>b.onclick=()=>openReplaceModal(n(b.dataset.replace)));
  $$('#activeWorkout [data-ex-info]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.exInfo)],ex=getExercise(e?.exerciseId);if(ex)showExerciseDetail(ex.id)});
  $('#sessionAddEx').onclick=()=>openExercisePicker(ex=>{const added=makeSessionExercise(ex,data.activeWorkout.date);data.activeWorkout.exercises.push(added);saveActiveOnly(true)});

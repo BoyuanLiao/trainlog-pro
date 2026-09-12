@@ -4,6 +4,8 @@
 
 目前模組：
 - `metrics.js`：純訓練統計（volume、effective sets、cardio/duration、best set）。
+- `lifecycle.js`：Active Workout 建立與完成狀態轉換。
+- `mutations.js`：set / exercise 資料變更（新增、刪除、複製、完成、組別、簡易強度）。
 
 未來負責：
 - Active Workout 狀態與生命週期
@@ -26,3 +28,9 @@
 - `tests/training/lifecycle-characterization.test.js`
 
 目前 UI confirm / modal / save 副作用仍留在 `app.js`，由 wrapper 呼叫 pure lifecycle。
+
+## Phase 4c
+
+- `mutations.js` 不處理 DOM、save、confirm、timer 或 toast。
+- `app.js` 保留 UI event binding 與副作用，只把資料 mutation 委派給 module。
+- `tests/training/mutations-characterization.test.js` 會在抽離前後驗證同一組行為。

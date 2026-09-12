@@ -164,3 +164,10 @@
 - ✅ `app.js` 保留 UI / confirm / save wrapper，不讓 lifecycle module 直接碰 DOM 或 LocalStorage
 - ✅ 實作前後 lifecycle characterization tests
 - 下一步：set 操作與 Active Workout mutation，再銜接 Smart Progression Engine。
+
+
+### Phase 4c — Set / Exercise mutation
+- [x] 新增 `tests/training/mutations-characterization.test.js` 鎖住既有 handler 行為。
+- [x] `js/training/mutations.js`：新增／刪除／複製 set、delta、完成狀態、kind、simple effort、移除動作。
+- [x] save / confirm / rest timer / toast 保持在 `app.js`。
+- 下一步：Progression Engine 前置資料模型與建議規則。
