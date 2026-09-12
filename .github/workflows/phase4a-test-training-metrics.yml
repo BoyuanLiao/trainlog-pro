@@ -1,0 +1,26 @@
+name: Phase 4a - Training metrics characterization tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/phase4a-test-training-metrics.yml'
+      - 'tests/training/metrics-characterization.test.js'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run core migration tests
+        run: node tests/core/migration-characterization.test.js
+      - name: Run core storage tests
+        run: node tests/core/storage-characterization.test.js
+      - name: Run core utils tests
+        run: node tests/core/utils-characterization.test.js
+      - name: Run training metrics tests
+        run: node tests/training/metrics-characterization.test.js
