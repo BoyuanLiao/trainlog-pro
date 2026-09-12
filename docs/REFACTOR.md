@@ -41,6 +41,18 @@
 
 ## Phase 2：分析邏輯
 
+狀態：**進行中**
+
+已完成第一批 pure/testable boundary：
+- [x] `js/analysis/training-metrics.js`
+- [x] `completedWorkingSets` 移出實作，`app.js` 保留薄 wrapper
+- [x] `effortStats` 移出實作，`app.js` 保留薄 wrapper
+- [x] `analysisConfidence` 移出實作，以 callback 注入 App-specific dependency
+- [x] Node fixture tests 驗證 RIR/RPE 分類與可信度門檻
+
+下一批候選：`STIMULUS_BY_PATTERN` / `stimulusMap` / `movementStats`。先處理依賴注入，再搬實作。
+
+
 預定：
 - `js/analysis/stimulus.js`
 - `js/analysis/progress.js`

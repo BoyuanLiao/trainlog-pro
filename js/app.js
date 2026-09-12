@@ -258,9 +258,7 @@ function rangeDateLabel(days){
  }
  return `${fmtDate(rollingStart(days))} – ${fmtDate(isoToday())}`;
 }
-function completedWorkingSets(ex){
- return (ex?.sets||[]).filter(s=>s.completed&&s.kind!=='warmup').length
-}
+function completedWorkingSets(ex){return window.TrainLogAnalysis.completedWorkingSets(ex)}
 const STIMULUS_BY_PATTERN={
  horizontal_push:[['胸',1],['三頭',.5],['肩膀',.5]],
  shoulder_horizontal_adduction:[['胸',1],['肩膀',.25]],
@@ -317,17 +315,7 @@ function stimulusMap(workouts){
  return out
 }
 function formalSetCount(workouts){return (workouts||[]).reduce((sum,w)=>sum+effectiveSets(w),0)}
-function effortStats(workouts){
- const o={high:0,mid:0,low:0,missing:0,total:0};
- (workouts||[]).forEach(w=>(w.exercises||[]).forEach(e=>(e.sets||[]).forEach(s=>{
-   if(!s.completed||s.kind==='warmup'||e.type==='cardio')return;o.total++;
-   const hasRir=s.rir!==''&&s.rir!=null,hasRpe=s.rpe!==''&&s.rpe!=null;
-   if(!hasRir&&!hasRpe){o.missing++;return}
-   if(hasRir){const v=n(s.rir);if(v<=1)o.high++;else if(v<=3)o.mid++;else o.low++}
-   else{const v=n(s.rpe);if(v>=9)o.high++;else if(v>=7)o.mid++;else o.low++}
- })));
- return o
-}
+function effortStats(workouts){return window.TrainLogAnalysis.effortStats(workouts)}
 function movementStats(workouts){
  const out={};
  (workouts||[]).forEach(w=>(w.exercises||[]).forEach(e=>{
@@ -374,22 +362,7 @@ function compareBadge(cur,prev){
  const arrow=c.dir==='up'?'↑':c.dir==='down'?'↓':'→';
  return `<span class="compare-badge ${c.dir}">${arrow} ${esc(c.text)}</span>`
 }
-function analysisConfidence(workouts){
- const formal=formalSetCount(workouts),eff=effortStats(workouts);
- let exTotal=0,recognized=0;
- (workouts||[]).forEach(w=>(w.exercises||[]).forEach(e=>{
-   const sets=completedWorkingSets(e);if(!sets||e.type==='cardio')return;
-   exTotal+=sets;if(exerciseAnalysisBasis(e).pattern)recognized+=sets
- }));
- const effortRecorded=eff.high+eff.mid+eff.low;
- const effortRate=eff.total?effortRecorded/eff.total:0;
- const patternRate=exTotal?recognized/exTotal:0;
- let level='low',label='低';
- if(workouts.length<2||formal<6){level='insufficient';label='資料不足'}
- else if(workouts.length>=6&&formal>=30&&effortRate>=.6&&patternRate>=.75){level='high';label='高'}
- else if(workouts.length>=3&&formal>=15&&patternRate>=.5){level='medium';label='中'}
- return{level,label,formal,workouts:workouts.length,effortRate,patternRate}
-}
+function analysisConfidence(workouts){return window.TrainLogAnalysis.analysisConfidence(workouts,{formalSetCount,patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}
 function exerciseSessionMetrics(exId){
  const sessions=[];
  [...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{

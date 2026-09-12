@@ -1,13 +1,24 @@
-# `js/analysis/`
+# Analysis 模組
 
-狀態：**重構骨架，分析函式目前仍在 `app.js`。**
+Phase 2 開始把分析邏輯從大型 `js/app.js` 移到可獨立測試的模組。
 
-未來負責資料分析，不直接操作 DOM：
-- `stimulus.js`：肌群刺激、正式組、動作模式
-- `progress.js`：PR、趨勢、前一期比較
-- `consistency.js`：頻率、間隔、一致性
-- `confidence.js`：分析資料可信度
+## `training-metrics.js`
 
-優先搬移 pure function，並搭配固定測試資料驗證搬移前後輸出一致。
+目前提供 `window.TrainLogAnalysis`：
+- `completedWorkingSets(exercise)`：完成且非暖身的組數。
+- `effortStats(workouts)`：依 RIR / RPE 分類 high / mid / low / missing。
+- `analysisConfidence(workouts, options)`：分析可信度分級。
 
-分析模組應回傳資料物件；畫面 HTML 應留在 UI 層。這是後續加入 progression / recovery 判斷的基礎。
+`analysisConfidence` 不直接讀 App state；需要由呼叫端注入：
+- `formalSetCount(workouts)`
+- `patternForExercise(exercise)`
+
+這是刻意的依賴反轉，避免外部模組反向依賴 `app.js` IIFE 內部函式。
+
+## 規則
+
+- 本目錄優先放 pure logic。
+- 禁止直接操作 DOM / LocalStorage。
+- 禁止直接讀取可變的全域 `data`。
+- App 專屬 resolver 由 `app.js` wrapper 注入。
+- 每次抽離一小組函式，同時補 Node fixture test。
