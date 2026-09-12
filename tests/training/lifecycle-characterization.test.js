@@ -21,8 +21,11 @@ function functionSource(name){
   throw new Error('Unclosed '+name);
 }
 
-const calls=[];
-const ctx=vm.createContext({console,Math,Date,JSON});
+const ctx=vm.createContext({console,Math,Date,JSON,window:{}});
+if(fs.existsSync('js/training/lifecycle.js')){
+  vm.runInContext(fs.readFileSync('js/training/lifecycle.js','utf8'),ctx);
+  vm.runInContext('const trainingLifecycle=window.TrainLogTrainingLifecycle;',ctx);
+}
 vm.runInContext(`
 let uidSeq=0;
 const uid=p=>p+'_test_'+(++uidSeq);
