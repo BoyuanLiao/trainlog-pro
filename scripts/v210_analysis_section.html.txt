@@ -1,0 +1,62 @@
+  <section class="page" id="analysisPage">
+    <div class="section">分析</div>
+    <div class="analysis-range" id="analysisRange">
+      <button type="button" data-analysis-range="7">7 天</button>
+      <button type="button" data-analysis-range="30" class="on">30 天</button>
+      <button type="button" data-analysis-range="90">90 天</button>
+      <button type="button" data-analysis-range="all">全部</button>
+    </div>
+    <div class="analysis-period" id="analysisPeriod"></div>
+    <div id="analysisConfidence"></div>
+
+    <div class="analysis-tabs" id="analysisTabs" aria-label="分析分類">
+      <button type="button" data-analysis-tab="overview" class="on">總覽</button>
+      <button type="button" data-analysis-tab="muscle">肌群與模式</button>
+      <button type="button" data-analysis-tab="exercise">動作進步</button>
+      <button type="button" data-analysis-tab="load">負荷與習慣</button>
+    </div>
+
+    <div class="analysis-panel" data-analysis-panel="overview">
+      <div class="section">本期重點 <button class="info-btn" type="button" data-info="analysis_highlights" aria-label="本期重點說明">i</button></div>
+      <div class="card"><div class="analysis-highlights" id="analysisHighlights"></div></div>
+
+      <div class="section">訓練摘要 <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明">i</button></div>
+      <div class="analysis-kpis" id="analysisKpis"></div>
+
+      <div class="section">下一步建議</div>
+      <div id="analysisProgressOpportunities"></div>
+
+      <div class="section">PR 與里程碑</div>
+      <div class="card" id="analysisPrTimeline"></div>
+    </div>
+
+    <div class="analysis-panel hidden" data-analysis-panel="muscle">
+      <div class="section">肌群目標 vs 實際</div>
+      <div class="card" id="analysisMuscleTargets"></div>
+
+      <div class="section ui-standard-only">肌群刺激 <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明">i</button></div>
+      <div class="card ui-standard-only" id="muscleAnalysis"></div>
+
+      <div class="section ui-advanced-only">動作模式 <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明">i</button></div>
+      <div class="card ui-advanced-only" id="pplAnalysis"></div>
+
+      <div class="section ui-standard-only">動作模式缺口</div>
+      <div class="card ui-standard-only" id="analysisMovementGaps"></div>
+    </div>
+
+    <div class="analysis-panel hidden" data-analysis-panel="exercise">
+      <div class="section">動作進步與個人最佳（PR） <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明">i</button></div>
+      <div class="card"><div class="field"><label>選擇做過的動作</label><select id="analysisExercise"></select><div class="hint">只列出訓練紀錄中實際做過的動作，最近做過的會排在前面。</div></div><div id="exerciseAnalysis"></div></div>
+    </div>
+
+    <div class="analysis-panel hidden" data-analysis-panel="load">
+      <div class="section">訓練負荷趨勢</div>
+      <div class="card" id="analysisLoadTrend"></div>
+
+      <div class="section ui-standard-only">訓練強度分布 <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明">i</button></div>
+      <div class="card ui-standard-only" id="effortAnalysis"></div>
+
+      <div class="section ui-standard-only">訓練一致性 <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明">i</button></div>
+      <div class="card ui-standard-only" id="consistencyAnalysis"></div>
+    </div>
+  </section>
