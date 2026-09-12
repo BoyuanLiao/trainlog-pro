@@ -1,0 +1,204 @@
+name: Apply TrainLog Pro v2.10.1 stability update
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/apply-v2.10.1-stability.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Apply stability improvements
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app=Path('js/app.js')
+          s=app.read_text(encoding='utf-8')
+
+          def one(old,new,label):
+              global s
+              count=s.count(old)
+              if count!=1:
+                  raise SystemExit(f'{label}: expected 1 match, found {count}')
+              s=s.replace(old,new,1)
+
+          one("const APP_KEY='trainlogProData';\nconst CURRENT_SCHEMA=18;",
+              "const APP_KEY='trainlogProData';\nconst APP_VERSION='2.10.1';\nconst CURRENT_SCHEMA=18;",
+              'APP_VERSION')
+
+          one("trainingDrawerTabTop:8,weeklyMuscleGoals:",
+              "trainingDrawerTabTop:8,analysisRange:'30',analysisTab:'overview',weeklyMuscleGoals:",
+              'analysis defaults')
+
+          old_load="function loadData(){try{const cur=localStorage.getItem(APP_KEY);if(cur)return migrate(JSON.parse(cur));const legacy=localStorage.getItem('fitnessRecordsV1');if(legacy){const d=migrate({schemaVersion:1,records:JSON.parse(legacy)});localStorage.setItem(APP_KEY,JSON.stringify(d));return d}return freshData()}catch{return freshData()}}\nlet data=loadData();"
+          new_load="""let recoveryIssue=null;
+          function loadData(){
+           const cur=localStorage.getItem(APP_KEY);
+           if(cur){
+            try{return migrate(JSON.parse(cur))}
+            catch(err){
+             try{
+              const recoveryKey=APP_KEY+'_recovery_latest';
+              localStorage.setItem(recoveryKey,cur);
+              recoveryIssue={key:recoveryKey,raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')};
+             }catch{recoveryIssue={key:'',raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')}}
+             return freshData()
+            }
+           }
+           try{
+            const legacy=localStorage.getItem('fitnessRecordsV1');
+            if(legacy){const d=migrate({schemaVersion:1,records:JSON.parse(legacy)});localStorage.setItem(APP_KEY,JSON.stringify(d));return d}
+           }catch(err){
+            try{localStorage.setItem('fitnessRecordsV1_recovery_latest',localStorage.getItem('fitnessRecordsV1')||'')}catch{}
+           }
+           return freshData()
+          }
+          let data=loadData();
+          function registerTrainLogServiceWorker(){
+           navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`).catch(()=>{});
+          }
+          if('serviceWorker' in navigator)window.addEventListener('load',registerTrainLogServiceWorker,{once:true});
+          function renderRecoveryBanner(){
+           const box=document.getElementById('dataRecoveryBanner');if(!box||!recoveryIssue)return;
+           box.innerHTML=`<div class=\"card warnbox\"><b>⚠ 偵測到本機資料異常</b><div class=\"small\" style=\"margin-top:6px;line-height:1.55\">原始 LocalStorage 內容已先保留為救援副本，App 暫時以空白資料啟動。建議先下載原始資料，再進行匯入或其他操作。</div><div class=\"actions\" style=\"margin-top:10px\"><button class=\"btn small warn\" id=\"downloadRecoveryData\">下載原始救援資料</button><button class=\"btn small ghost\" id=\"dismissRecoveryData\">先隱藏</button></div></div>`;
+           const dl=document.getElementById('downloadRecoveryData');if(dl)dl.onclick=()=>download(`trainlog-pro-recovery-${isoToday()}.json`,recoveryIssue.raw,'application/json');
+           const dismiss=document.getElementById('dismissRecoveryData');if(dismiss)dismiss.onclick=()=>{box.innerHTML=''};
+          }
+          setTimeout(renderRecoveryBanner,0);"""
+          one(old_load,new_load,'loadData recovery')
+
+          one("appVersion:'2.9.15'","appVersion:APP_VERSION",'backup app version')
+
+          old_import="""function importSummaryHtml(migrated,type,newCount,dup){
+           const hasSettings=type==='json'&&!!migrated.settings,hasPlan=type==='json'&&!!migrated.currentPlan,hasActive=type==='json'&&!!migrated.activeWorkout;"""
+          new_import="""function importSummaryHtml(migrated,type,newCount,dup,source=null){
+           const raw=source&&typeof source==='object'?source:{};
+           const hasSettings=type==='json'&&!!raw.settings&&typeof raw.settings==='object',hasPlan=type==='json'&&!!raw.currentPlan,hasActive=type==='json'&&!!raw.activeWorkout;"""
+          one(old_import,new_import,'raw import detection')
+          one("${importSummaryHtml(migrated,type,newCount,dup)}","${importSummaryHtml(migrated,type,newCount,dup,incoming)}",'import summary source')
+
+          old_week="""function analysisWeekStart(dateStr){
+            const d=new Date(`${dateStr}T12:00:00`);
+            if(Number.isNaN(d.getTime()))return dateStr;
+            const offset=(d.getDay()+6)%7;
+            d.setDate(d.getDate()-offset);
+            return d.toISOString().slice(0,10);
+          }"""
+          new_week="""function analysisWeekStart(dateStr){
+            const d=new Date(`${dateStr}T12:00:00`);
+            if(Number.isNaN(d.getTime()))return dateStr;
+            const start=((n(data.settings.weekStart)%7)+7)%7;
+            const offset=(d.getDay()-start+7)%7;
+            d.setDate(d.getDate()-offset);
+            return d.toISOString().slice(0,10);
+          }"""
+          one(old_week,new_week,'analysis week start')
+
+          one("let analysisRange='30';",
+              "let analysisRange=['7','30','90','all'].includes(String(data.settings.analysisRange))?String(data.settings.analysisRange):'30';",
+              'analysis range restore')
+          one("let analysisTabState='overview';",
+              "let analysisTabState=['overview','muscle','exercise','load'].includes(data.settings.analysisTab)?data.settings.analysisTab:'overview';",
+              'analysis tab restore')
+
+          old_tab="""function showAnalysisTab(tab){
+            analysisTabState=tab||'overview';
+            $$('#analysisTabs [data-analysis-tab]').forEach(b=>b.classList.toggle('on',b.dataset.analysisTab===analysisTabState));
+            $$('[data-analysis-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.analysisPanel!==analysisTabState));
+          }"""
+          new_tab="""function showAnalysisTab(tab){
+            const next=['overview','muscle','exercise','load'].includes(tab)?tab:'overview';
+            const changed=data.settings.analysisTab!==next;
+            analysisTabState=next;data.settings.analysisTab=next;
+            if(changed){try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}}
+            $$('#analysisTabs [data-analysis-tab]').forEach(b=>b.classList.toggle('on',b.dataset.analysisTab===analysisTabState));
+            $$('[data-analysis-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.analysisPanel!==analysisTabState));
+          }"""
+          one(old_tab,new_tab,'analysis tab persistence')
+
+          old_range="$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{analysisRange=b.dataset.analysisRange;renderAnalysis()});"
+          new_range="$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});"
+          one(old_range,new_range,'analysis range persistence')
+
+          app.write_text(s,encoding='utf-8')
+
+          idx=Path('index.html')
+          h=idx.read_text(encoding='utf-8')
+          if 'v2.10.0' not in h:
+              raise SystemExit('index v2.10.0 marker not found')
+          h=h.replace('v2.10.0','v2.10.1')
+          if '<div id="dataRecoveryBanner"></div>' not in h:
+              marker='<div id="resumeBanner"></div>'
+              if marker not in h: raise SystemExit('resumeBanner marker missing')
+              h=h.replace(marker,marker+'\n  <div id="dataRecoveryBanner"></div>',1)
+          idx.write_text(h,encoding='utf-8')
+
+          motion=Path('js/motion-gifs.js')
+          m=motion.read_text(encoding='utf-8')
+          m=m.replace('// TrainLog Pro v2.9.24 - Exercise Library animated exercise demos','// TrainLog Pro v2.10.1 - Exercise Library animated exercise demos',1)
+          motion.write_text(m,encoding='utf-8')
+
+          sw=Path('sw.js')
+          sw.write_text("""// TrainLog Pro v2.10.1 - offline cache for Exercise Library animations
+          'use strict';
+          const EXERCISE_CACHE='trainlog-exercise-library-v1';
+          self.addEventListener('install',()=>self.skipWaiting());
+          self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));
+          self.addEventListener('fetch',event=>{
+            const req=event.request;
+            if(req.method!=='GET')return;
+            let url;try{url=new URL(req.url)}catch{return}
+            const isExerciseLibrary=url.hostname==='raw.githubusercontent.com'&&url.pathname.startsWith('/mohamedatef90/exercise-library/main/');
+            if(!isExerciseLibrary)return;
+            event.respondWith((async()=>{
+              const cache=await caches.open(EXERCISE_CACHE);
+              const cached=await cache.match(req);
+              const network=fetch(req).then(async response=>{
+                if(response&&(response.ok||response.type==='opaque')){
+                  try{await cache.put(req,response.clone())}catch{}
+                }
+                return response;
+              }).catch(()=>null);
+              if(cached){network.catch(()=>{});return cached}
+              const response=await network;
+              return response||new Response('',{status:504,statusText:'Exercise Library unavailable offline'});
+            })());
+          });
+          """,encoding='utf-8')
+          PY
+
+      - name: Verify JavaScript and integration
+        run: |
+          node --check js/app.js
+          node --check js/motion-gifs.js
+          node --check sw.js
+          grep -F "const APP_VERSION='2.10.1'" js/app.js
+          grep -F "appVersion:APP_VERSION" js/app.js
+          grep -F "importSummaryHtml(migrated,type,newCount,dup,incoming)" js/app.js
+          grep -F "data.settings.weekStart" js/app.js
+          grep -F "analysisRange:'30',analysisTab:'overview'" js/app.js
+          grep -F "serviceWorker.register" js/app.js
+          grep -F 'dataRecoveryBanner' index.html
+          grep -F 'v2.10.1' index.html
+          grep -F 'trainlog-exercise-library-v1' sw.js
+
+      - name: Commit stability update
+        shell: bash
+        run: |
+          rm -f .github/workflows/apply-v2.10.1-stability.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/motion-gifs.js index.html sw.js .github/workflows/apply-v2.10.1-stability.yml
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat: TrainLog Pro v2.10.1 stability update'
+          git push origin HEAD:main
