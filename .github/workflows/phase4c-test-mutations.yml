@@ -1,0 +1,33 @@
+name: Phase 4c - Training mutation characterization tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/training/mutations-characterization.test.js'
+      - '.github/workflows/phase4c-test-mutations.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run core migration tests
+        run: node tests/core/migration-characterization.test.js
+      - name: Run core storage tests
+        run: node tests/core/storage-characterization.test.js
+      - name: Run core utils tests
+        run: node tests/core/utils-characterization.test.js
+      - name: Run training metrics tests
+        run: node tests/training/metrics-characterization.test.js
+      - name: Run lifecycle tests
+        run: node tests/training/lifecycle-characterization.test.js
+      - name: Run mutation characterization tests
+        run: node tests/training/mutations-characterization.test.js
