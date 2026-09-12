@@ -1,0 +1,173 @@
+name: Refactor Phase 2c - Stimulus profile
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refactor-phase2c-stimulus-profile.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  refactor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Move stimulus profile logic into analysis module
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          app_path=Path('js/app.js')
+          module_path=Path('js/analysis/training-metrics.js')
+          app=app_path.read_text(encoding='utf-8')
+          module=module_path.read_text(encoding='utf-8')
+
+          def balanced_brace_end(source, brace):
+              depth=0; state='normal'; escaped=False; i=brace
+              while i<len(source):
+                  ch=source[i]; nxt=source[i+1] if i+1<len(source) else ''
+                  if state=='line':
+                      if ch=='\n': state='normal'
+                      i+=1; continue
+                  if state=='block':
+                      if ch=='*' and nxt=='/': state='normal'; i+=2
+                      else: i+=1
+                      continue
+                  if state in ('single','double','template'):
+                      if escaped: escaped=False; i+=1; continue
+                      if ch=='\\': escaped=True; i+=1; continue
+                      if (state=='single' and ch=="'") or (state=='double' and ch=='"') or (state=='template' and ch=='`'):
+                          state='normal'
+                      i+=1; continue
+                  if ch=='/' and nxt=='/': state='line'; i+=2; continue
+                  if ch=='/' and nxt=='*': state='block'; i+=2; continue
+                  if ch=="'": state='single'; i+=1; continue
+                  if ch=='"': state='double'; i+=1; continue
+                  if ch=='`': state='template'; i+=1; continue
+                  if ch=='{': depth+=1
+                  elif ch=='}':
+                      depth-=1
+                      if depth==0: return i+1
+                  i+=1
+              raise RuntimeError('Unclosed brace block')
+
+          def function_span(source,name):
+              m=re.search(r'(?m)^\s*function\s+'+re.escape(name)+r'\s*\(',source)
+              if not m: raise RuntimeError(f'Cannot find function {name}')
+              brace=source.find('{',m.end())
+              end=balanced_brace_end(source,brace)
+              while end<len(source) and source[end] in ' \t\r': end+=1
+              if end<len(source) and source[end]=='\n': end+=1
+              return m.start(),end
+
+          marker='const STIMULUS_BY_PATTERN='
+          start=app.find(marker)
+          if start<0: raise RuntimeError('STIMULUS_BY_PATTERN missing from app.js')
+          brace=app.find('{',start)
+          obj_end=balanced_brace_end(app,brace)
+          semi=obj_end
+          while semi<len(app) and app[semi] in ' \t\r': semi+=1
+          if semi>=len(app) or app[semi]!=';': raise RuntimeError('Stimulus map semicolon missing')
+          const_end=semi+1
+          if const_end<len(app) and app[const_end]=='\n': const_end+=1
+          const_text=app[start:semi+1]
+
+          if 'const STIMULUS_BY_PATTERN=' in module:
+              raise RuntimeError('Stimulus constant already moved')
+          insert_after = "  const num = value => {\n"
+          pos=module.find(insert_after)
+          if pos<0: raise RuntimeError('num helper marker missing')
+          # Put the table before helper functions but inside the module IIFE.
+          table='\n  '+const_text.replace('\n','\n  ')+'\n'
+          module=module[:pos]+table+module[pos:]
+
+          profile_fn=r'''
+
+            function exerciseStimulusProfile(exercise, options = {}) {
+              if (!exercise || exercise.type === 'cardio') return [];
+              const analysisBasis = typeof options.analysisBasis === 'function'
+                ? options.analysisBasis
+                : () => ({ lib: {}, pattern: '', primary: exercise?.muscle || '其他' });
+              const { lib = {}, pattern = '', primary = exercise?.muscle || '其他' } = analysisBasis(exercise) || {};
+              if (Array.isArray(lib.stimulus) && lib.stimulus.length) {
+                return lib.stimulus
+                  .map(item => ({ muscle: item?.muscle, weight: num(item?.weight) }))
+                  .filter(item => item.muscle && item.weight > 0);
+              }
+              if (['mobility', 'scapular_control'].includes(pattern)) return [];
+              const base = (STIMULUS_BY_PATTERN[pattern] || []).map(([muscle, weight]) => ({ muscle, weight }));
+              if (!base.length && primary && !['有氧', '其他'].includes(primary)) return [{ muscle: primary, weight: 1 }];
+              if (primary && !['有氧', '其他'].includes(primary) && !base.some(item => item.muscle === primary)) {
+                base.unshift({ muscle: primary, weight: 1 });
+              }
+              return base;
+            }
+          '''
+          export_marker='  window.TrainLogAnalysis = Object.freeze({'
+          epos=module.find(export_marker)
+          if epos<0: raise RuntimeError('Export marker missing')
+          module=module[:epos]+profile_fn+'\n'+module[epos:]
+          module=module.replace('    consistencyStats,\n','    consistencyStats,\n    exerciseStimulusProfile,\n',1)
+          module_path.write_text(module,encoding='utf-8')
+
+          # Remove constant and replace the App-specific profile implementation with an injected wrapper.
+          app=app[:start]+app[const_end:]
+          fstart,fend=function_span(app,'exerciseStimulusProfile')
+          replacement="function exerciseStimulusProfile(exRecord){return window.TrainLogAnalysis.exerciseStimulusProfile(exRecord,{analysisBasis:exerciseAnalysisBasis})}\n"
+          app=app[:fstart]+replacement+app[fend:]
+          if 'const STIMULUS_BY_PATTERN=' in app: raise RuntimeError('Stimulus constant still present in app.js')
+          app_path.write_text(app,encoding='utf-8')
+
+          readme=Path('js/analysis/README.md')
+          text=readme.read_text(encoding='utf-8')
+          if 'exerciseStimulusProfile(exercise' not in text:
+              text += '''\n## Phase 2c\n\n- `STIMULUS_BY_PATTERN` 已移入 analysis module。\n- `exerciseStimulusProfile(exercise, options)` 已移入 analysis module。\n- App 端只注入 `analysisBasis(exercise)`，因此器材/動作庫查找仍留在 App data boundary。\n'''
+          readme.write_text(text,encoding='utf-8')
+
+          refactor=Path('docs/REFACTOR.md')
+          text=refactor.read_text(encoding='utf-8')
+          if '### Phase 2c' not in text:
+              text += '''\n### Phase 2c\n- [x] `STIMULUS_BY_PATTERN` 移到 analysis module。\n- [x] `exerciseStimulusProfile` 改成 pure function + `analysisBasis` dependency injection。\n- [x] App 只保留 resolver wrapper。\n'''
+          refactor.write_text(text,encoding='utf-8')
+
+      - name: Verify syntax
+        run: |
+          node --check js/analysis/training-metrics.js
+          node --check js/app.js
+
+      - name: Test stimulus profile
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm');
+          const ctx=vm.createContext({window:{}});
+          vm.runInContext(fs.readFileSync('js/analysis/training-metrics.js','utf8'),ctx);
+          const A=ctx.window.TrainLogAnalysis;
+          const custom=A.exerciseStimulusProfile({type:'weight_reps'},{analysisBasis:()=>({lib:{stimulus:[{muscle:'胸',weight:1},{muscle:'三頭',weight:.25}]},pattern:'horizontal_push',primary:'胸'})});
+          if(custom.length!==2 || custom[1].weight!==.25) throw new Error('Custom stimulus failed');
+          const push=A.exerciseStimulusProfile({type:'weight_reps'},{analysisBasis:()=>({lib:{},pattern:'horizontal_push',primary:'胸'})});
+          if(!push.some(x=>x.muscle==='胸'&&x.weight===1) || !push.some(x=>x.muscle==='三頭')) throw new Error('Pattern stimulus failed: '+JSON.stringify(push));
+          const fallback=A.exerciseStimulusProfile({type:'weight_reps'},{analysisBasis:()=>({lib:{},pattern:'unknown_pattern',primary:'二頭'})});
+          if(JSON.stringify(fallback)!==JSON.stringify([{muscle:'二頭',weight:1}])) throw new Error('Primary fallback failed');
+          const mobility=A.exerciseStimulusProfile({type:'weight_reps'},{analysisBasis:()=>({lib:{},pattern:'mobility',primary:'腿'})});
+          if(mobility.length!==0) throw new Error('Mobility should not add stimulus');
+          NODE
+
+      - name: Verify and commit
+        run: |
+          git diff --check
+          ! grep -q 'const STIMULUS_BY_PATTERN=' js/app.js
+          grep -q 'TrainLogAnalysis.exerciseStimulusProfile' js/app.js
+          grep -q 'const STIMULUS_BY_PATTERN=' js/analysis/training-metrics.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js js/analysis docs/REFACTOR.md
+          git commit -m 'refactor: extract stimulus profile logic'
+          git push
