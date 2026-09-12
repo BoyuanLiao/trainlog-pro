@@ -8,6 +8,7 @@ on:
       - 'index.html'
       - 'js/app.js'
       - 'tests/ui/records-page-regression.test.js'
+      - 'tests/ui/startup-cache-compat.test.js'
       - '.github/workflows/records-page-regression.yml'
 
 jobs:
@@ -20,3 +21,5 @@ jobs:
           node-version: 22
       - name: Verify records page UI
         run: node tests/ui/records-page-regression.test.js
+      - name: Verify startup cache compatibility
+        run: node tests/ui/startup-cache-compat.test.js
