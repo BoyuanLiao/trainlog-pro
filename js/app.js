@@ -58,27 +58,8 @@ function migrate(raw){return migrationCore.migrate(raw)}
 function guessType(e){return migrationCore.guessType(e)}
 function findOrCreateExercise(name,muscle,type,library){return migrationCore.findOrCreateExercise(name,muscle,type,library)}
 let recoveryIssue=null;
-function loadData(){
- const cur=localStorage.getItem(APP_KEY);
- if(cur){
-  try{return migrate(JSON.parse(cur))}
-  catch(err){
-   try{
-    const recoveryKey=APP_KEY+'_recovery_latest';
-    localStorage.setItem(recoveryKey,cur);
-    recoveryIssue={key:recoveryKey,raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')};
-   }catch{recoveryIssue={key:'',raw:cur,at:new Date().toISOString(),message:String(err?.message||err||'JSON parse error')}}
-   return freshData()
-  }
- }
- try{
-  const legacy=localStorage.getItem('fitnessRecordsV1');
-  if(legacy){const d=migrate({schemaVersion:1,records:JSON.parse(legacy)});localStorage.setItem(APP_KEY,JSON.stringify(d));return d}
- }catch(err){
-  try{localStorage.setItem('fitnessRecordsV1_recovery_latest',localStorage.getItem('fitnessRecordsV1')||'')}catch{}
- }
- return freshData()
-}
+const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid});
+function loadData(){const result=storageCore.loadData();recoveryIssue=result.recoveryIssue;return result.data}
 let data=loadData();
 function registerTrainLogServiceWorker(){
  navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`).catch(()=>{});
@@ -91,14 +72,8 @@ function renderRecoveryBanner(){
  const dismiss=document.getElementById('dismissRecoveryData');if(dismiss)dismiss.onclick=()=>{box.innerHTML=''};
 }
 setTimeout(renderRecoveryBanner,0);
-
-function snapshot(reason){
- const copy=JSON.parse(JSON.stringify(Object.fromEntries(Object.entries(data).filter(([key])=>key!=='snapshots'))));
- const snaps=(data.snapshots||[]).filter(s=>s&&s.payload);
- snaps.unshift({id:uid('snap'),at:new Date().toISOString(),reason,payload:copy});
- data.snapshots=snaps.slice(0,5);
-}
-function save(reason='',takeSnapshot=false){if(takeSnapshot)snapshot(reason||'自動快照');localStorage.setItem(APP_KEY,JSON.stringify(data));renderAll()}
+function snapshot(reason){return storageCore.snapshot(data,reason)}
+function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,takeSnapshot,renderAll)}
 function workoutVolume(w){let sum=0;(w.exercises||[]).forEach(e=>{if(!['weight_reps','bodyweight','unilateral'].includes(e.type))return;(e.sets||[]).forEach(s=>{if(!s.completed)return;if(!data.settings.includeWarmup&&s.kind==='warmup')return;if(e.type==='unilateral')sum+=(n(s.leftWeight)*n(s.leftReps)+n(s.rightWeight)*n(s.rightReps));else sum+=n(s.weight)*n(s.reps)})});return sum}
 function effectiveSets(w,muscle){let c=0;(w.exercises||[]).forEach(e=>{if(muscle&&e.muscle!==muscle)return;(e.sets||[]).forEach(s=>{if(s.completed&&s.kind!=='warmup')c++})});return c}
 function cardioMinutes(w){let m=0;(w.exercises||[]).forEach(e=>{if(e.type==='cardio')m+=n(e.cardio?.minutes)});return m}

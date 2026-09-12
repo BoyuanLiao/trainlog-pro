@@ -15,3 +15,10 @@
 ## 尚未拆出
 - `storage.js`：`loadData / save / snapshot / recovery` 仍在 `app.js`。
 - `utils.js`：日期、數值等共用 helper 仍待後續整理。
+
+### `storage.js`
+- LocalStorage current/legacy load。
+- 壞資料 recovery copy 與 recoveryIssue。
+- 最多 5 份 snapshot。
+- save/persist，render callback 由 App 注入。
+- 對應測試：`tests/core/storage-characterization.test.js`。

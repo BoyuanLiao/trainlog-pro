@@ -73,6 +73,10 @@
 
 ## Phase 3：Core
 
+- [x] `js/core/migration.js`：schema migration 已抽離並有 characterization tests
+- [x] `js/core/storage.js`：load/recovery/snapshot/save 已抽離並有 characterization tests
+
+
 預定：
 - `js/core/utils.js`
 - `js/core/storage.js`
