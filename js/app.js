@@ -1760,7 +1760,7 @@ function renderAnalysisLoadTrend(ws,days){
     if(!byWeek.has(key))byWeek.set(key,{key,workouts:0,sets:0,volume:0,cardio:0,rirs:[]});
     const row=byWeek.get(key);
     row.workouts++;
-    row.sets+=formalSetCount(w);
+    row.sets+=effectiveSets(w);
     row.volume+=workoutVolume(w);
     row.cardio+=cardioMinutes(w);
     (w.exercises||[]).forEach(e=>(e.sets||[]).forEach(s=>{
@@ -1860,18 +1860,20 @@ function analysisPrEvents(ws){
   analysisExerciseIds(ws).forEach(id=>{
     const ex=getExercise(id);if(!ex)return;
     const sessions=exerciseSessionMetrics(id).slice().sort((a,b)=>a.date.localeCompare(b.date));
-    let bestWeight=0,bestE1rm=0,bestVolume=0,started=false;
+    let bestWeight=0,bestE1rm=0,bestVolume=0,bestSeconds=0,bestDistance=0,started=false;
     sessions.forEach(s=>{
-      const oldW=bestWeight,oldE=bestE1rm,oldV=bestVolume;
-      const w=n(s.maxWeight),e=n(s.bestE1rm),v=n(s.volume);
+      const oldW=bestWeight,oldE=bestE1rm,oldV=bestVolume,oldSeconds=bestSeconds,oldDistance=bestDistance;
+      const w=n(s.maxWeight),e=n(s.bestE1rm),v=n(s.volume),seconds=n(s.bestSeconds),distance=n(s.distance);
       let event=null;
       if(started&&periodDates.has(s.date)){
-        if(w>oldW+.0001)event={kind:'重量 PR',value:fmtWeight(w)};
-        else if(e>0&&oldE>0&&e>oldE*1.01)event={kind:'估算力量 PR',value:`e1RM ${fmtWeight(e)}`};
-        else if(v>0&&oldV>0&&v>oldV*1.05)event={kind:'單次完成量 PR',value:fmtKg(v)};
+        if(s.type==='duration'&&seconds>oldSeconds)event={kind:'時間 PR',value:`${Math.round(seconds)} 秒`};
+        else if(s.type==='cardio'&&distance>0&&oldDistance>0&&distance>oldDistance*1.01)event={kind:'距離 PR',value:`${distance.toFixed(2).replace(/\.00$/,'')} km`};
+        else if(!['duration','cardio'].includes(s.type)&&w>oldW+.0001)event={kind:'重量 PR',value:fmtWeight(w)};
+        else if(!['duration','cardio'].includes(s.type)&&e>0&&oldE>0&&e>oldE*1.01)event={kind:'估算力量 PR',value:`e1RM ${fmtWeight(e)}`};
+        else if(!['duration','cardio'].includes(s.type)&&v>0&&oldV>0&&v>oldV*1.05)event={kind:'單次完成量 PR',value:fmtKg(v)};
       }
-      bestWeight=Math.max(bestWeight,w);bestE1rm=Math.max(bestE1rm,e);bestVolume=Math.max(bestVolume,v);
-      if(w>0||e>0||v>0)started=true;
+      bestWeight=Math.max(bestWeight,w);bestE1rm=Math.max(bestE1rm,e);bestVolume=Math.max(bestVolume,v);bestSeconds=Math.max(bestSeconds,seconds);bestDistance=Math.max(bestDistance,distance);
+      if(w>0||e>0||v>0||seconds>0||distance>0)started=true;
       if(event)events.push({date:s.date,name:ex.name,...event})
     })
   });
@@ -1894,7 +1896,7 @@ function renderV210Analysis(ws,days){
 }
 
 function renderAnalysis(){
- const __v210days=data.settings.analysisRange||30;renderV210Analysis(workoutsInRange(__v210days),__v210days);bindAnalysisTabs();
+ const __v210days=analysisRange==='all'?'all':n(analysisRange);renderV210Analysis(selectedAnalysisWorkouts(),__v210days);bindAnalysisTabs();
  const ws=selectedAnalysisWorkouts(),days=analysisRange==='all'?'all':n(analysisRange),prevWs=previousPeriodWorkouts(days);
  const stim=stimulusMap(ws),prevStim=stimulusMap(prevWs),effort=effortStats(ws),moves=movementStats(ws),cons=consistencyStats(ws,days),confidence=analysisConfidence(ws);
  const totalMinutes=ws.reduce((a,w)=>a+n(w.duration),0),volume=ws.reduce((a,w)=>a+workoutVolume(w),0),formal=formalSetCount(ws),cardio=Math.round(ws.reduce((a,w)=>a+cardioMinutes(w),0));
