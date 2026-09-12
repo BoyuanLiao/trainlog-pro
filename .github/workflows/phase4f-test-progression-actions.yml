@@ -5,6 +5,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'js/training/progression-actions.js'
       - 'tests/training/progression-actions.test.js'
       - '.github/workflows/phase4f-test-progression-actions.yml'
 
@@ -32,5 +33,5 @@ jobs:
         run: node tests/training/progression-engine.test.js
       - name: Verify progression UI
         run: node tests/training/progression-ui.test.js
-      - name: Verify progression actions (expected red until implementation)
+      - name: Verify progression actions
         run: node tests/training/progression-actions.test.js
