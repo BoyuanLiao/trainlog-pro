@@ -21,7 +21,7 @@ function functionSource(name){
   throw new Error('Unclosed '+name);
 }
 
-const ctx=vm.createContext({console,Math,Date,JSON});
+const ctx=vm.createContext({console,Math,Date,JSON,window:{}});
 vm.runInContext(`
 let uidSeq=0;
 const uid=p=>p+'_test_'+(++uidSeq);
@@ -50,8 +50,23 @@ function renderTrainingDrawerVisibility(){}
 function maybeStartWorkoutTutorial(){}
 function finishWorkout(){}
 let timerHidden=false,timerEnd=0;
+let trainingMutations={
+  addSet(exercise,{id}){const prev=exercise.sets[exercise.sets.length-1]||{};const set={id,kind:'working',weight:n(prev.weight),reps:n(prev.reps),rir:'',rpe:'',seconds:n(prev.seconds),leftWeight:n(prev.leftWeight),rightWeight:n(prev.rightWeight),leftReps:n(prev.leftReps),rightReps:n(prev.rightReps),completed:false};exercise.sets.push(set);return set},
+  removeSet(exercise,index){return exercise.sets.splice(index,1)[0]||null},
+  applyDelta(set,key,delta){set[key]=Math.max(0,n(set[key])+n(delta));return set[key]},
+  applyWeightDelta(set,deltaKg){set.weight=Math.max(0,n(set.weight)+n(deltaKg));return set.weight},
+  copyPreviousSet(exercise,index){if(index<1)return false;const prev=exercise.sets[index-1],cur=exercise.sets[index];if(!prev||!cur)return false;['weight','reps','seconds','leftWeight','rightWeight','leftReps','rightReps'].forEach(k=>cur[k]=prev[k]);return true},
+  toggleCompleted(exercise,index){const set=exercise.sets[index];if(!set)return false;set.completed=!set.completed;return set.completed},
+  setKind(exercise,index,kind){const set=exercise.sets[index];if(!set)return false;set.kind=kind;return true},
+  applySimpleEffort(exercise,index,feel){const set=exercise.sets[index];if(!set)return false;set.rir=feel==='easy'?4:feel==='ok'?2:0;set.rpe='';return true},
+  removeExercise(exercises,index){return exercises.splice(index,1)[0]||null}
+};
 let data={settings:{trainingIntervalTimer:true,defaultRest:90},activeWorkout:{exercises:[]}};
 `,ctx);
+if(fs.existsSync('js/training/mutations.js')){
+  vm.runInContext(fs.readFileSync('js/training/mutations.js','utf8'),ctx);
+  vm.runInContext('trainingMutations=window.TrainLogTrainingMutations',ctx);
+}
 vm.runInContext(functionSource('bindSessionEvents'),ctx);
 const run=code=>vm.runInContext(code,ctx);
 function bindOne(selector,dataset){
