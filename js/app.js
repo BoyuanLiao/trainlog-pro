@@ -373,7 +373,6 @@ const PAGE_COACH_STEPS={
   {selector:'#recordsPage .section',title:'訓練紀錄',copy:'這一頁集中保存每一次已完成或手動補登的訓練。'},
   {selector:'#recordsPage .calendar',title:'日期與月份',copy:'有訓練的日期會特別標示，可以用日期快速找到過去紀錄。'},
   {selector:'#recordsPage .record',title:'紀錄清單',copy:'點開一筆紀錄，可以查看當天所有動作、重量、次數與組數。'},
-  {selector:'#manualFromRecords',title:'手動補登',copy:'忘記當場記錄時，可以用「補登」把一整場訓練補回來。'}
  ],
  analysis:[
   {selector:'#analysisPage select',title:'分析期間',copy:'先選 7 天、30 天、90 天或全部，再看你想比較的時間範圍。'},
@@ -2218,7 +2217,7 @@ function csvToData(text){
 function goPage(id){$$('.page').forEach(p=>p.classList.toggle('active',p.id===id));$$('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));if(id==='settingsPage')showSettingsView('hub');window.scrollTo({top:0,behavior:'smooth'});renderAll();setTimeout(()=>maybeStartPageTutorial(id),80)}
 $$('.nav button').forEach(b=>b.onclick=()=>goPage(b.dataset.page));
 initRestTimerUI();initTrainingDrawer();
-$('#quickStart').onclick=()=>data.activeWorkout?goPage('trainPage'):openStartModal();$('#quickManual').onclick=manualEntry;$('#manualFromRecords').onclick=manualEntry;
+$('#quickStart').onclick=()=>data.activeWorkout?goPage('trainPage'):openStartModal();$('#quickManual').onclick=manualEntry;
 $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecords;
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
