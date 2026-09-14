@@ -29,8 +29,12 @@
     const muscle=options.muscle||'';
     const recentLimit=Math.max(1,Number(options.recentLimit)||6);
     const attentionLimit=Math.max(1,Number(options.attentionLimit)||4);
+    const listLimit=Math.max(1,Number(options.listLimit)||6);
     const recent=sortedByRecent(items);
     const filtered=recent.filter(item=>matches(item,query,muscle));
+    const hasActiveFilter=Boolean(text(query)||muscle);
+    const showAll=options.showAll===true||hasActiveFilter;
+    const visible=showAll?filtered:filtered.slice(0,listLimit);
     const attention=recent
       .filter(item=>Number(item.attentionPriority)>0)
       .sort((a,b)=>Number(b.attentionPriority)-Number(a.attentionPriority)||String(b.lastDate||'').localeCompare(String(a.lastDate||'')))
@@ -40,6 +44,10 @@
       recent:recent.slice(0,recentLimit),
       attention,
       filtered,
+      visible,
+      hiddenCount:Math.max(0,filtered.length-visible.length),
+      showAll,
+      hasActiveFilter,
       muscles:muscles(items)
     };
   }

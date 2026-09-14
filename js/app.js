@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.10.3';
+const APP_VERSION='2.10.4';
 const CURRENT_SCHEMA=18;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
@@ -1762,6 +1762,7 @@ function renderAnalysis(){
 }
 let analysisExerciseBrowserQuery='';
 let analysisExerciseBrowserMuscle='';
+let analysisExerciseBrowserExpanded=false;
 
 function analysisPerformedExercises(){
  const performedMap=new Map();
@@ -1800,14 +1801,15 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
  sel.innerHTML='<option value=""></option>'+items.map(item=>`<option value="${item.id}">${esc(item.name)}</option>`).join('');
  sel.value=items.some(item=>item.id===previous)?previous:(items[0]?.id||'');
  search.value=analysisExerciseBrowserQuery;
- const view=exerciseProgressBrowser.buildViewModel(items,{query:analysisExerciseBrowserQuery,muscle:analysisExerciseBrowserMuscle,recentLimit:6,attentionLimit:4});
+ const view=exerciseProgressBrowser.buildViewModel(items,{query:analysisExerciseBrowserQuery,muscle:analysisExerciseBrowserMuscle,recentLimit:6,attentionLimit:4,listLimit:6,showAll:analysisExerciseBrowserExpanded});
  recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):'<div class="exercise-browser-empty" style="grid-column:1/-1">還沒有已完成的動作紀錄。</div>';
  muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">全部</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
  attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):'<div class="exercise-browser-empty">目前沒有特別需要處理的進步訊號，照原計畫持續記錄即可。</div>';
- list.innerHTML=view.filtered.length?view.filtered.map(item=>analysisExerciseBrowserCard(item)).join(''):'<div class="exercise-browser-empty">找不到符合搜尋或肌群條件的動作。</div>';
- if(count)count.textContent=`${view.filtered.length} / ${items.length}`;
- search.oninput=()=>{analysisExerciseBrowserQuery=search.value;renderAnalysisExerciseBrowser(items)};
- $$('[data-analysis-muscle]').forEach(button=>button.onclick=()=>{analysisExerciseBrowserMuscle=button.dataset.analysisMuscle||'';renderAnalysisExerciseBrowser(items)});
+ list.innerHTML=view.filtered.length?view.visible.map(item=>analysisExerciseBrowserCard(item)).join('')+(view.hiddenCount?`<div class="actions" style="justify-content:center;margin-top:9px"><button type="button" class="btn small ghost" data-analysis-show-more>顯示更多（還有 ${view.hiddenCount} 個）</button></div>`:''):'<div class="exercise-browser-empty">找不到符合搜尋或肌群條件的動作。</div>';
+ if(count)count.textContent=view.hiddenCount?`顯示 ${view.visible.length} / ${view.filtered.length}`:`${view.filtered.length} / ${items.length}`;
+ search.oninput=()=>{analysisExerciseBrowserQuery=search.value;analysisExerciseBrowserExpanded=false;renderAnalysisExerciseBrowser(items)};
+ $$('[data-analysis-muscle]').forEach(button=>button.onclick=()=>{analysisExerciseBrowserMuscle=button.dataset.analysisMuscle||'';analysisExerciseBrowserExpanded=false;renderAnalysisExerciseBrowser(items)});
+ const showMore=$('[data-analysis-show-more]');if(showMore)showMore.onclick=()=>{analysisExerciseBrowserExpanded=true;renderAnalysisExerciseBrowser(items)};
  $$('[data-analysis-exercise-id]').forEach(button=>button.onclick=()=>{sel.value=button.dataset.analysisExerciseId;renderAnalysisExerciseBrowser(items);requestAnimationFrame(()=>$('#exerciseAnalysis')?.scrollIntoView({behavior:'smooth',block:'start'}))});
  renderExerciseAnalysis(sel.value)
 }
