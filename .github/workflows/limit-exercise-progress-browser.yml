@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'scripts/limit_exercise_progress_browser.py'
+      - 'tests/ui/exercise-progress-browser.test.js'
       - '.github/workflows/limit-exercise-progress-browser.yml'
 
 permissions:
