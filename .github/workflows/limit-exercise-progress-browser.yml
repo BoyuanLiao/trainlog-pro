@@ -1,0 +1,73 @@
+name: Limit exercise progress browser list
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/limit_exercise_progress_browser.py'
+      - '.github/workflows/limit-exercise-progress-browser.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  limit-list:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify existing regressions before UI change
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Apply collapsed exercise list
+        run: python scripts/limit_exercise_progress_browser.py
+      - name: Verify syntax and browser contract
+        run: |
+          node --check js/app.js
+          node --check js/ui/exercise-progress-browser.js
+          node tests/ui/exercise-progress-browser.test.js
+      - name: Verify regressions after UI change
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Verify integration and commit
+        run: |
+          grep -q "const APP_VERSION='2.10.4'" js/app.js
+          grep -q 'data-analysis-show-more' js/app.js
+          grep -q 'listLimit:6' js/app.js
+          grep -q 'visible' js/ui/exercise-progress-browser.js
+          grep -q '?v=2.10.4' index.html
+          git diff --check
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js js/ui/exercise-progress-browser.js
+          git commit -m 'fix: collapse long exercise progress list'
+          git push
