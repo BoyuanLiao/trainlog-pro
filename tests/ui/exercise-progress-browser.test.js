@@ -30,7 +30,7 @@ assert.strictEqual(view.hiddenCount,2,'default list should report remaining hidd
 assert.strictEqual(view.showAll,false,'default unfiltered list should remain collapsed');
 
 view=browser.buildViewModel(items,{query:'press',muscle:'',listLimit:6});
-assert.deepStrictEqual(Array.from(view.visible,x=>x.id),['press','shoulder'],'search must show every matched result, not truncate matches');
+assert.deepStrictEqual(Array.from(view.visible,x=>x.id),['press','leg','shoulder'],'search must show every matched result, including equipment-name matches');
 assert.strictEqual(view.hiddenCount,0,'search results should not be hidden behind show-more');
 assert.strictEqual(view.showAll,true,'active search should expand matching results');
 
