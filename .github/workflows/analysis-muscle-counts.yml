@@ -1,0 +1,21 @@
+name: Analysis muscle counts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'js/analysis/training-metrics.js'
+      - 'tests/analysis/stimulus-map-regression.test.js'
+      - '.github/workflows/analysis-muscle-counts.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify structured muscle stimulus counts
+        run: node tests/analysis/stimulus-map-regression.test.js
