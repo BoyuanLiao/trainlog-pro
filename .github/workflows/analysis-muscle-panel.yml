@@ -1,0 +1,21 @@
+name: Analysis muscle panel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'tests/ui/analysis-muscle-panel-regression.test.js'
+      - '.github/workflows/analysis-muscle-panel.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify muscle analysis visibility contract
+        run: node tests/ui/analysis-muscle-panel-regression.test.js
