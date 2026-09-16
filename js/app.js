@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.10.5';
+const APP_VERSION='2.10.6';
 const CURRENT_SCHEMA=18;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
@@ -166,7 +166,15 @@ function exerciseAnalysisBasis(exRecord){
  return {lib,eq,pattern:lib.pattern||eq?.pattern||'',primary:lib.muscle||exRecord?.muscle||'其他'}
 }
 function exerciseStimulusProfile(exRecord){return window.TrainLogAnalysis.exerciseStimulusProfile(exRecord,{analysisBasis:exerciseAnalysisBasis})}
-function stimulusMap(workouts){return window.TrainLogAnalysis.stimulusMap(workouts,{profileForExercise:exerciseStimulusProfile})}
+function stimulusMap(workouts){
+ return window.TrainLogAnalysis.stimulusMap(workouts,{
+  profileForExercise:exerciseStimulusProfile,
+  sourceForExercise:e=>{
+   const basis=exerciseAnalysisBasis(e);
+   return{key:e.exerciseId||e.nameSnapshot||'unknown',name:e.nameSnapshot||basis.lib.name||'動作',pattern:basis.pattern,equipment:basis.eq?.nameZh||''}
+  }
+ })
+}
 function formalSetCount(workouts){return (workouts||[]).reduce((sum,w)=>sum+effectiveSets(w),0)}
 function effortStats(workouts){return window.TrainLogAnalysis.effortStats(workouts)}
 function movementStats(workouts){return window.TrainLogAnalysis.movementStats(workouts,{patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}

@@ -111,15 +111,39 @@
     const profileForExercise = typeof options.profileForExercise === 'function'
       ? options.profileForExercise
       : () => [];
+    const sourceForExercise = typeof options.sourceForExercise === 'function'
+      ? options.sourceForExercise
+      : () => null;
     const out = {};
     (workouts || []).forEach(workout => (workout.exercises || []).forEach(exercise => {
       const sets = completedWorkingSets(exercise);
       if (!sets) return;
+      const source = sourceForExercise(exercise) || {};
       (profileForExercise(exercise) || []).forEach(item => {
         const muscle = item?.muscle;
         const weight = num(item?.weight);
-        if (!muscle || weight <= 0) return;
-        out[muscle] = (out[muscle] || 0) + sets * weight;
+        if (!muscle || muscle === '有氧' || muscle === '其他' || weight <= 0) return;
+        if (!out[muscle]) out[muscle] = { direct: 0, indirect: 0, total: 0, sources: {} };
+        const direct = weight >= 0.999;
+        const amount = sets * weight;
+        if (direct) out[muscle].direct += amount;
+        else out[muscle].indirect += amount;
+        out[muscle].total += amount;
+
+        const key = source.key || exercise.exerciseId || exercise.nameSnapshot || 'unknown';
+        if (!out[muscle].sources[key]) {
+          out[muscle].sources[key] = {
+            name: source.name || exercise.nameSnapshot || '動作',
+            direct: 0,
+            indirect: 0,
+            total: 0,
+            pattern: source.pattern || '',
+            equipment: source.equipment || '',
+          };
+        }
+        if (direct) out[muscle].sources[key].direct += amount;
+        else out[muscle].sources[key].indirect += amount;
+        out[muscle].sources[key].total += amount;
       });
     }));
     return out;
