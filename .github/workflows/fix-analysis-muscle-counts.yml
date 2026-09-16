@@ -1,0 +1,78 @@
+name: Fix analysis muscle counts
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/fix_analysis_muscle_counts.py'
+      - '.github/workflows/fix-analysis-muscle-counts.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify existing regressions before fix
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/ui/analysis-muscle-panel-regression.test.js
+          node tests/ui/exercise-progress-browser.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+      - name: Apply structured muscle stimulus count fix
+        run: python scripts/fix_analysis_muscle_counts.py
+      - name: Verify syntax and stimulus contract
+        run: |
+          node --check js/analysis/training-metrics.js
+          node --check js/app.js
+          node tests/analysis/stimulus-map-regression.test.js
+      - name: Verify regressions after fix
+        run: |
+          node tests/ui/records-page-regression.test.js
+          node tests/ui/startup-cache-compat.test.js
+          node tests/ui/analysis-muscle-panel-regression.test.js
+          node tests/ui/exercise-progress-browser.test.js
+          node tests/core/migration-characterization.test.js
+          node tests/core/storage-characterization.test.js
+          node tests/core/utils-characterization.test.js
+          node tests/training/metrics-characterization.test.js
+          node tests/training/lifecycle-characterization.test.js
+          node tests/training/mutations-characterization.test.js
+          node tests/training/progression-engine.test.js
+          node tests/training/progression-ui.test.js
+          node tests/training/progression-actions.test.js
+          node tests/analysis/stimulus-map-regression.test.js
+      - name: Verify integration and commit
+        run: |
+          grep -q "const APP_VERSION='2.10.6'" js/app.js
+          grep -q 'sourceForExercise' js/analysis/training-metrics.js
+          grep -q 'direct: 0, indirect: 0, total: 0, sources:' js/analysis/training-metrics.js
+          grep -q 'sourceForExercise:e=>' js/app.js
+          grep -q '?v=2.10.6' index.html
+          git diff --check
+          if git diff --quiet; then
+            echo 'No changes to commit'
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html js/app.js js/analysis/training-metrics.js
+          git commit -m 'fix: restore muscle stimulus set counts'
+          git push
