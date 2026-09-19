@@ -34,3 +34,46 @@ jobs:
       - uses: actions/checkout@v4
       - name: Compile maintenance scripts
         run: python3 -m compileall -q scripts
+
+
+  browser-smoke:
+    name: Headless Chrome startup smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Chrome is available
+        run: google-chrome --version
+      - name: Start static server and render app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 --bind 127.0.0.1 >/tmp/trainlog-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=0
+          for _ in {1..20}; do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 0.5
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/trainlog-http.log
+            exit 1
+          fi
+
+          google-chrome \
+            --headless=new \
+            --no-sandbox \
+            --disable-gpu \
+            --virtual-time-budget=3000 \
+            --dump-dom \
+            http://127.0.0.1:4173/ > /tmp/trainlog-dom.html
+
+          node tests/browser/assert-rendered-dom.js /tmp/trainlog-dom.html
