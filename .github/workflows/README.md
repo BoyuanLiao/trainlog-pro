@@ -26,3 +26,8 @@
 - main 已不依賴它們產生或修補原始碼。
 - 沒有 workflow_dispatch 仍需人工重跑。
 - 對應版本已可由 Git history 完整追溯。
+
+
+## Permanent verification
+
+`verify.yml` is the permanent CI entry point. It runs `node tests/run-all.js` on every push to `main`, every pull request, and manual dispatch. The suite recursively discovers all `*.test.js` files and also compiles Python maintenance scripts.
