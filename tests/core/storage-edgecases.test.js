@@ -65,7 +65,7 @@ assert.throws(()=>Storage.create({storage:memoryStorage(),migrate:null,freshData
   const storage=memoryStorage({legacy:JSON.stringify([{id:1}])});
   const result=Storage.create({...deps,storage}).loadData();
   assert.strictEqual(result.data.schemaVersion,1);
-  assert.deepStrictEqual(result.data.records,[{id:1}]);
+  assert.deepStrictEqual(plain(result.data.records),[{id:1}]);
   assert.strictEqual(result.data.migrated,true);
   assert(storage.getItem('app').includes('"migrated":true'));
 }

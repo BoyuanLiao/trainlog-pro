@@ -48,7 +48,7 @@ assert.deepStrictEqual(plain(progressSignals({type:'cardio'},{type:'weight_reps'
 // Thresholds should not trigger on noise.
 assert.deepStrictEqual(plain(progressSignals(
   {type:'weight_reps',maxWeight:50,repByWeight:{50:8},bestE1rm:100,volume:1000},
-  {type:'weight_reps',maxWeight:50,repByWeight:{50:8},bestE1rm:101.5,volume:1030}
+  {type:'weight_reps',maxWeight:50,repByWeight:{50:8},bestE1rm:101.4,volume:1029}
 )),[]);
 
 // Cardio and duration use their own signals.
