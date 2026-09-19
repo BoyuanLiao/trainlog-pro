@@ -19,7 +19,7 @@ const workout=L.createBlankWorkout({
   startedAt:'2026-09-20T10:00:00.000Z'
 });
 assert.strictEqual(workout.status,'active');
-assert.deepStrictEqual(workout.exercises,[]);
+assert.strictEqual(workout.exercises.length,0);
 
 const exercise={
   exerciseId:'chest',
@@ -49,12 +49,12 @@ const completed=L.finalizeWorkout(workout,{
 });
 assert.strictEqual(completed.status,'completed');
 assert.strictEqual(completed.duration,30);
-assert.deepStrictEqual(completed.bodyStatusSnapshot,{energy:'ok'});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(completed.bodyStatusSnapshot)),{energy:'ok'});
 assert.strictEqual(workout.status,'active','finalization must not mutate active workout');
 
 const history=L.appendCompletedWorkout([
   {id:'older',date:'2026-09-18',status:'completed',exercises:[]}
 ],completed);
-assert.deepStrictEqual(history.map(x=>x.id),['w1','older']);
+assert.deepStrictEqual(Array.from(history,x=>x.id),['w1','older']);
 
 console.log('integration training flow: create -> mutate -> measure -> finalize -> history passed');

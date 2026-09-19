@@ -6,6 +6,7 @@ const {createBrowserContext,loadBrowserScript}=require('../helpers/load-browser-
 const ctx=createBrowserContext();
 loadBrowserScript(ctx,'js/core/storage.js');
 const Storage=ctx.TrainLogStorage;
+const plain=value=>JSON.parse(JSON.stringify(value));
 
 function memoryStorage(initial={}){
   const map=new Map(Object.entries(initial));
@@ -31,7 +32,7 @@ assert.throws(()=>Storage.create({storage:memoryStorage(),migrate:null,freshData
 {
   const storage=memoryStorage({app:JSON.stringify({value:1})});
   const core=Storage.create({...deps,storage});
-  assert.deepStrictEqual(core.loadData(),{data:{value:1,migrated:true},recoveryIssue:null});
+  assert.deepStrictEqual(plain(core.loadData()),{data:{value:1,migrated:true},recoveryIssue:null});
 }
 
 // Corrupt current payload is preserved and fresh data is returned.

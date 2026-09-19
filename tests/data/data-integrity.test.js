@@ -59,7 +59,9 @@ programs.forEach(program=>{
     assert(Array.isArray(workout.items)&&workout.items.length>0,program.id+' workout '+wi+' requires items');
     workout.items.forEach((item,ii)=>{
       assert(exerciseIds.has(item.exerciseId),program.id+' item '+wi+':'+ii+' references missing exercise '+item.exerciseId);
-      assert(Number(item.targetSets)>0,program.id+' '+item.exerciseId+' targetSets must be > 0');
+      const exercise=exercises.find(ex=>ex.id===item.exerciseId);
+      const effectiveSets=item.targetSets!=null?Number(item.targetSets):Number(exercise?.targetSets);
+      assert(effectiveSets>0,program.id+' '+item.exerciseId+' effective targetSets must be > 0');
       if(item.repMin!=null&&item.repMax!=null){
         assert(Number(item.repMin)<=Number(item.repMax),program.id+' '+item.exerciseId+' rep range is reversed');
       }

@@ -6,10 +6,11 @@ const {createBrowserContext,loadBrowserScript}=require('../helpers/load-browser-
 const ctx=createBrowserContext();
 loadBrowserScript(ctx,'js/analysis/progress.js');
 const {comparePct,progressSignals,overloadSummaryFromSessions,plateauFromSessions}=ctx.TrainLogProgress;
+const plain=value=>JSON.parse(JSON.stringify(value));
 
 // comparePct
 assert.strictEqual(comparePct(0,0),null);
-assert.deepStrictEqual(comparePct(10,0),{pct:null,dir:'up',text:'前期 0'});
+assert.deepStrictEqual(plain(comparePct(10,0)),{pct:null,dir:'up',text:'前期 0'});
 assert.strictEqual(comparePct(120,100).dir,'up');
 assert.strictEqual(comparePct(120,100).text,'+20%');
 assert.strictEqual(comparePct(80,100).dir,'down');
@@ -17,8 +18,8 @@ assert.strictEqual(comparePct(99.4,100).dir,'same');
 assert.strictEqual(comparePct('bad',100).pct,-100);
 
 // incompatible/missing sessions must not invent progress.
-assert.deepStrictEqual(progressSignals(null,{type:'weight_reps'}),[]);
-assert.deepStrictEqual(progressSignals({type:'cardio'},{type:'weight_reps'}),[]);
+assert.deepStrictEqual(plain(progressSignals(null,{type:'weight_reps'})),[]);
+assert.deepStrictEqual(plain(progressSignals({type:'cardio'},{type:'weight_reps'})),[]);
 
 // Strength progress signals.
 {
@@ -45,21 +46,21 @@ assert.deepStrictEqual(progressSignals({type:'cardio'},{type:'weight_reps'}),[])
 }
 
 // Thresholds should not trigger on noise.
-assert.deepStrictEqual(progressSignals(
+assert.deepStrictEqual(plain(progressSignals(
   {type:'weight_reps',maxWeight:50,repByWeight:{50:8},bestE1rm:100,volume:1000},
   {type:'weight_reps',maxWeight:50,repByWeight:{50:8},bestE1rm:101.5,volume:1030}
-),[]);
+)),[]);
 
 // Cardio and duration use their own signals.
 assert.deepStrictEqual(
-  progressSignals(
+  Array.from(progressSignals(
     {type:'cardio',minutes:20,distance:3,speed:8},
     {type:'cardio',minutes:23,distance:3.2,speed:8.3}
-  ).map(x=>x.key),
+  ),x=>x.key),
   ['time','distance','speed']
 );
 assert.deepStrictEqual(
-  progressSignals({type:'duration',maxSeconds:60},{type:'duration',maxSeconds:63}).map(x=>x.key),
+  Array.from(progressSignals({type:'duration',maxSeconds:60},{type:'duration',maxSeconds:63}),x=>x.key),
   ['time']
 );
 
@@ -79,7 +80,7 @@ assert.deepStrictEqual(
   assert(result.count>=1);
   assert(result.lastSignals.length>=1);
 }
-assert.deepStrictEqual(overloadSummaryFromSessions([]).lastSignals,[]);
+assert.strictEqual(overloadSummaryFromSessions([]).lastSignals.length,0);
 
 // Plateau states.
 assert.strictEqual(plateauFromSessions([]).state,'insufficient');

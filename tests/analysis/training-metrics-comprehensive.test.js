@@ -6,6 +6,7 @@ const {createBrowserContext,loadBrowserScript}=require('../helpers/load-browser-
 const ctx=createBrowserContext();
 loadBrowserScript(ctx,'js/analysis/training-metrics.js');
 const A=ctx.TrainLogAnalysis;
+const plain=value=>JSON.parse(JSON.stringify(value));
 
 const set=(overrides={})=>({completed:true,kind:'working',rir:'',rpe:'',...overrides});
 
@@ -26,7 +27,7 @@ assert.strictEqual(A.completedWorkingSets(null),0);
     {type:'weight_reps',sets:[set({rpe:9}),set({rpe:8}),set({rpe:6})]},
     {type:'cardio',sets:[set({rpe:10})]}
   ]}];
-  assert.deepStrictEqual(A.effortStats(workouts),{high:2,mid:3,low:2,missing:1,total:8});
+  assert.deepStrictEqual(plain(A.effortStats(workouts)),{high:2,mid:3,low:2,missing:1,total:8});
 }
 
 // analysisConfidence levels and rates.
@@ -113,7 +114,7 @@ assert.strictEqual(A.completedWorkingSets(null),0);
     {pattern:'cardio',sets:[set()]}
   ]}];
   assert.deepStrictEqual(
-    A.movementStats(workouts,{patternForExercise:e=>e.pattern}),
+    plain(A.movementStats(workouts,{patternForExercise:e=>e.pattern})),
     {horizontal_push:2}
   );
 }
@@ -139,29 +140,29 @@ assert.strictEqual(A.completedWorkingSets(null),0);
   assert.strictEqual(all.totalWeeks,2);
   assert.strictEqual(all.avgPerWeek,1.5);
 
-  assert.deepStrictEqual(A.consistencyStats([],14,opts),{
+  assert.deepStrictEqual(plain(A.consistencyStats([],14,opts)),{
     days:0,avgPerWeek:0,weeks:0,totalWeeks:2,longestGap:null
   });
 }
 
 // exerciseStimulusProfile: custom definitions, pattern defaults and safe exclusions.
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'cardio',muscle:'有氧'}),[]);
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'cardio',muscle:'有氧'})),[]);
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
   analysisBasis:()=>({lib:{stimulus:[{muscle:'胸',weight:1},{muscle:'三頭',weight:.5},{muscle:'背',weight:0}]},pattern:'',primary:'胸'})
-}),[{muscle:'胸',weight:1},{muscle:'三頭',weight:.5}]);
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
+})),[{muscle:'胸',weight:1},{muscle:'三頭',weight:.5}]);
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
   analysisBasis:()=>({lib:{},pattern:'mobility',primary:'胸'})
-}),[]);
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
+})),[]);
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'weight_reps',muscle:'胸'},{
   analysisBasis:()=>({lib:{},pattern:'horizontal_push',primary:'胸'})
-}),[
+})),[
   {muscle:'胸',weight:1},{muscle:'三頭',weight:.5},{muscle:'肩膀',weight:.5}
 ]);
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'weight_reps',muscle:'其他'},{
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'weight_reps',muscle:'其他'},{
   analysisBasis:()=>({lib:{},pattern:'unknown',primary:'二頭'})
-}),[{muscle:'二頭',weight:1}]);
-assert.deepStrictEqual(A.exerciseStimulusProfile({type:'weight_reps',muscle:'腿'},{
+})),[{muscle:'二頭',weight:1}]);
+assert.deepStrictEqual(plain(A.exerciseStimulusProfile({type:'weight_reps',muscle:'腿'},{
   analysisBasis:()=>({lib:{},pattern:'horizontal_push',primary:'腿'})
-})[0],{muscle:'腿',weight:1});
+}))[0],{muscle:'腿',weight:1});
 
 console.log('analysis training metrics: comprehensive cases passed');
