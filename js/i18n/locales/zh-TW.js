@@ -90,6 +90,30 @@
       newMyEquipment:'新增我的器材',newStrengthGoal:'新增力量目標'
     },
     prompts:{gymName:'健身房名稱'},
+    dynamic:{
+      recoveryTitle:'⚠ 偵測到本機資料異常',
+      recoveryCopy:'原始 LocalStorage 內容已先保留為救援副本，App 暫時以空白資料啟動。建議先下載原始資料，再進行匯入或其他操作。',
+      recoveryDownload:'下載原始救援資料',recoveryHide:'先隱藏',
+      resumeTitle:'你有尚未完成的訓練：',resume:'繼續',discard:'放棄',
+      weeklyTraining:'本週訓練',cardioMinutes:'有氧分鐘',recent30Volume:'近 30 天訓練量',
+      completedSets:'正式組',noCompletedWorkout:'還沒有完成的訓練紀錄。',
+      open:'開啟',allMuscles:'全部肌群',deletedAt:'刪除於',restore:'復原',purge:'永久刪除',
+      manualName:'手動補登',actualMinutes:'實際訓練分鐘',createManual:'建立補登紀錄',
+      pickerSearchLabel:'搜尋動作／英文名稱／器械',pickerAll:'全部',pickerRecent:'最近做過',
+      pickerMine:'我的動作',pickerEquipment:'我的器材',pickerMuscle:'肌群（可多選）',
+      pickerResistance:'器材類型',pickerClear:'清除篩選',pickerCount:'找到 {count} 個動作',
+      pickerEmpty:'找不到符合目前篩選條件的動作。',pickerEmptyHint:'可以清除篩選或改用其他搜尋字。',
+      periodTrainingEmpty:'這個期間還沒有訓練紀錄。',
+      muscleTargetEmpty:'這個期間還沒有足夠紀錄可比較肌群目標。',
+      movementEmpty:'這個期間還沒有可辨識的主要動作模式紀錄。',
+      nextStepEmpty:'再累積幾次可比較的訓練後，這裡會整理下一步建議。',
+      noRirRpe:'這個期間還沒有 RIR / RPE 紀錄。',noMovement:'這個期間還沒有可辨識的動作模式。',
+      trainingDays:'有訓練的日期',avgPerWeek:'平均次數／週',trainingWeeks:'有訓練的週',longestGap:'最長未訓練間隔',
+      noExerciseHistory:'還沒有已完成的動作紀錄。',noAttention:'目前沒有特別需要處理的進步訊號，照原計畫持續記錄即可。',
+      selectExercise:'選擇一個動作查看歷史、進步訊號與 PR。',noAnalyzable:'目前沒有可分析的紀錄。',
+      recentRecords:'最近紀錄',recentVsPrevious:'最近一次 vs 上一次',noProgressSignal:'目前沒有明顯進步訊號',
+      onlyOneRecord:'只有一次紀錄，暫時無法比較。'
+    },
     messages:{priorityMax:'優先加強部位最多選 2 個',setupRequired:'請先完成所有必填項目',recordsEmpty:'這個月份沒有符合條件的紀錄。',insufficient:'資料不足'}
   });
 })();
