@@ -20,6 +20,17 @@
       effort:'訓練強度分布',consistency:'訓練一致性'
     },
     settings:{title:'設定',tutorial:'使用教學'},
+    drawer:{
+      displayLevel:'顯示層次',editList:'編輯運動清單',editListDesc:'調整動作順序',addExercise:'新增動作',addExerciseDesc:'加入器械或其他訓練動作',
+      bodyStatus:'今日身體狀況',addPlan:'新增訓練計畫',addPlanDesc:'將目前動作清單存成我的課表',loadHistory:'載入紀錄',loadHistoryDesc:'從過去訓練加入或取代目前清單',
+      expandAll:'展開所有運動卡',collapseAll:'收起所有運動卡',collapseDesc:'快速縮短訓練畫面',cancelEdit:'取消編輯紀錄',discardWorkout:'刪除／放棄本次訓練',
+      trainingSettings:'訓練設定',tabPosition:'側邊工具位置',tabPositionDesc:'可直接拖曳右側「訓練工具」標籤上下移動；預設在畫面最上方。',resetTop:'回到最上方',
+      inputUnit:'本次重量輸入單位',inputUnitDesc:'每個動作仍可個別切換。這裡可一次把所有重量型動作改成同一種器械標示單位。',allKg:'全部用 kg 輸入',allLb:'全部用 lb 輸入',
+      timerPosition:'計時器位置',timerPositionDesc:'開始休息時預設顯示方式',top:'頂部',floating:'浮動',notes:'備註',notesDesc:'顯示動作提示與本次動作備註',
+      autoLoad:'自動載入',autoLoadDesc:'新增動作時載入上次組數／重量／次數',intervalTimer:'間歇計時器',intervalTimerDesc:'完成一組後自動開始休息計時',
+      sound:'時間到提示音',soundDesc:'提示音與支援裝置的短震動',historyExerciseCount:'{count} 個動作',historyAdd:'加入目前清單',historyReplace:'取代目前清單',
+      historyEmpty:'目前沒有歷史訓練紀錄。',templateName:'課表名稱',defaultTemplateName:'我的訓練計畫',templateHint:'會把目前 {count} 個動作與組數存成「我的模板」，不會把已完成狀態存進去。',saveTemplate:'儲存為我的課表'
+    },
     bodyStatus:{
       noneToday:'今天還沒有標記任何部位。',intro:'記錄今天哪裡有肌肉痠痛、緊繃或不舒服。這是訓練調整提示，不是受傷診斷。',
       areaStep:'1. 哪個部位？',feelingStep:'2. 感覺是？',levelStep:'3. 程度',
