@@ -828,7 +828,7 @@ function saveBodyStatus(status){
 function bodyStatusSummary(status){
  const es=status?.entries||[];if(!es.length)return'今天沒有標記痠痛或不舒服';
  const important=es.filter(x=>x.type==='pain'||n(x.level)>=3).length;
- return `${es.length} 個部位已標記${important?` · ${important} 個需要多注意`:''}`
+ return `${tr('bodyStatus.summaryMarked',{count:es.length})}${important?tr('bodyStatus.summaryImportant',{count:important}):''}`
 }
 function bodyStatusTagsHtml(status){
  return (status?.entries||[]).map(e=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<span class="body-status-tag ${t.cls}">${esc(bodyAreaName(e.area))} · ${esc(t.short)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</span>`}).join('')
@@ -838,23 +838,23 @@ function openBodyStatusModal(date=isoToday()){
  let area=BODY_AREAS[0][0],type='soreness',level=1;
  const renderEntries=()=>{
    const box=$('#bodyStatusEntries');if(!box)return;
-   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(t.label)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):'<div class="empty">今天還沒有標記任何部位。</div>';
+   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(t.label)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):`<div class="empty">${esc(tr('bodyStatus.noneToday'))}</div>`;
    $$('[data-body-remove]').forEach(b=>b.onclick=()=>{draft.entries.splice(n(b.dataset.bodyRemove),1);renderEntries()})
  };
  openModal(tr('modal.bodyStatus'),`<div class="card">
-   <div class="small">記錄今天哪裡有肌肉痠痛、緊繃或不舒服。這是訓練調整提示，不是受傷診斷。</div>
-   <div class="section" style="margin-top:13px">1. 哪個部位？</div>
+   <div class="small">${esc(tr('bodyStatus.intro'))}</div>
+   <div class="section" style="margin-top:13px">${esc(tr('bodyStatus.areaStep'))}</div>
    <div class="body-area-grid">${BODY_AREAS.map((a,i)=>`<button type="button" class="body-area-btn ${i===0?'on':''}" data-body-area="${a[0]}">${a[1]}</button>`).join('')}</div>
-   <div class="section">2. 感覺是？</div>
-   <div class="body-status-seg"><button type="button" class="on" data-body-type="soreness">肌肉痠痛</button><button type="button" data-body-type="tight">緊繃／卡卡</button><button type="button" data-body-type="pain">疼痛／不舒服</button></div>
-   <div class="section">3. 程度</div>
-   <div class="body-status-seg"><button type="button" class="on" data-body-level="1">輕微</button><button type="button" data-body-level="2">中等</button><button type="button" data-body-level="3">明顯</button></div>
-   <button class="btn primary" type="button" id="bodyStatusAdd" style="margin-top:10px;width:100%">＋ 加入這個部位</button>
+   <div class="section">${esc(tr('bodyStatus.feelingStep'))}</div>
+   <div class="body-status-seg"><button type="button" class="on" data-body-type="soreness">${esc(tr('bodyStatus.soreness'))}</button><button type="button" data-body-type="tight">${esc(tr('bodyStatus.tight'))}</button><button type="button" data-body-type="pain">${esc(tr('bodyStatus.pain'))}</button></div>
+   <div class="section">${esc(tr('bodyStatus.levelStep'))}</div>
+   <div class="body-status-seg"><button type="button" class="on" data-body-level="1">${esc(tr('bodyStatus.mild'))}</button><button type="button" data-body-level="2">${esc(tr('bodyStatus.medium'))}</button><button type="button" data-body-level="3">${esc(tr('bodyStatus.strong'))}</button></div>
+   <button class="btn primary" type="button" id="bodyStatusAdd" style="margin-top:10px;width:100%">${esc(tr('bodyStatus.addArea'))}</button>
  </div>
- <div class="section">今天已標記</div><div class="card" id="bodyStatusEntries"></div>
- <div class="field"><label>備註（選填）</label><textarea id="bodyStatusNote" placeholder="例如：昨天練腿後大腿痠；右肩抬高手時不舒服">${esc(draft.note||'')}</textarea></div>
- <div class="warnbox"><b>什麼情況不要硬練？</b><div class="small" style="margin-top:4px">若是明顯疼痛、麻木、腫脹、突發無力，或活動明顯受限，不要只靠 App 的補強建議處理；可先停止相關動作並考慮專業評估。</div></div>
- <div class="actions" style="margin-top:10px"><button class="btn primary" id="bodyStatusSave">儲存今天狀況</button><button class="btn ghost" id="bodyStatusClear">今天沒有不適</button></div>`,()=>{
+ <div class="section">${esc(tr('bodyStatus.markedToday'))}</div><div class="card" id="bodyStatusEntries"></div>
+ <div class="field"><label>${esc(tr('bodyStatus.note'))}</label><textarea id="bodyStatusNote" placeholder="${esc(tr('bodyStatus.notePlaceholder'))}">${esc(draft.note||'')}</textarea></div>
+ <div class="warnbox"><b>${esc(tr('bodyStatus.warningTitle'))}</b><div class="small" style="margin-top:4px">${esc(tr('bodyStatus.warning'))}</div></div>
+ <div class="actions" style="margin-top:10px"><button class="btn primary" id="bodyStatusSave">${esc(tr('bodyStatus.save'))}</button><button class="btn ghost" id="bodyStatusClear">${esc(tr('bodyStatus.clear'))}</button></div>`,()=>{
    renderEntries();
    $$('[data-body-area]').forEach(b=>b.onclick=()=>{area=b.dataset.bodyArea;$$('[data-body-area]').forEach(x=>x.classList.toggle('on',x===b))});
    $$('[data-body-type]').forEach(b=>b.onclick=()=>{type=b.dataset.bodyType;$$('[data-body-type]').forEach(x=>x.classList.toggle('on',x===b))});
@@ -888,7 +888,7 @@ function bodyStatusExerciseMatch(ex,date=isoToday()){
 }
 function bodyStatusCardHtml(date=isoToday()){
  const s=todayBodyStatus(date);
- return `<div class="card body-status-card"><div class="body-status-head"><div><div class="body-status-title">今日身體狀況</div><div class="body-status-summary">${esc(bodyStatusSummary(s))}</div></div><button class="btn small ghost" type="button" data-open-body-status="${esc(date)}">${(s.entries||[]).length?'修改':'設定'}</button></div>${(s.entries||[]).length?`<div class="body-status-tags">${bodyStatusTagsHtml(s)}</div>`:''}${s.note?`<div class="small" style="margin-top:8px">備註：${esc(s.note)}</div>`:''}</div>`
+ return `<div class="card body-status-card"><div class="body-status-head"><div><div class="body-status-title">${esc(tr('bodyStatus.today'))}</div><div class="body-status-summary">${esc(bodyStatusSummary(s))}</div></div><button class="btn small ghost" type="button" data-open-body-status="${esc(date)}">${(s.entries||[]).length?tr('bodyStatus.edit'):tr('bodyStatus.setup')}</button></div>${(s.entries||[]).length?`<div class="body-status-tags">${bodyStatusTagsHtml(s)}</div>`:''}${s.note?`<div class="small" style="margin-top:8px">${esc(tr('bodyStatus.notePrefix'))}${esc(s.note)}</div>`:''}</div>`
 }
 function bindBodyStatusButtons(scope=document){
  scope.querySelectorAll?.('[data-open-body-status]').forEach(b=>b.onclick=()=>openBodyStatusModal(b.dataset.openBodyStatus||isoToday()))
