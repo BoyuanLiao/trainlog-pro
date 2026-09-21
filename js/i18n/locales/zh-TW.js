@@ -20,6 +20,15 @@
       effort:'訓練強度分布',consistency:'訓練一致性'
     },
     settings:{title:'設定',tutorial:'使用教學'},
+    bodyStatus:{
+      noneToday:'今天還沒有標記任何部位。',intro:'記錄今天哪裡有肌肉痠痛、緊繃或不舒服。這是訓練調整提示，不是受傷診斷。',
+      areaStep:'1. 哪個部位？',feelingStep:'2. 感覺是？',levelStep:'3. 程度',
+      soreness:'肌肉痠痛',tight:'緊繃／卡卡',pain:'疼痛／不舒服',mild:'輕微',medium:'中等',strong:'明顯',
+      addArea:'＋ 加入這個部位',markedToday:'今天已標記',note:'備註（選填）',notePlaceholder:'例如：昨天練腿後大腿痠；右肩抬高手時不舒服',
+      warningTitle:'什麼情況不要硬練？',warning:'若是明顯疼痛、麻木、腫脹、突發無力，或活動明顯受限，不要只靠 App 的補強建議處理；可先停止相關動作並考慮專業評估。',
+      save:'儲存今天狀況',clear:'今天沒有不適',today:'今日身體狀況',edit:'修改',setup:'設定',notePrefix:'備註：',
+      summaryMarked:'{count} 個部位已標記',summaryImportant:' · {count} 個需要多注意'
+    },
     gym:{
       workoutRecords:'訓練紀錄',recognizedEquipment:'辨識器械',lastUsed:'最近使用',
       recognizedSection:'從紀錄辨識到的器械',noRecognized:'目前沒有可辨識的器械紀錄。',
