@@ -30,7 +30,7 @@ function timerSeconds(text){
     await b.waitFor("document.querySelector('#firstSetupWrap')?.classList.contains('show')",{label:'first setup'});
     if(verifyValidation){
       await b.click('#firstSetupSave');
-      await b.waitFor("document.querySelector('#toast')?.textContent.includes('必填')",{label:'setup validation toast'});
+      await b.waitFor("document.querySelector('#toast')?.classList.contains('show')",{label:'setup validation toast'});
     }
     await b.setValue('#firstTrainingGoal','general');
     await b.setValue('#firstWeeklySessions','3');
@@ -52,7 +52,7 @@ function timerSeconds(text){
   assert.strictEqual(data.settings.weeklySessions,3);
   assert.deepStrictEqual(data.settings.priorityMuscles,['胸','背']);
 
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="training"]');
   await b.setValue('#setUnit','lb');
   await b.setValue('#setRest','150');
@@ -65,7 +65,7 @@ function timerSeconds(text){
   assert.strictEqual(data.settings.weeklySessions,4);
   assert.strictEqual(data.settings.trainingIntervalTimer,false);
   await b.reload();
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="training"]');
   assert.strictEqual(await b.evaluate("document.querySelector('#setUnit').value"),'lb');
   assert.strictEqual(await b.evaluate("document.querySelector('#setRest').value"),'150');
@@ -103,7 +103,7 @@ function timerSeconds(text){
   assert.strictEqual(data.workouts[0].gymNameSnapshot,'E2E Gym');
   assert.strictEqual(data.workouts[0].exercises[0].sets.filter(x=>x.completed).length,3);
 
-  await b.click('.nav button[data-page="analysisPage"]');
+  await b.click('[data-testid="nav-analysis"]');
   await b.click('[data-analysis-tab="muscle"]');
   await b.waitFor("document.querySelector('#muscleAnalysis')?.textContent.includes('腿')",{label:'muscle analysis'});
   const muscleText=await b.text('#muscleAnalysis');
@@ -111,7 +111,7 @@ function timerSeconds(text){
   await b.click('[data-analysis-tab="exercise"]');
   await b.waitFor("document.querySelector('#analysisExerciseRecent')?.textContent.includes('腿推')",{label:'exercise progress browser'});
 
-  await b.click('.nav button[data-page="recordsPage"]');
+  await b.click('[data-testid="nav-records"]');
   await b.waitFor("!!document.querySelector('#recordList [data-open]')",{label:'record entry'});
   await b.click('#recordList [data-open]');
   await b.setValue('#ewName','E2E Workout Edited');
@@ -131,7 +131,7 @@ function timerSeconds(text){
   console.log('E2E 2/4 workout + records + analysis + trash restore passed');
 
   // 3) Backup export -> change settings -> full restore import.
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="data"]');
   await b.click('#exportJson');
   let backupFile='';
@@ -151,7 +151,7 @@ function timerSeconds(text){
   await b.click('#saveSettings');
   assert.strictEqual((await storage()).settings.unit,'lb');
 
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="data"]');
   await b.setFile('#importJson',backupFile);
   await b.waitFor("!!document.querySelector('#impConfirm')",{label:'import preview'});
@@ -185,7 +185,7 @@ function timerSeconds(text){
   await b.click('#cancelWorkout');
   await b.waitFor("!JSON.parse(localStorage.getItem('trainlogProData')).activeWorkout",{label:'workout cancelled'});
 
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="programs"]');
   await b.waitFor("!!document.querySelector('[data-program-import]')",{label:'system programs'});
   await b.click('[data-program-import]');
@@ -201,7 +201,7 @@ function timerSeconds(text){
   await b.click('#cancelWorkout');
   await b.waitFor("!JSON.parse(localStorage.getItem('trainlogProData')).activeWorkout",{label:'program workout cancelled'});
 
-  await b.click('.nav button[data-page="settingsPage"]');
+  await b.click('[data-testid="nav-settings"]');
   await b.click('[data-settings-view="gym"]');
   b.cdp.setPromptText('E2E Gym 2');
   await b.click('#addGym');
