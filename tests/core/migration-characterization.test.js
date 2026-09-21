@@ -13,7 +13,7 @@ const normalizeWeightUnit=u=>u==='lb'?'lb':'kg';
 const LB_PER_KG=2.2046226218;
 const toKg=(v,unit='kg')=>normalizeWeightUnit(unit)==='lb'?n(v)/LB_PER_KG:n(v);
 let uidSeq=0; const uid=(p='id')=>p+'_test_'+(++uidSeq);
-const migrationCore=window.TrainLogMigration.create({currentSchema:18,systemExercises:SYSTEM_EXERCISES,uid,today:()=> '2026-09-13',toKg,normalizeWeightUnit,num:n});
+const migrationCore=window.TrainLogMigration.create({currentSchema:19,systemExercises:SYSTEM_EXERCISES,uid,today:()=> '2026-09-13',toKg,normalizeWeightUnit,num:n});
 `,ctx);
 const migrate=vm.runInContext('migrationCore.migrate',ctx);
 const freshData=vm.runInContext('migrationCore.freshData',ctx);
@@ -26,7 +26,8 @@ function approx(actual, expected, eps=1e-6) {
 
 {
   const d = freshData();
-  assert.equal(d.schemaVersion, 18);
+  assert.equal(d.schemaVersion, 19);
+  assert.equal(d.settings.locale, 'zh-TW');
   assert.equal(d.settings.unit, 'kg');
   assert.equal(d.settings.analysisRange, '30');
   assert.equal(d.settings.analysisTab, 'overview');
@@ -37,7 +38,7 @@ function approx(actual, expected, eps=1e-6) {
 
 {
   const out = migrate([{ date:'2025-01-02', name:'Legacy', exercises:[] }]);
-  assert.equal(out.schemaVersion, 18);
+  assert.equal(out.schemaVersion, 19);
   assert.equal(out.workouts.length, 1);
   assert.equal(out.workouts[0].name, 'Legacy');
 }
@@ -80,6 +81,7 @@ function approx(actual, expected, eps=1e-6) {
 
 {
   const out = migrate({schemaVersion:18,settings:{pageTutorials:{home:true}},workouts:[]});
+  assert.equal(out.settings.locale,'zh-TW');
   assert.equal(out.settings.pageTutorials.home, true);
   assert.equal(out.settings.pageTutorials.analysis, false);
   assert.equal(out.settings.pageTutorials.settings, false);
