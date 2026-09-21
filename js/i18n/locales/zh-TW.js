@@ -20,6 +20,16 @@
       effort:'訓練強度分布',consistency:'訓練一致性'
     },
     settings:{title:'設定',tutorial:'使用教學'},
+    gym:{
+      workoutRecords:'訓練紀錄',recognizedEquipment:'辨識器械',lastUsed:'最近使用',
+      recognizedSection:'從紀錄辨識到的器械',noRecognized:'目前沒有可辨識的器械紀錄。',
+      autoNote:'器械清單是由這間健身房的訓練紀錄自動整理，不會把跑步、平板撐等沒有器械的動作硬加入。',
+      sessions:'{count} 次訓練',recent:'最近 {date}',noHistory:'尚無訓練紀錄',
+      usedEquipment:'{count} 種已使用器械',emptyHint:'完成指定這間健身房的訓練後，器械會自動出現在這裡。',
+      viewUsage:'查看紀錄整理',delete:'刪除',
+      none:'尚未建立健身房。可以直接在訓練時輸入名稱，或從既有訓練紀錄帶入。',
+      deleteWithHistory:'刪除「{name}」？歷史訓練仍會保留健身房名稱。',deleteSimple:'刪除「{name}」？'
+    },
     training:{start:'開始訓練',finish:'完成本次訓練',addExercise:'加入動作'},
     timer:{title:'組間休息',defaultLabel:'準備下一組',minus:'−10 秒',plus:'＋10 秒',skip:'跳過'},
     firstSetup:{kicker:'第一次使用設定',title:'先設定你的訓練偏好與目標',save:'完成設定並開始使用'},
