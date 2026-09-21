@@ -84,9 +84,9 @@ function timerSeconds(text){
 
   await b.click('#sessionAddEx');
   await b.setValue('#pickSearch','腿推','input');
-  await b.waitFor("!!document.querySelector('[data-pick="ex_legpress"]')",{label:'leg press picker result'});
+  await b.waitFor(`!!document.querySelector('[data-pick="ex_legpress"]')`,{label:'leg press picker result'});
   await b.click('[data-pick="ex_legpress"]');
-  await b.waitFor("document.querySelectorAll('#sessionExercises [data-set="weight"]').length>=3",{label:'leg press sets'});
+  await b.waitFor(`document.querySelectorAll('#sessionExercises [data-set="weight"]').length>=3`,{label:'leg press sets'});
   for(let i=0;i<3;i++){
     await b.setValue(`[data-set="weight"][data-e="0"][data-s="${i}"]`,'100');
     await b.setValue(`[data-set="reps"][data-e="0"][data-s="${i}"]`,'10');
