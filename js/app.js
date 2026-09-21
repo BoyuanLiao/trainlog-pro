@@ -10,7 +10,7 @@ const KINDS=[['warmup','暖身'],['working','正式'],['drop','Drop'],['failure'
 const PPL={胸:'Push',肩膀:'Push',三頭:'Push',背:'Pull',二頭:'Pull',腿:'Legs',腹部:'Core',有氧:'Cardio',其他:'Other'};
 const PATTERN_INFO={horizontal_push:'horizontal_push',horizontal_pull:'horizontal_pull',vertical_push:'vertical_push',vertical_pull:'vertical_pull',knee_dominant:'knee_dominant',hip_extension:'hip_extension',knee_flexion:'knee_flexion',knee_extension:'knee_extension',shoulder_abduction:'shoulder_abduction',elbow_flexion:'elbow_flexion',elbow_extension:'elbow_extension',core_flexion:'core_flexion',rotation:'rotation'};
 
-const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const i18n=window.TrainLogI18n;
 const t=(key,vars)=>i18n.t(key,vars);
 const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
