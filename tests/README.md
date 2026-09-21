@@ -31,3 +31,8 @@ GitHub Actions runs the complete suite on pushes to `main`, pull requests and ma
 4. Rest timer controls → import/start system program → add/delete gym → add owned equipment.
 
 The Node suite also contains a Service Worker contract test to ensure only Exercise Library GET assets are intercepted and unrelated/app assets are left alone.
+
+
+## i18n foundation
+
+v2.11.0 introduces a single-locale i18n foundation using `zh-TW`. Functional browser tests should prefer stable ids, `data-testid`, and entity ids over translated display text. Translation-specific assertions live under `tests/i18n/`.
