@@ -37,7 +37,7 @@ refs.forEach(ref=>{
 // Critical dependency order must remain deterministic and app.js must load last.
 const scripts=[...index.matchAll(/<script\s+src="([^"]+)"/g)].map(m=>m[1].split('?')[0]);
 const required=[
-  'js/data/glossary.js','js/data/equipment.js','js/data/exercises.js','js/data/programs.js',
+  'js/i18n/locales/zh-TW.js','js/i18n/i18n.js','js/data/glossary.js','js/data/equipment.js','js/data/exercises.js','js/data/programs.js',
   'js/analysis/training-metrics.js','js/analysis/progress.js',
   'js/core/utils.js','js/core/migration.js','js/core/storage.js',
   'js/training/metrics.js','js/training/lifecycle.js','js/training/mutations.js',
