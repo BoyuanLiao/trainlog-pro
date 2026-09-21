@@ -22,9 +22,9 @@
   <section class="page active" id="homePage">
     <div id="homeSuggestion"></div>
     <div class="grid3" id="homeKpis"></div>
-    <div class="section">本週肌群目標</div><div class="card" id="weeklyMuscles"></div>
-    <div class="section">最近進步</div><div id="recentProgress"></div>
-    <div class="section">最近訓練</div><div id="recentWorkouts"></div>
+    <div class="section" data-i18n="home.weeklyMuscles">本週肌群目標</div><div class="card" id="weeklyMuscles"></div>
+    <div class="section" data-i18n="home.recentProgress">最近進步</div><div id="recentProgress"></div>
+    <div class="section" data-i18n="home.recentWorkouts">最近訓練</div><div id="recentWorkouts"></div>
   </section>
 
   <section class="page" id="trainPage">
@@ -33,14 +33,14 @@
   </section>
 
   <section class="page" id="recordsPage">
-    <div class="section">訓練紀錄</div>
+    <div class="section" data-i18n="records.title">訓練紀錄</div>
     <span id="manualFromRecords" hidden aria-hidden="true"></span>
     <div class="card">
       <div class="grid2">
-        <div class="field"><label>月份</label><input type="month" id="recordMonth"></div>
-        <div class="field"><label>肌群</label><select id="recordMuscle"></select></div>
+        <div class="field"><label data-i18n="records.month">月份</label><input type="month" id="recordMonth"></div>
+        <div class="field"><label data-i18n="records.muscle">肌群</label><select id="recordMuscle"></select></div>
       </div>
-      <div class="actions"><button class="btn small ghost" id="prevMonth">← 上月</button><button class="btn small ghost" id="thisMonth">本月</button><button class="btn small ghost" id="nextMonth">下月 →</button></div>
+      <div class="actions"><button class="btn small ghost" id="prevMonth" data-i18n="records.prevMonth">← 上月</button><button class="btn small ghost" id="thisMonth" data-i18n="records.thisMonth">本月</button><button class="btn small ghost" id="nextMonth" data-i18n="records.nextMonth">下月 →</button></div>
     </div>
     <div class="card">
       <div class="calendar-legend" aria-label="月曆圖例">
@@ -56,12 +56,12 @@
   </section>
 
   <section class="page" id="analysisPage">
-    <div class="section">分析</div>
+    <div class="section" data-i18n="analysis.title">分析</div>
     <div class="analysis-range" id="analysisRange">
-      <button type="button" data-analysis-range="7">7 天</button>
-      <button type="button" data-analysis-range="30" class="on">30 天</button>
-      <button type="button" data-analysis-range="90">90 天</button>
-      <button type="button" data-analysis-range="all">全部</button>
+      <button type="button" data-analysis-range="7" data-i18n="analysis.days7">7 天</button>
+      <button type="button" data-analysis-range="30" class="on" data-i18n="analysis.days30">30 天</button>
+      <button type="button" data-analysis-range="90" data-i18n="analysis.days90">90 天</button>
+      <button type="button" data-analysis-range="all" data-i18n="analysis.all">全部</button>
     </div>
     <div class="analysis-period" id="analysisPeriod"></div>
     <div id="analysisConfidence"></div>
@@ -80,15 +80,15 @@
       <div class="section">訓練摘要 <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明">i</button></div>
       <div class="analysis-kpis" id="analysisKpis"></div>
 
-      <div class="section">下一步建議</div>
+      <div class="section" data-i18n="analysis.next">下一步建議</div>
       <div id="analysisProgressOpportunities"></div>
 
-      <div class="section">PR 與里程碑</div>
+      <div class="section" data-i18n="analysis.prTimeline">PR 與里程碑</div>
       <div class="card" id="analysisPrTimeline"></div>
     </div>
 
     <div class="analysis-panel hidden" data-analysis-panel="muscle">
-      <div class="section">肌群目標 vs 實際</div>
+      <div class="section" data-i18n="analysis.muscleTarget">肌群目標 vs 實際</div>
       <div class="card" id="analysisMuscleTargets"></div>
 
       <div class="section">肌群刺激 <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明">i</button></div>
@@ -97,7 +97,7 @@
       <div class="section">動作模式 <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明">i</button></div>
       <div class="card" id="pplAnalysis"></div>
 
-      <div class="section">動作模式缺口</div>
+      <div class="section" data-i18n="analysis.movementGap">動作模式缺口</div>
       <div class="card" id="analysisMovementGaps"></div>
     </div>
 
@@ -127,12 +127,12 @@
           <div id="analysisExerciseList" class="exercise-browser-list"></div>
         </div>
       </div>
-      <div class="section exercise-detail-section">動作詳細分析</div>
+      <div class="section exercise-detail-section" data-i18n="analysis.exerciseDetail">動作詳細分析</div>
       <div class="card"><div id="exerciseAnalysis"></div></div>
     </div>
 
     <div class="analysis-panel hidden" data-analysis-panel="load">
-      <div class="section">訓練負荷趨勢</div>
+      <div class="section" data-i18n="analysis.loadTrend">訓練負荷趨勢</div>
       <div class="card" id="analysisLoadTrend"></div>
 
       <div class="section ui-standard-only">訓練強度分布 <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明">i</button></div>
@@ -145,7 +145,7 @@
 
   <section class="page" id="settingsPage">
     <div id="settingsHub">
-      <div class="section">設定</div>
+      <div class="section" data-i18n="settings.title">設定</div>
       <div class="settings-hub">
         <button class="settings-menu-card" type="button" data-settings-view="programs">
           <span class="menu-icon">▦</span><span class="menu-copy"><span class="menu-title">課表與訓練計畫</span><span class="menu-desc">系統課表、體態補強、我的課表與訓練安排</span><span class="settings-summary"><span class="tag" id="hubProgramSummary">系統課表</span><span class="tag" id="hubTemplateSummary">我的模板</span></span></span><span class="menu-chevron">›</span>
@@ -166,7 +166,7 @@
           <span class="menu-icon">⇅</span><span class="menu-copy"><span class="menu-title">資料與備份</span><span class="menu-desc">匯入、匯出、自動備份與資料清除</span></span><span class="menu-chevron">›</span>
         </button>
       </div>
-      <div class="section">使用教學</div>
+      <div class="section" data-i18n="settings.tutorial">使用教學</div>
       <div class="card">
         <div class="record-head">
           <div>
