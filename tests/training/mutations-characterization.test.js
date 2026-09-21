@@ -32,7 +32,7 @@ let selectorMap={};
 const $$=s=>selectorMap[s]||[];
 const $=s=>({onclick:null});
 let saveCalls=0,timers=[],toasts=[],confirmResult=true;
-function t(key){return key}
+function tr(key){return key}
 function saveActiveOnly(){saveCalls++}
 function exerciseInputUnit(e){return normalizeWeightUnit(e?.inputUnit||'kg')}
 function getExercise(){return {name:'Bench',rest:120}}
