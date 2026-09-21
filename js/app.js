@@ -55,7 +55,7 @@ function registerTrainLogServiceWorker(){
 if('serviceWorker' in navigator)window.addEventListener('load',registerTrainLogServiceWorker,{once:true});
 function renderRecoveryBanner(){
  const box=document.getElementById('dataRecoveryBanner');if(!box||!recoveryIssue)return;
- box.innerHTML=`<div class="card warnbox"><b>⚠ 偵測到本機資料異常</b><div class="small" style="margin-top:6px;line-height:1.55">原始 LocalStorage 內容已先保留為救援副本，App 暫時以空白資料啟動。建議先下載原始資料，再進行匯入或其他操作。</div><div class="actions" style="margin-top:10px"><button class="btn small warn" id="downloadRecoveryData">下載原始救援資料</button><button class="btn small ghost" id="dismissRecoveryData">先隱藏</button></div></div>`;
+ box.innerHTML=`<div class="card warnbox"><b>${esc(t('dynamic.recoveryTitle'))}</b><div class="small" style="margin-top:6px;line-height:1.55">${esc(t('dynamic.recoveryCopy'))}</div><div class="actions" style="margin-top:10px"><button class="btn small warn" id="downloadRecoveryData">${esc(t('dynamic.recoveryDownload'))}</button><button class="btn small ghost" id="dismissRecoveryData">${esc(t('dynamic.recoveryHide'))}</button></div></div>`;
  const dl=document.getElementById('downloadRecoveryData');if(dl)dl.onclick=()=>download(`trainlog-pro-recovery-${isoToday()}.json`,recoveryIssue.raw,'application/json');
  const dismiss=document.getElementById('dismissRecoveryData');if(dismiss)dismiss.onclick=()=>{box.innerHTML=''};
 }
@@ -552,8 +552,8 @@ function renderAll(){
 }
 function renderResume(){
  const b=$('#resumeBanner');if(!data.activeWorkout){b.innerHTML='';return}
- b.innerHTML=`<div class="banner"><b>你有尚未完成的訓練：</b> ${esc(data.activeWorkout.name)} · ${esc(data.activeWorkout.date)}
- <div class="actions" style="margin-top:7px"><button class="btn small primary" id="resumeBtn">繼續</button><button class="btn small danger" id="discardActive">放棄</button></div></div>`;
+ b.innerHTML=`<div class="banner"><b>${esc(t('dynamic.resumeTitle'))}</b> ${esc(data.activeWorkout.name)} · ${esc(data.activeWorkout.date)}
+ <div class="actions" style="margin-top:7px"><button class="btn small primary" id="resumeBtn">${esc(t('dynamic.resume'))}</button><button class="btn small danger" id="discardActive">${esc(t('dynamic.discard'))}</button></div></div>`;
  $('#resumeBtn').onclick=()=>goPage('trainPage');$('#discardActive').onclick=()=>{if(confirm(t('dialogs.discardResume'))){data.activeWorkout=null;save('放棄訓練',true)}}
 }
 const COACH_GOALS={
@@ -733,20 +733,20 @@ function renderHome(){
  $('#homeSuggestion').innerHTML=coachHomeHtml();bindBodyStatusButtons($('#homeSuggestion'));bindCoachUI($('#homeSuggestion'));
  const target=n(data.settings.weeklySessions)||3,cardioGoal=n(data.settings.weeklyCardio)||0,weekCardio=week.reduce((a,w)=>a+cardioMinutes(w),0);
  $('#homeKpis').innerHTML=`
- <div class="stat"><b>${week.length} / ${target}</b><span>本週訓練</span></div>
- <div class="stat"><b>${Math.round(weekCardio)} / ${cardioGoal}</b><span>有氧分鐘</span></div>
- <div class="stat"><b>${fmtKg(recent30.reduce((a,w)=>a+workoutVolume(w),0))}</b><span>近 30 天訓練量<br><small>${rangeDateLabel(30)}</small></span></div>`;
+ <div class="stat"><b>${week.length} / ${target}</b><span>${esc(t('dynamic.weeklyTraining'))}</span></div>
+ <div class="stat"><b>${Math.round(weekCardio)} / ${cardioGoal}</b><span>${esc(t('dynamic.cardioMinutes'))}</span></div>
+ <div class="stat"><b>${fmtKg(recent30.reduce((a,w)=>a+workoutVolume(w),0))}</b><span>${esc(t('dynamic.recent30Volume'))}<br><small>${rangeDateLabel(30)}</small></span></div>`;
  const load=recentMuscleLoad(7),goals=data.settings.weeklyMuscleGoals||{};
  $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${m}</b><span>${val} / ${goal||'—'} 組</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
  const prog=[];data.exerciseLibrary.filter(ex=>['weight_reps','bodyweight','unilateral','duration'].includes(ex.type)).forEach(ex=>{const adv=progressionAdvice(ex.id);const best=bestSetForExercise(ex.id);if(best&&adv)prog.push({ex,adv,best})});prog.sort((a,b)=>b.best.date.localeCompare(a.best.date));
  $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">最近：${esc(p.best.date)} · ${esc(view.evidence)}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">判斷：${esc(view.reason)}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">累積幾次訓練後，這裡會顯示進步建議。</div>';
  const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||'動作')}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · 目標 ${fmtWeight(g.weight)} × ${g.reps}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
- $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):'<div class="card empty">還沒有完成的訓練紀錄。</div>';$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
+ $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):`<div class="card empty">${esc(t('dynamic.noCompletedWorkout'))}</div>`;$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
 }
 function suggestTemplate(){const r=coachRecommendations(coachGoal(),1)[0];if(r)return{title:r.p.nameZh,reason:r.reasons.join(' · '),templateId:'',systemProgramId:r.p.id};return{title:'自由訓練',reason:'目前沒有可用的系統課表。',templateId:'',systemProgramId:''}}
 function workoutCardHtml(w){
  const sets=effectiveSets(w),vol=workoutVolume(w),prs=countPRsInWorkout(w);
- return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(w.name)} ${w.deload?'<span class="pill">Deload</span>':''}</div><div class="record-meta">${esc(w.date)} · ${n(w.duration)} 分 · ${sets} 正式組</div></div><button class="btn small ghost" data-open="${esc(w.id)}">編輯</button></div><div class="tagrow" style="margin-top:8px"><span class="tag">${fmtKg(vol)}</span><span class="tag">有氧 ${Math.round(cardioMinutes(w))} 分</span>${prs?`<span class="tag">PR ${prs}</span>`:''}</div></div>`
+ return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(w.name)} ${w.deload?'<span class="pill">Deload</span>':''}</div><div class="record-meta">${esc(w.date)} · ${n(w.duration)} 分 · ${sets} ${esc(t('dynamic.completedSets'))}</div></div><button class="btn small ghost" data-open="${esc(w.id)}">編輯</button></div><div class="tagrow" style="margin-top:8px"><span class="tag">${fmtKg(vol)}</span><span class="tag">有氧 ${Math.round(cardioMinutes(w))} 分</span>${prs?`<span class="tag">PR ${prs}</span>`:''}</div></div>`
 }
 function countPRsInWorkout(w){
  let count=0;(w.exercises||[]).forEach(e=>{let local=0;(e.sets||[]).forEach(s=>local=Math.max(local,est1rm(n(s.weight),n(s.reps))));if(!local)return;const prior=data.workouts.filter(x=>x.date<w.date);let prev=0;prior.forEach(x=>{const ex=(x.exercises||[]).find(a=>a.exerciseId===e.exerciseId);(ex?.sets||[]).forEach(s=>prev=Math.max(prev,est1rm(n(s.weight),n(s.reps))))});if(local>prev&&prev>0)count++});return count
@@ -1349,7 +1349,7 @@ function openExercisePicker(onPick){
    state.muscles.forEach(m=>tags.push(m));
    if(state.resistance!=='all')tags.push(state.resistance==='none'?'無器材':(resistanceLabels[state.resistance]||state.resistance));
    const results=sortedResults();
-   $('#pickCount').textContent=`找到 ${results.length} 個動作`;
+   $('#pickCount').textContent=t('dynamic.pickerCount',{count:results.length});
    $('#pickTags').innerHTML=tags.map(t=>`<span class="exercise-filter-tag">${esc(t)}</span>`).join('');
    $('#pickClear').style.visibility=tags.length?'visible':'hidden';
    $('#pickList').innerHTML=renderRows(results);
@@ -1368,25 +1368,25 @@ function openExercisePicker(onPick){
 
  const gymLabel=activeGym?`目前健身房`:'目前健身房（未設定）';
  openModal(t('modal.chooseExercise'),`<div class="exercise-filter-bar">
-   <div class="field" style="margin-bottom:0"><label>搜尋動作／英文名稱／器械</label><input id="pickSearch" placeholder="Lat Pulldown、腿推、RSL0314..."></div>
+   <div class="field" style="margin-bottom:0"><label>${esc(t('dynamic.pickerSearchLabel'))}</label><input id="pickSearch" placeholder="Lat Pulldown、腿推、RSL0314..."></div>
    <div class="exercise-filter-quick" id="pickerQuick">
-     <button type="button" class="on" data-picker-scope="all">全部</button>
-     <button type="button" data-picker-scope="recent">最近做過</button>
-     <button type="button" data-picker-scope="mine">我的動作</button>
+     <button type="button" class="on" data-picker-scope="all">${esc(t('dynamic.pickerAll'))}</button>
+     <button type="button" data-picker-scope="recent">${esc(t('dynamic.pickerRecent'))}</button>
+     <button type="button" data-picker-scope="mine">${esc(t('dynamic.pickerMine'))}</button>
      <button type="button" data-picker-scope="gym" ${activeGym&&gymEquipment.size?'':'disabled'}>${esc(gymLabel)}</button>
-     <button type="button" data-picker-scope="equipment" ${ownedEquipment.size?'':'disabled'}>我的器材</button>
+     <button type="button" data-picker-scope="equipment" ${ownedEquipment.size?'':'disabled'}>${esc(t('dynamic.pickerEquipment'))}</button>
    </div>
    <div>
-     <div class="small" style="margin-bottom:5px">肌群（可多選）</div>
+     <div class="small" style="margin-bottom:5px">${esc(t('dynamic.pickerMuscle'))}</div>
      <div class="exercise-muscle-chips" id="pickerMuscles">${MUSCLES.filter(m=>m!=='其他').map(m=>`<button type="button" data-picker-muscle="${esc(m)}">${esc(m)}</button>`).join('')}</div>
    </div>
    <div class="exercise-filter-row">
-     <div class="field" style="margin:0"><label>器材類型</label><select id="pickResistance">
+     <div class="field" style="margin:0"><label>${esc(t('dynamic.pickerResistance'))}</label><select id="pickResistance">
        <option value="all">全部器材類型</option>
        ${resistanceOptions.map(r=>`<option value="${esc(r)}">${esc(resistanceLabels[r]||r)}</option>`).join('')}
        <option value="none">無器材／其他</option>
      </select></div>
-     <button class="btn ghost exercise-filter-clear" type="button" id="pickClear">清除篩選</button>
+     <button class="btn ghost exercise-filter-clear" type="button" id="pickClear">${esc(t('dynamic.pickerClear'))}</button>
    </div>
    <div class="exercise-filter-summary"><div class="exercise-filter-tags" id="pickTags"></div><div class="exercise-filter-count" id="pickCount"></div></div>
  </div>
@@ -1458,14 +1458,14 @@ function openReorderModal(){
 }
 
 function renderRecords(){
- const mus=$('#recordMuscle');if(!mus.options.length)mus.innerHTML='<option value="">全部肌群</option>'+MUSCLES.map(m=>`<option>${m}</option>`).join('');
+ const mus=$('#recordMuscle');if(!mus.options.length)mus.innerHTML=`<option value="">${esc(t('dynamic.allMuscles'))}</option>`+MUSCLES.map(m=>`<option>${m}</option>`).join('');
  if(!$('#recordMonth').value)$('#recordMonth').value=monthKey();
  const mk=$('#recordMonth').value,filter=$('#recordMuscle').value;
  renderCalendar(mk);
  const filtered=data.workouts.filter(w=>w.date.startsWith(mk)&&(!filter||(w.exercises||[]).some(e=>e.muscle===filter))).sort((a,b)=>b.date.localeCompare(a.date));
- $('#recordList').innerHTML=filtered.length?filtered.map(workoutCardHtml).join(''):'<div class="card empty">這個月份沒有符合條件的紀錄。</div>';
+ $('#recordList').innerHTML=filtered.length?filtered.map(workoutCardHtml).join(''):`<div class="card empty">${esc(t('messages.recordsEmpty'))}</div>`;
  $$('#recordList [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open));
- $('#trashList').innerHTML=data.trash.length?data.trash.map(t=>`<div class="record"><div class="record-head"><div><b>${esc(t.item.name)}</b><div class="record-meta">刪除於 ${new Date(t.deletedAt).toLocaleString('zh-TW')}</div></div><div class="actions"><button class="btn small good" data-restore="${t.id}">復原</button><button class="btn small danger" data-purge="${t.id}">永久刪除</button></div></div></div>`).join(''):'<div class="card empty">回收筒是空的。</div>';
+ $('#trashList').innerHTML=data.trash.length?data.trash.map(t=>`<div class="record"><div class="record-head"><div><b>${esc(t.item.name)}</b><div class="record-meta">${esc(t('dynamic.deletedAt'))} ${i18n.formatDate(new Date(t.deletedAt),{dateStyle:'short',timeStyle:'short'})}</div></div><div class="actions"><button class="btn small good" data-restore="${t.id}">${esc(t('dynamic.restore'))}</button><button class="btn small danger" data-purge="${t.id}">${esc(t('dynamic.purge'))}</button></div></div></div>`).join(''):'<div class="card empty">回收筒是空的。</div>';
  $$('[data-restore]').forEach(b=>b.onclick=()=>{const t=data.trash.find(x=>x.id===b.dataset.restore);if(t){data.workouts.push(t.item);data.trash=data.trash.filter(x=>x.id!==t.id);save('復原紀錄',true);toast(t('feedback.recordRestored'))}})
  $$('[data-purge]').forEach(b=>b.onclick=()=>{if(confirm(t('dialogs.purgeRecord'))){data.trash=data.trash.filter(x=>x.id!==b.dataset.purge);save('永久刪除',true)}})
 }
@@ -1501,8 +1501,8 @@ function editWorkout(id){
 }
 function manualEntry(){
  if(data.activeWorkout&&!confirm(t('dialogs.replaceForManual')))return;
- openModal(t('modal.manualEntry'),`<div class="grid2"><div class="field"><label>日期</label><input type="date" id="meDate" value="${isoToday()}"></div><div class="field"><label>名稱</label><input id="meName" value="手動補登"></div><div class="field"><label>實際訓練分鐘</label><input type="number" id="meDur" value="60" min="0" max="1440"></div><div class="field"><label>Deload</label><select id="meDeload"><option value="0">否</option><option value="1">是</option></select></div></div><p class="small">建立後會進入完整訓練輸入畫面，因此重量×次數、計時、有氧、體重型與單側訓練都能補登。</p><button class="btn primary" id="meCreate">建立補登紀錄</button>`,()=>{
-   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||'手動補登',duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save('開始手動補登',true);closeModal();goPage('trainPage');toast(t('feedback.manualStarted'))}
+ openModal(t('modal.manualEntry'),`<div class="grid2"><div class="field"><label>日期</label><input type="date" id="meDate" value="${isoToday()}"></div><div class="field"><label>名稱</label><input id="meName" value="${esc(t('dynamic.manualName'))}"></div><div class="field"><label>${esc(t('dynamic.actualMinutes'))}</label><input type="number" id="meDur" value="60" min="0" max="1440"></div><div class="field"><label>Deload</label><select id="meDeload"><option value="0">否</option><option value="1">是</option></select></div></div><p class="small">建立後會進入完整訓練輸入畫面，因此重量×次數、計時、有氧、體重型與單側訓練都能補登。</p><button class="btn primary" id="meCreate">${esc(t('dynamic.createManual'))}</button>`,()=>{
+   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||t('dynamic.manualName'),duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save('開始手動補登',true);closeModal();goPage('trainPage');toast(t('feedback.manualStarted'))}
  })
 }
 
@@ -1568,7 +1568,7 @@ function bindAnalysisTabs(){
 function renderAnalysisLoadTrend(ws,days){
   const root=$('#analysisLoadTrend');if(!root)return;
   if(!ws?.length){
-    root.innerHTML='<div class="empty">這個期間還沒有訓練紀錄。</div>';return
+    root.innerHTML=`<div class="empty">${esc(t('dynamic.periodTrainingEmpty'))}</div>`;return
   }
   const byWeek=new Map();
   ws.forEach(w=>{
@@ -1612,7 +1612,7 @@ function renderAnalysisMuscleTargets(ws,days){
   const goals=data.settings.weeklyMuscleGoals||{},weeks=analysisRangeWeeks(days,ws),stim=stimulusMap(ws||[]);
   const muscles=MUSCLES.filter(m=>!['有氧','其他'].includes(m));
   if(!ws?.length){
-    root.innerHTML='<div class="empty">這個期間還沒有足夠紀錄可比較肌群目標。</div>';return
+    root.innerHTML=`<div class="empty">${esc(t('dynamic.muscleTargetEmpty'))}</div>`;return
   }
   root.innerHTML=muscles.map(m=>{
     const goal=n(goals[m]),actual=n(stim[m]?.total)/weeks;
@@ -1640,7 +1640,7 @@ function renderAnalysisMovementGaps(ws,days){
   const rows=major.map(k=>({key:k,sets:n(stats[k]),perWeek:n(stats[k])/weeks}));
   const max=Math.max(0,...rows.map(x=>x.sets));
   if(!max){
-    root.innerHTML='<div class="empty">這個期間還沒有可辨識的主要動作模式紀錄。</div>';return
+    root.innerHTML=`<div class="empty">${esc(t('dynamic.movementEmpty'))}</div>`;return
   }
   const gaps=rows.filter(x=>x.sets===0||(max>=4&&x.sets<max*.25))
     .sort((a,b)=>a.sets-b.sets).slice(0,4);
@@ -1659,7 +1659,7 @@ function renderAnalysisProgressOpportunities(ws){
     return {id,ex,adv,view,plateau,best,order:view.priority+(plateau?.state==='slow'&&adv.action!=='increase_load'?.25:0)}
   }).filter(Boolean).sort((a,b)=>a.order-b.order||(b.best?.date||'').localeCompare(a.best?.date||'')).slice(0,5);
   if(!items.length){
-    root.innerHTML='<div class="card empty">再累積幾次可比較的訓練後，這裡會整理下一步建議。</div>';return
+    root.innerHTML=`<div class="card empty">${esc(t('dynamic.nextStepEmpty'))}</div>`;return
   }
   root.innerHTML=`<div class="analysis-opportunity-grid">${items.map(x=>`<div class="card analysis-opportunity">
     <div class="record-head"><div><div class="record-title">${esc(x.ex.name)}</div><div class="record-meta">${x.best?.date?`最近最佳：${esc(x.best.date)} · `:''}${esc(x.view.evidence)}</div></div><span class="pill ${progressionToneClass(x.view)}">${esc(x.view.label)}</span></div>
@@ -1756,16 +1756,16 @@ function renderAnalysis(){
      <div class="effort-box"><b>${effort.low}</b><span>保留較多<br>${pct(effort.low)}%</span></div>
    </div>
    <div class="analysis-note">依已記錄 RIR / RPE 的正式組整理。${effort.missing?`另有 ${effort.missing} 組未記錄強度。`:''}</div>`:
-   `<div class="empty">這個期間還沒有 RIR / RPE 紀錄。</div>`;
+   `<div class="empty">${esc(t('dynamic.noRirRpe'))}</div>`;
 
- $('#pplAnalysis').innerHTML=Object.keys(moves).length?movementMatrixHtml(moves):`<div class="empty">這個期間還沒有可辨識的動作模式。</div>`;
+ $('#pplAnalysis').innerHTML=Object.keys(moves).length?movementMatrixHtml(moves):`<div class="empty">${esc(t('dynamic.noMovement'))}</div>`;
 
  $('#consistencyAnalysis').innerHTML=ws.length?`
    <div class="consistency-grid">
-     <div class="stat"><b>${cons.days}</b><span>有訓練的日期</span></div>
-     <div class="stat"><b>${cons.avgPerWeek.toFixed(1)}</b><span>平均次數／週</span></div>
-     <div class="stat"><b>${cons.weeks} / ${cons.totalWeeks}</b><span>有訓練的週</span></div>
-     <div class="stat"><b>${cons.longestGap ?? '—'} 天</b><span>最長未訓練間隔</span></div>
+     <div class="stat"><b>${cons.days}</b><span>${esc(t('dynamic.trainingDays'))}</span></div>
+     <div class="stat"><b>${cons.avgPerWeek.toFixed(1)}</b><span>${esc(t('dynamic.avgPerWeek'))}</span></div>
+     <div class="stat"><b>${cons.weeks} / ${cons.totalWeeks}</b><span>${esc(t('dynamic.trainingWeeks'))}</span></div>
+     <div class="stat"><b>${cons.longestGap ?? '—'} 天</b><span>${esc(t('dynamic.longestGap'))}</span></div>
    </div>
    <div class="analysis-note">這裡只描述訓練規律性，不代表恢復程度或健康評分。</div>`:
    `<div class="empty">這個期間沒有訓練紀錄。</div>`;
@@ -1815,9 +1815,9 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
  sel.value=items.some(item=>item.id===previous)?previous:(items[0]?.id||'');
  search.value=analysisExerciseBrowserQuery;
  const view=exerciseProgressBrowser.buildViewModel(items,{query:analysisExerciseBrowserQuery,muscle:analysisExerciseBrowserMuscle,recentLimit:6,attentionLimit:4,listLimit:6,showAll:analysisExerciseBrowserExpanded});
- recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):'<div class="exercise-browser-empty" style="grid-column:1/-1">還沒有已完成的動作紀錄。</div>';
- muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">全部</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
- attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):'<div class="exercise-browser-empty">目前沒有特別需要處理的進步訊號，照原計畫持續記錄即可。</div>';
+ recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):`<div class="exercise-browser-empty" style="grid-column:1/-1">${esc(t('dynamic.noExerciseHistory'))}</div>`;
+ muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">${esc(t('dynamic.pickerAll'))}</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
+ attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):`<div class="exercise-browser-empty">${esc(t('dynamic.noAttention'))}</div>`;
  list.innerHTML=view.filtered.length?view.visible.map(item=>analysisExerciseBrowserCard(item)).join('')+(view.hiddenCount?`<div class="actions" style="justify-content:center;margin-top:9px"><button type="button" class="btn small ghost" data-analysis-show-more>顯示更多（還有 ${view.hiddenCount} 個）</button></div>`:''):'<div class="exercise-browser-empty">找不到符合搜尋或肌群條件的動作。</div>';
  if(count)count.textContent=view.hiddenCount?`顯示 ${view.visible.length} / ${view.filtered.length}`:`${view.filtered.length} / ${items.length}`;
  search.oninput=()=>{analysisExerciseBrowserQuery=search.value;analysisExerciseBrowserExpanded=false;renderAnalysisExerciseBrowser(items)};
@@ -1829,9 +1829,9 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
 
 function renderExerciseAnalysis(id){
  const box=$('#exerciseAnalysis');
- if(!id){box.innerHTML='<div class="empty">選擇一個動作查看歷史、進步訊號與 PR。</div>';return}
+ if(!id){box.innerHTML=`<div class="empty">${esc(t('dynamic.selectExercise'))}</div>`;return}
  const lib=getExercise(id),sessions=exerciseSessionMetrics(id),histEx=data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id),name=lib?.name||histEx?.nameSnapshot||'已做過的動作';
- if(!sessions.length){box.innerHTML='<div class="empty">目前沒有可分析的紀錄。</div>';return}
+ if(!sessions.length){box.innerHTML=`<div class="empty">${esc(t('dynamic.noAnalyzable'))}</div>`;return}
  const type=sessions.at(-1).type,over=overloadSummary(id),plat=plateauDetail(id),last=sessions.at(-1),prev=sessions.at(-2);
  const lastSignals=prev?progressSignals(prev,last):[];
  let pts=[],summary='',history='';
@@ -1864,12 +1864,12 @@ function renderExerciseAnalysis(id){
    plat.state==='progress'?`<div class="goodbox" style="margin-top:9px"><b>近期仍有進步訊號</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:'';
  box.innerHTML=`<div class="record-title">${esc(name)}</div>
    ${summary}
-   <div class="section" style="margin-top:12px">最近一次 vs 上一次</div>
-   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(s.text)}</span>`).join(''):'<span class="signal">目前沒有明顯進步訊號</span>'}</div>`:'<div class="analysis-note">只有一次紀錄，暫時無法比較。</div>'}
+   <div class="section" style="margin-top:12px">${esc(t('dynamic.recentVsPrevious'))}</div>
+   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(s.text)}</span>`).join(''):`<span class="signal">${esc(t('dynamic.noProgressSignal'))}</span>`}</div>`:`<div class="analysis-note">${esc(t('dynamic.onlyOneRecord'))}</div>`}
    <div class="analysis-note">${esc(overloadText)} ${infoButton('progressive_overload_detection')}</div>
    ${platBox}
    ${sparkline(pts)}
-   <div class="section">最近紀錄</div><div class="progress-session-list">${history}</div>`
+   <div class="section">${esc(t('dynamic.recentRecords'))}</div><div class="progress-session-list">${history}</div>`
 }
 function sparkline(pts){
  if(!pts.length)return'<div class="empty">還沒有歷史資料</div>';const arr=pts.slice(-12),vals=arr.map(p=>p.v),min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;const points=arr.map((p,i)=>`${10+i*(280/Math.max(1,arr.length-1))},${105-(p.v-min)/range*85}`).join(' ');return `<svg class="spark" viewBox="0 0 300 120" role="img" aria-label="進步趨勢"><line x1="10" y1="105" x2="290" y2="105" stroke="#40515c"/><polyline fill="none" stroke="#69c4ff" stroke-width="3" points="${points}"/>${arr.map((p,i)=>`<circle cx="${10+i*(280/Math.max(1,arr.length-1))}" cy="${105-(p.v-min)/range*85}" r="4" fill="#f4f7f8"/>`).join('')}</svg>`
