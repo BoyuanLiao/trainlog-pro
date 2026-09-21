@@ -8,6 +8,18 @@
     nav:{home:'首頁',training:'訓練',records:'紀錄',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'本週肌群目標',recentProgress:'最近進步',recentWorkouts:'最近訓練'},
     records:{title:'訓練紀錄',month:'月份',muscle:'肌群',prevMonth:'← 上月',thisMonth:'本月',nextMonth:'下月 →',trained:'有訓練',untrained:'無訓練',today:'今天',trash:'回收筒',trashHint:'30 天後可手動清除'},
+    analysisUi:{
+      period:'統計期間：{current}',previous:' · 前一期 {previous}',confidence:'分析可信度：{label}',
+      confidenceMeta:'{workouts} 次訓練 · {sets} 正式組 · 強度紀錄 {effort}% · 動作模式辨識 {pattern}%',viewProgram:'查看補強課表',
+      workoutCount:'訓練次數',trainingTime:'訓練時間',formalSets:'正式組',volume:'訓練量',cardioTime:'有氧時間',
+      viewSource:'查看來源 ›',sets:'{count} 組',direct:'直接 {count}',indirect:'間接 {count}',fourWeekAvg:'近 4 週平均 {count} / 週',
+      stimulusNote:'「刺激組」是估算值。點「查看來源」可以確認哪些動作被算成直接或間接刺激。',nearFailure:'接近力竭',midHigh:'中等偏高',moreReserve:'保留較多',
+      effortNote:'依已記錄 RIR / RPE 的正式組整理。',missingEffort:'另有 {count} 組未記錄強度。',consistencyNote:'這裡只描述訓練規律性，不代表恢復程度或健康評分。',
+      noTraining:'這個期間沒有訓練紀錄。',recentPrefix:'最近 ',showMore:'顯示更多（還有 {count} 個）',noFilteredExercise:'找不到符合搜尋或肌群條件的動作。',
+      showing:'顯示 {visible} / {total}',bestDuration:'最長時間',bestDistance:'最長距離',bestSetTime:'最佳單組',bestTotalTime:'單次最高總時間',
+      historyBestSet:'歷史最佳組',estimated1rm:'估算一次最大重量（e1RM）趨勢',maxWeight:'最高重量',maxReps:'單組最多次數',maxVolume:'單次最高完成量',
+      recentAverage:'最近平均 {kind}',progressSlow:'進步趨勢可能趨緩',progressing:'近期仍有進步訊號'
+    },
     analysis:{
       title:'分析',days7:'7 天',days30:'30 天',days90:'90 天',all:'全部',
       tabs:{overview:'總覽',muscle:'肌群與模式',exercise:'動作進步',load:'負荷與習慣'},
