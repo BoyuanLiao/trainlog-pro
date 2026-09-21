@@ -109,7 +109,7 @@ function approx(actual, expected, eps=1e-6) {
   assert.equal(out.bodyStatus.length,1);
   assert.equal(out.trash.length,1);
   assert.equal(out.snapshots.length,1);
-  assert.equal(out.schemaVersion,18);
+  assert.equal(out.schemaVersion,19);
 }
 
 console.log('migration characterization: 10 cases passed');
