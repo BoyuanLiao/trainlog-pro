@@ -14,7 +14,7 @@ const sources=[fs.readFileSync('index.html','utf8'),fs.readFileSync('js/app.js',
 const keys=new Set();
 for(const source of sources){
   for(const m of source.matchAll(/data-i18n(?:-placeholder|-aria)?="([^"]+)"/g))keys.add(m[1]);
-  for(const m of source.matchAll(/\bt\(\s*['"]([^'"]+)['"]/g))keys.add(m[1]);
+  for(const m of source.matchAll(/\btr\(\s*['"]([^'"]+)['"]/g))keys.add(m[1]);
 }
 const missing=[...keys].filter(key=>typeof get(locale,key)!=='string');
 assert.deepStrictEqual(missing,[],'missing zh-TW translations: '+missing.join(', '));
