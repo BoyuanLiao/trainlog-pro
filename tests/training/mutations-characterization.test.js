@@ -32,7 +32,7 @@ let selectorMap={};
 const $$=s=>selectorMap[s]||[];
 const $=s=>({onclick:null});
 let saveCalls=0,timers=[],toasts=[],confirmResult=true;
-function tr(key,vars={}){if(key==='trainingUi.nextSet')return `${vars.name} · 準備第 ${vars.number} 組`;return key}
+function tr(key,vars={}){if(key==='trainingUi.nextSet')return String(vars.name)+' · 準備第 '+String(vars.number)+' 組';return key}
 function saveActiveOnly(){saveCalls++}
 function exerciseInputUnit(e){return normalizeWeightUnit(e?.inputUnit||'kg')}
 function getExercise(){return {name:'Bench',rest:120}}
