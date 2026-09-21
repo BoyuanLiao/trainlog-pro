@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.10.6';
-const CURRENT_SCHEMA=18;
+const APP_VERSION='2.11.0';
+const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const TYPES=[
   ['weight_reps','重量 × 次數'],['duration','計時'],['cardio','有氧'],['bodyweight','體重型'],['unilateral','單側']
@@ -10,7 +10,9 @@ const KINDS=[['warmup','暖身'],['working','正式'],['drop','Drop'],['failure'
 const PPL={胸:'Push',肩膀:'Push',三頭:'Push',背:'Pull',二頭:'Pull',腿:'Legs',腹部:'Core',有氧:'Cardio',其他:'Other'};
 const PATTERN_INFO={horizontal_push:'horizontal_push',horizontal_pull:'horizontal_pull',vertical_push:'vertical_push',vertical_pull:'vertical_pull',knee_dominant:'knee_dominant',hip_extension:'hip_extension',knee_flexion:'knee_flexion',knee_extension:'knee_extension',shoulder_abduction:'shoulder_abduction',elbow_flexion:'elbow_flexion',elbow_extension:'elbow_extension',core_flexion:'core_flexion',rotation:'rotation'};
 
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const i18n=window.TrainLogI18n;
+const t=(key,vars)=>i18n.t(key,vars);
 const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const {n,clamp,isoToday,parseDate,isoDate,daysBetween,monthKey,fmtDate,LB_PER_KG,normalizeWeightUnit,toKg,fromKg,cleanWeightNumber,est1rm}=window.TrainLogUtils;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -25,7 +27,7 @@ function machineIncrementForUnit(ex,unit){
 const fmtKg=x=>{
  const unit=normalizeWeightUnit(data?.settings?.unit||'kg');
  const shown=fromKg(x,unit);
- return Math.round(shown).toLocaleString('zh-TW')+' '+unit
+ return i18n.formatNumber(Math.round(shown))+' '+unit
 };
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1800)}
 function openModal(title,html,onReady){$('#modalTitle').textContent=title;$('#modalBody').innerHTML=html;$('#modalWrap').classList.add('show');document.body.style.overflow='hidden';if(onReady)onReady()}
@@ -46,6 +48,7 @@ let recoveryIssue=null;
 const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid});
 function loadData(){const result=storageCore.loadData();recoveryIssue=result.recoveryIssue;return result.data}
 let data=loadData();
+i18n.setLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
 function registerTrainLogServiceWorker(){
  navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`).catch(()=>{});
 }
@@ -526,7 +529,7 @@ function renderFirstSetup(){
  });
  $('#firstSetupSave').onclick=()=>{
    const goal=$('#firstTrainingGoal').value,days=n($('#firstWeeklySessions').value),mins=n($('#firstSessionMinutes').value),exp=$('#firstExperience').value,equip=$('#firstEquipmentPreference').value;
-   if(!goal||!days||!mins||!exp||!equip){toast('請先完成所有必填項目');return}
+   if(!goal||!days||!mins||!exp||!equip){toast(t('messages.setupRequired'));return}
    data.settings.trainingGoal=goal;
    data.settings.weeklySessions=days;
    data.settings.sessionMinutes=mins;
@@ -540,8 +543,10 @@ function renderFirstSetup(){
  }
 }
 function renderAll(){
+ i18n.setLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
+ i18n.apply(document);
  applyUiLevel();
- $('#todayText').textContent=new Intl.DateTimeFormat('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date());
+ $('#todayText').textContent=i18n.formatDate(new Date(),{year:'numeric',month:'long',day:'numeric',weekday:'short'});
  renderResume();renderHome();renderTrain();renderRecords();renderAnalysis();renderSettings();renderFirstTutorial();renderFirstSetup();
  if(data.settings.tutorialCompleted===true&&data.settings.preferencesSetupCompleted===true){const active=$('.page.active');if(active)setTimeout(()=>maybeStartPageTutorial(active.id),180)};
 }
