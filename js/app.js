@@ -128,7 +128,7 @@ function renderGymSettings(){
    const info=gymUsageInfo(g),preview=info.equipment.slice(0,6),more=Math.max(0,info.equipment.length-preview.length);
    return `<div class="gym-card">
     <div class="gym-head"><div><div class="gym-name">${esc(g.name)}</div><div class="gym-meta">${info.workouts.length?`${tr('gym.sessions',{count:info.workouts.length})}${info.lastDate?` · ${tr('gym.recent',{date:fmtDate(info.lastDate)})}`:''}`:tr('gym.noHistory')} · ${tr('gym.usedEquipment',{count:info.equipment.length})}</div></div></div>
-    ${preview.length?`<div class="gym-equipment">${preview.map(e=>`<span class="tag">${esc(e.name)}</span>`).join('')}${more?`<span class="tag">＋${more}</span>`:''}</div>`:'<div class="gym-auto-note">${esc(tr('gym.emptyHint'))}</div>'}
+    ${preview.length?`<div class="gym-equipment">${preview.map(e=>`<span class="tag">${esc(e.name)}</span>`).join('')}${more?`<span class="tag">＋${more}</span>`:''}</div>`:`<div class="gym-auto-note">${esc(tr('gym.emptyHint'))}</div>`}
     <div class="gym-actions"><button class="btn small ghost" data-gym-usage="${g.id}">${esc(tr('gym.viewUsage'))}</button><button class="btn small danger" data-delgym="${g.id}">${esc(tr('gym.delete'))}</button></div>
    </div>`
  }).join(''):`<div class="empty">${esc(tr('gym.none'))}</div>`;
