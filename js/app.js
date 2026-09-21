@@ -958,17 +958,17 @@ function openLoadHistoryToSession(){
  closeTrainingDrawer();
  const rows=[...data.workouts].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12);
  openModal(tr('modal.loadHistory'),rows.length?rows.map(w=>`<div class="drawer-history-row">
-   <div class="record-head"><div><b>${esc(w.name)}</b><div class="record-meta">${esc(w.date)} · ${(w.exercises||[]).length} 個動作</div></div></div>
-   <div class="drawer-history-actions"><button class="btn ghost" data-history-add="${w.id}">加入目前清單</button><button class="btn primary" data-history-replace="${w.id}">取代目前清單</button></div>
- </div>`).join(''):'<div class="empty">目前沒有歷史訓練紀錄。</div>',()=>{
+   <div class="record-head"><div><b>${esc(w.name)}</b><div class="record-meta">${esc(w.date)} · ${tr('drawer.historyExerciseCount',{count:(w.exercises||[]).length})}</div></div></div>
+   <div class="drawer-history-actions"><button class="btn ghost" data-history-add="${w.id}">${esc(tr('drawer.historyAdd'))}</button><button class="btn primary" data-history-replace="${w.id}">${esc(tr('drawer.historyReplace'))}</button></div>
+ </div>`).join(''):`<div class="empty">${esc(tr('drawer.historyEmpty'))}</div>`,()=>{
    $$('[data-history-add]').forEach(b=>b.onclick=()=>{const w=data.workouts.find(x=>x.id===b.dataset.historyAdd);if(!w)return;data.activeWorkout.exercises.push(...(w.exercises||[]).map(sessionExerciseFromHistory));saveActiveOnly(true);closeModal();toast(tr('feedback.historyAdded'))});
    $$('[data-history-replace]').forEach(b=>b.onclick=()=>{const w=data.workouts.find(x=>x.id===b.dataset.historyReplace);if(!w)return;if(data.activeWorkout.exercises.length&&!confirm(tr('dialogs.replaceHistory')))return;data.activeWorkout.exercises=(w.exercises||[]).map(sessionExerciseFromHistory);saveActiveOnly(true);closeModal();toast(tr('feedback.historyReplaced'))})
  })
 }
 function saveActiveAsTemplate(){
  const w=data.activeWorkout;if(!w)return;closeTrainingDrawer();
- openModal(tr('modal.newTrainingPlan'),`<div class="card"><div class="field"><label>課表名稱</label><input id="drawerTplName" value="${esc(w.name||'我的訓練計畫')}"></div><div class="small">會把目前 ${w.exercises.length} 個動作與組數存成「我的模板」，不會把已完成狀態存進去。</div><button class="btn primary" id="drawerTplSave" style="margin-top:12px">儲存為我的課表</button></div>`,()=>$('#drawerTplSave').onclick=()=>{
-   const name=$('#drawerTplName').value.trim()||'我的訓練計畫';
+ openModal(tr('modal.newTrainingPlan'),`<div class="card"><div class="field"><label>${esc(tr('drawer.templateName'))}</label><input id="drawerTplName" value="${esc(w.name||tr('drawer.defaultTemplateName'))}"></div><div class="small">${esc(tr('drawer.templateHint',{count:w.exercises.length}))}</div><button class="btn primary" id="drawerTplSave" style="margin-top:12px">${esc(tr('drawer.saveTemplate'))}</button></div>`,()=>$('#drawerTplSave').onclick=()=>{
+   const name=$('#drawerTplName').value.trim()||tr('drawer.defaultTemplateName');
    data.templates.push({id:uid('tpl'),name,nameEn:'',items:w.exercises.map(e=>({exerciseId:e.exerciseId,targetSets:Math.max(1,(e.sets||[]).length||n(getExercise(e.exerciseId)?.targetSets)||3)}))});
    save('從訓練建立課表',true);closeModal();toast(tr('feedback.planCreated'))
  })
@@ -982,26 +982,26 @@ function renderTrainingDrawer(){
  const w=data.activeWorkout,box=$('#trainingDrawerBody');if(!box||!w)return;
  $('#trainingDrawerDate').textContent=fmtDate(w.date);
  const allCollapsed=(w.exercises||[]).length&&(w.exercises||[]).every(e=>e.uiCollapsed);
- box.innerHTML=`<div class="drawer-section-title" style="margin-top:8px">顯示層次</div>
+ box.innerHTML=`<div class="drawer-section-title" style="margin-top:8px">${esc(tr('drawer.displayLevel'))}</div>
  <div class="card" style="padding:10px">${uiLevelSwitchHtml()}</div>
  <div class="drawer-menu">
-   <button class="drawer-row" id="drawerEditList"><span class="drawer-row-icon">☷</span><span class="drawer-row-copy"><span class="drawer-row-title">編輯運動清單</span><span class="drawer-row-desc">調整動作順序</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row" id="drawerAddExercise"><span class="drawer-row-icon">＋</span><span class="drawer-row-copy"><span class="drawer-row-title">新增動作</span><span class="drawer-row-desc">加入器械或其他訓練動作</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row" id="drawerBodyStatus"><span class="drawer-row-icon">♡</span><span class="drawer-row-copy"><span class="drawer-row-title">今日身體狀況</span><span class="drawer-row-desc">${esc(bodyStatusSummary(todayBodyStatus(w.date)))}</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row" id="drawerAddPlan"><span class="drawer-row-icon">▱</span><span class="drawer-row-copy"><span class="drawer-row-title">新增訓練計畫</span><span class="drawer-row-desc">將目前動作清單存成我的課表</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row" id="drawerLoadHistory"><span class="drawer-row-icon">↶</span><span class="drawer-row-copy"><span class="drawer-row-title">載入紀錄</span><span class="drawer-row-desc">從過去訓練加入或取代目前清單</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row" id="drawerCollapseAll"><span class="drawer-row-icon">▤</span><span class="drawer-row-copy"><span class="drawer-row-title">${allCollapsed?'展開所有運動卡':'收起所有運動卡'}</span><span class="drawer-row-desc">快速縮短訓練畫面</span></span><span class="drawer-row-arrow">›</span></button>
-   <button class="drawer-row danger" id="drawerDeleteWorkout"><span class="drawer-row-icon">⌫</span><span class="drawer-row-copy"><span class="drawer-row-title">${w.editingWorkoutId?'取消編輯紀錄':'刪除／放棄本次訓練'}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerEditList"><span class="drawer-row-icon">☷</span><span class="drawer-row-copy"><span class="drawer-row-title">${esc(tr('drawer.editList'))}</span><span class="drawer-row-desc">${esc(tr('drawer.editListDesc'))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerAddExercise"><span class="drawer-row-icon">＋</span><span class="drawer-row-copy"><span class="drawer-row-title">${esc(tr('drawer.addExercise'))}</span><span class="drawer-row-desc">${esc(tr('drawer.addExerciseDesc'))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerBodyStatus"><span class="drawer-row-icon">♡</span><span class="drawer-row-copy"><span class="drawer-row-title">${esc(tr('drawer.bodyStatus'))}</span><span class="drawer-row-desc">${esc(bodyStatusSummary(todayBodyStatus(w.date)))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerAddPlan"><span class="drawer-row-icon">▱</span><span class="drawer-row-copy"><span class="drawer-row-title">${esc(tr('drawer.addPlan'))}</span><span class="drawer-row-desc">${esc(tr('drawer.addPlanDesc'))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerLoadHistory"><span class="drawer-row-icon">↶</span><span class="drawer-row-copy"><span class="drawer-row-title">${esc(tr('drawer.loadHistory'))}</span><span class="drawer-row-desc">${esc(tr('drawer.loadHistoryDesc'))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row" id="drawerCollapseAll"><span class="drawer-row-icon">▤</span><span class="drawer-row-copy"><span class="drawer-row-title">${allCollapsed?tr('drawer.expandAll'):tr('drawer.collapseAll')}</span><span class="drawer-row-desc">${esc(tr('drawer.collapseDesc'))}</span></span><span class="drawer-row-arrow">›</span></button>
+   <button class="drawer-row danger" id="drawerDeleteWorkout"><span class="drawer-row-icon">⌫</span><span class="drawer-row-copy"><span class="drawer-row-title">${w.editingWorkoutId?tr('drawer.cancelEdit'):tr('drawer.discardWorkout')}</span></span><span class="drawer-row-arrow">›</span></button>
  </div>
- <div class="drawer-section-title">訓練設定</div>
+ <div class="drawer-section-title">${esc(tr('drawer.trainingSettings'))}</div>
  <div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">側邊工具位置</div><div class="drawer-setting-desc">可直接拖曳右側「訓練工具」標籤上下移動；預設在畫面最上方。</div></div><button class="btn small ghost" id="drawerResetTabPosition" type="button">回到最上方</button></div>
-   <div class="drawer-setting" style="display:block"><div class="drawer-setting-copy"><div class="drawer-setting-title">本次重量輸入單位</div><div class="drawer-setting-desc">每個動作仍可個別切換。這裡可一次把所有重量型動作改成同一種器械標示單位。</div></div><div class="drawer-unit-actions"><button class="btn ghost" id="drawerAllKg" type="button">全部用 kg 輸入</button><button class="btn ghost" id="drawerAllLb" type="button">全部用 lb 輸入</button></div></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">計時器位置</div><div class="drawer-setting-desc">開始休息時預設顯示方式</div></div><div class="drawer-radio"><label><input type="radio" name="drawerTimerPos" value="top" ${data.settings.restTimerPosition!=='floating'?'checked':''}>頂部</label><label><input type="radio" name="drawerTimerPos" value="floating" ${data.settings.restTimerPosition==='floating'?'checked':''}>小浮窗</label></div></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">備註</div><div class="drawer-setting-desc">顯示動作提示與本次動作備註</div></div><label class="drawer-toggle"><input id="drawerNotes" type="checkbox" ${data.settings.trainingNotes!==false?'checked':''}><span></span></label></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">自動載入</div><div class="drawer-setting-desc">新增動作時載入上次組數／重量／次數</div></div><label class="drawer-toggle"><input id="drawerAutoLoad" type="checkbox" ${data.settings.trainingAutoLoad!==false?'checked':''}><span></span></label></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">間歇計時器</div><div class="drawer-setting-desc">完成一組後自動開始休息計時</div></div><label class="drawer-toggle"><input id="drawerIntervalTimer" type="checkbox" ${data.settings.trainingIntervalTimer!==false?'checked':''}><span></span></label></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">時間到提示音</div><div class="drawer-setting-desc">提示音與支援裝置的短震動</div></div><label class="drawer-toggle"><input id="drawerRestSound" type="checkbox" ${data.settings.restTimerSound!==false?'checked':''}><span></span></label></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.tabPosition'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.tabPositionDesc'))}</div></div><button class="btn small ghost" id="drawerResetTabPosition" type="button">${esc(tr('drawer.resetTop'))}</button></div>
+   <div class="drawer-setting" style="display:block"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.inputUnit'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.inputUnitDesc'))}</div></div><div class="drawer-unit-actions"><button class="btn ghost" id="drawerAllKg" type="button">${esc(tr('drawer.allKg'))}</button><button class="btn ghost" id="drawerAllLb" type="button">${esc(tr('drawer.allLb'))}</button></div></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.timerPosition'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.timerPositionDesc'))}</div></div><div class="drawer-radio"><label><input type="radio" name="drawerTimerPos" value="top" ${data.settings.restTimerPosition!=='floating'?'checked':''}>${esc(tr('drawer.top'))}</label><label><input type="radio" name="drawerTimerPos" value="floating" ${data.settings.restTimerPosition==='floating'?'checked':''}>小浮窗</label></div></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.notes'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.notesDesc'))}</div></div><label class="drawer-toggle"><input id="drawerNotes" type="checkbox" ${data.settings.trainingNotes!==false?'checked':''}><span></span></label></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.autoLoad'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.autoLoadDesc'))}</div></div><label class="drawer-toggle"><input id="drawerAutoLoad" type="checkbox" ${data.settings.trainingAutoLoad!==false?'checked':''}><span></span></label></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.intervalTimer'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.intervalTimerDesc'))}</div></div><label class="drawer-toggle"><input id="drawerIntervalTimer" type="checkbox" ${data.settings.trainingIntervalTimer!==false?'checked':''}><span></span></label></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.sound'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.soundDesc'))}</div></div><label class="drawer-toggle"><input id="drawerRestSound" type="checkbox" ${data.settings.restTimerSound!==false?'checked':''}><span></span></label></div>
  </div>`;
  bindUiLevelSwitch(box);
  $('#drawerEditList').onclick=()=>{closeTrainingDrawer();openReorderModal()};
@@ -1245,7 +1245,7 @@ function startBlank(date=isoToday()){
 function openSessionMeta(first=false){
  const w=data.activeWorkout,p=w.preStatus||{};
  openModal(first?tr('modal.preWorkout'):tr('modal.workoutSettings'),`<div class="grid2">
- <div class="field"><label>課表名稱</label><input id="smName" value="${esc(w.name)}"></div><div class="field"><label>日期</label><input type="date" id="smDate" value="${esc(w.date)}"></div>
+ <div class="field"><label>${esc(tr('drawer.templateName'))}</label><input id="smName" value="${esc(w.name)}"></div><div class="field"><label>日期</label><input type="date" id="smDate" value="${esc(w.date)}"></div>
  <div class="field"><label>訓練時間（分鐘）</label><input type="number" id="smDuration" min="0" max="1440" value="${n(w.duration)}"></div>
  <div class="field"><label>精神 1–5</label><input type="number" id="smEnergy" min="1" max="5" value="${p.energy||''}"></div><div class="field"><label>睡眠 1–5</label><input type="number" id="smSleep" min="1" max="5" value="${p.sleep||''}"></div>
  <div class="field"><label>疲勞 1–5</label><input type="number" id="smFatigue" min="1" max="5" value="${p.fatigue||''}"></div><div class="field"><label>健身房</label><input id="smGymName" list="smGymOptions" value="${esc(workoutGymName(w))}" placeholder="選擇或直接輸入新健身房"><datalist id="smGymOptions">${data.gyms.map(g=>`<option value="${esc(g.name)}"></option>`).join('')}</datalist><div class="hint">輸入新的名稱並儲存後，會自動加入健身房設定。</div></div></div>
@@ -2217,7 +2217,7 @@ function editTemplate(id=''){
      $$('[data-tu]').forEach(b=>b.onclick=()=>{const i=n(b.dataset.tu);if(i>0)[working.items[i-1],working.items[i]]=[working.items[i],working.items[i-1]];bindRows()});
      $$('[data-td]').forEach(b=>b.onclick=()=>{const i=n(b.dataset.td);if(i<working.items.length-1)[working.items[i+1],working.items[i]]=[working.items[i],working.items[i+1]];bindRows()})
    };
-   openModal(id?tr('modal.editTemplate'):tr('modal.newTemplate'),`<div class="field"><label>課表名稱</label><input id="tplName" value="${esc(working.name)}"></div><div id="tplItems"></div><div class="actions"><button class="btn ghost" id="tplAdd">＋ 加動作</button><button class="btn primary" id="tplSave">儲存課表</button></div>`,()=>{
+   openModal(id?tr('modal.editTemplate'):tr('modal.newTemplate'),`<div class="field"><label>${esc(tr('drawer.templateName'))}</label><input id="tplName" value="${esc(working.name)}"></div><div id="tplItems"></div><div class="actions"><button class="btn ghost" id="tplAdd">＋ 加動作</button><button class="btn primary" id="tplSave">儲存課表</button></div>`,()=>{
      bindRows();
      $('#tplAdd').onclick=()=>{working.name=$('#tplName').value.trim()||working.name||'新課表';openExercisePicker(ex=>{working.items.push({exerciseId:ex.id});showEditor()})};
      $('#tplSave').onclick=()=>{working.name=$('#tplName').value.trim()||'未命名課表';if(id){const i=data.templates.findIndex(x=>x.id===id);if(i>=0)data.templates[i]=working}else data.templates.push(working);save(id?'編輯課表':'新增課表',true);closeModal();toast(tr('feedback.templateSaved'))}
