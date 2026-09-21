@@ -9,6 +9,7 @@ const {launchBrowser,sleep}=require('./cdp-client');
 const BASE_URL=process.env.TRAINLOG_E2E_URL||'http://127.0.0.1:4173/';
 const APP_KEY='trainlogProData';
 const downloadDir=fs.mkdtempSync(path.join(os.tmpdir(),'trainlog-downloads-'));
+let browser=null;
 
 function timerSeconds(text){
   const m=String(text||'').trim().match(/(\d+):(\d+)/);
@@ -16,7 +17,7 @@ function timerSeconds(text){
 }
 
 (async()=>{
-  const b=await launchBrowser({url:BASE_URL,downloadDir});
+  const b=browser=await launchBrowser({url:BASE_URL,downloadDir});
   const storage=()=>b.evaluate(`JSON.parse(localStorage.getItem(${JSON.stringify(APP_KEY)})||'null')`);
 
   async function clearAndReload(){
@@ -218,10 +219,13 @@ function timerSeconds(text){
   await b.waitFor("!JSON.parse(localStorage.getItem('trainlogProData')).gyms.some(g=>g.name==='E2E Gym 2')",{label:'gym deleted'});
   console.log('E2E 4/4 timer + program + gym/equipment passed');
 
-  await b.close();
-  fs.rmSync(downloadDir,{recursive:true,force:true});
   console.log('critical browser E2E: all 4 flows passed');
-})().catch(async err=>{
+})().catch(err=>{
   console.error(err);
   process.exitCode=1;
+}).finally(async()=>{
+  if(browser){
+    try{await browser.close()}catch(err){console.error('browser cleanup failed:',err)}
+  }
+  try{fs.rmSync(downloadDir,{recursive:true,force:true})}catch{}
 });
