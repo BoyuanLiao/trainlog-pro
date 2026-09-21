@@ -63,6 +63,23 @@
       deleteWithHistory:'刪除「{name}」？歷史訓練仍會保留健身房名稱。',deleteSimple:'刪除「{name}」？'
     },
     training:{start:'開始訓練',finish:'完成本次訓練',addExercise:'加入動作'},
+    trainingUi:{
+      startToday:'開始今天的訓練',landingHint:'有目前計畫時建議依 A／B／C 順序訓練；也可以從「我的模板」或 {count} 套系統課表開始。',
+      myTemplates:'我的模板',systemPrograms:'系統課表庫',longTermPlan:'長期課表與目前計畫',bodyMarked:'今天有身體狀況標記',bodyMarkedHint:'{summary}。相關動作會另外顯示提醒。',viewEdit:'查看／修改',
+      editingHistory:'正在編輯歷史訓練紀錄',editingHistoryHint:'儲存後會更新原紀錄，不會新增一筆重複紀錄。',historyMode:'歷史紀錄編輯模式',autosaving:'自動儲存中',modeSuffix:'模式',settings:'設定',tools:'☰ 工具',
+      energy:'精神 {value}/5',sleep:'睡眠 {value}/5',fatigue:'疲勞 {value}/5',todayFocus:'今日訓練重點',primary:'主要：{value}',intensity:'強度：{value}',aboutMinutes:'約 {value} 分',tip:'提示：',pain:'不適紀錄：{value}',
+      restTimer:'休息計時器',restTimerHint:'完成一組後會依該動作休息時間自動顯示在最上層',show:'顯示',addExercise:'＋ 加動作',reorder:'調整順序',saveEdit:'✓ 儲存修改',finishWorkout:'✓ 完成本次訓練',cancelEdit:'取消編輯',discard:'放棄',
+      minutes:'時間（分鐘）',distance:'距離 km',speed:'平均速度 km/h',incline:'坡度 %',addSet:'＋ 加一組',noPrevious:'無上次紀錄',machineUnit:'器械重量標示',
+      lbStorage:'輸入 lb，App 會自動換算成 kg 標準值儲存；例如 100 lb ≈ 45.4 kg。',kgStorage:'輸入 kg，內部直接以 kg 標準值儲存。',viewInfo:'查看動作說明',info:'ⓘ 說明',previous:'上次：{value}',
+      bodyRelated:'今日相關部位：{value}。',bodyStrong:'先不要勉強加重；若動作引發疼痛或活動受限，可停止這個動作。',bodyMild:'先用輕重量暖身，確認活動舒服再決定是否照原計畫。',equipmentNote:'器材/動作備註：',
+      expand:'展開',collapse:'收合',replace:'替換',remove:'移除',exerciseNote:'本次動作備註',exerciseNotePlaceholder:'例如：座椅 4、右肩有感',
+      seconds:'時間（秒）',leftWeight:'左重量（{unit}）',leftReps:'左次數',rightWeight:'右重量（{unit}）',rightReps:'右次數',weightInput:'重量以 {unit} 輸入',weight:'重量',assistWeight:'附加／輔助重量',reps:'次數',
+      repsMinus:'次數−1',repsPlus:'次數+1',copyPrevious:'同上一組',completed:'已完成',completeSet:'完成這組',tooEasy:'太輕鬆',justRight:'剛剛好',tooHard:'太吃力',setKind:'訓練組別',
+      timeUp:'時間到',close:'關閉',skip:'跳過',manualRest:'手動休息計時',nextSet:'{name} · 準備第 {number} 組',defaultNext:'準備下一組',
+      todayDate:'今天日期',templates:'我的模板',noTemplates:'尚無我的模板，可先從系統課表加入。',blankWorkout:'空白訓練',browsePrograms:'瀏覽系統課表',
+      workoutName:'課表名稱',date:'日期',duration:'訓練時間（分鐘）',energyInput:'精神 1–5',sleepInput:'睡眠 1–5',fatigueInput:'疲勞 1–5',gym:'健身房',gymPlaceholder:'選擇或直接輸入新健身房',gymHint:'輸入新的名稱並儲存後，會自動加入健身房設定。',painInput:'疼痛 / 不適',painPlaceholder:'例如：右肩前側不適',deload:'這次是 Deload / 減量訓練',save:'儲存',unnamed:'未命名訓練',
+      inputWarning:'偵測到可能的輸入異常：\n\n{issues}\n\n仍要儲存嗎？',missingOriginal:'找不到原本的訓練紀錄，無法儲存修改。',summary:'{exercises} 個動作 · {sets} 正式組 · {volume} · 有氧 {cardio} 分',summaryPr:' · {count} 個 PR',done:'完成'
+    },
     timer:{title:'組間休息',defaultLabel:'準備下一組',minus:'−10 秒',plus:'＋10 秒',skip:'跳過'},
     firstSetup:{kicker:'第一次使用設定',title:'先設定你的訓練偏好與目標',save:'完成設定並開始使用'},
     feedback:{
