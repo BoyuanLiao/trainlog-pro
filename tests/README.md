@@ -19,3 +19,15 @@ Every `*.test.js` file under `tests/` is discovered recursively and executed in 
 - **Syntax / architecture** — all JavaScript files are parsed with `node --check`; pure modules are guarded against accidental DOM, LocalStorage or mutable app-state coupling.
 
 GitHub Actions runs the complete suite on pushes to `main`, pull requests and manual dispatch through `.github/workflows/verify.yml`. Python maintenance scripts are compiled separately in the same workflow.
+
+
+## Critical browser E2E
+
+`tests/browser/critical-flows.e2e.js` uses Chrome DevTools Protocol directly, so no third-party browser-test package is required. The permanent CI now verifies four real browser flows:
+
+1. First tutorial → required first setup → settings save/reload persistence.
+2. Blank workout → add exercise → enter/complete sets → finish → records → muscle/exercise analysis → edit/delete/restore.
+3. Download full JSON backup → change settings → import with full restore → verify workouts/settings/snapshots.
+4. Rest timer controls → import/start system program → add/delete gym → add owned equipment.
+
+The Node suite also contains a Service Worker contract test to ensure only Exercise Library GET assets are intercepted and unrelated/app assets are left alone.
