@@ -33,7 +33,7 @@ const isoToday=()=> '2026-09-13';
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
 let data={templates:[],workouts:[],activeWorkout:null};
 const calls=[];
-function t(key){return key}
+function tr(key){return key}
 function save(reason,snapshot){calls.push(['save',reason,snapshot])}
 function openSessionMeta(first){calls.push(['meta',first])}
 function goPage(page){calls.push(['page',page])}
