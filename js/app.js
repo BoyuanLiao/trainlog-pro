@@ -1715,23 +1715,23 @@ function renderAnalysis(){
  const stim=stimulusMap(ws),prevStim=stimulusMap(prevWs),effort=effortStats(ws),moves=movementStats(ws),cons=consistencyStats(ws,days),confidence=analysisConfidence(ws);
  const totalMinutes=ws.reduce((a,w)=>a+n(w.duration),0),volume=ws.reduce((a,w)=>a+workoutVolume(w),0),formal=formalSetCount(ws),cardio=Math.round(ws.reduce((a,w)=>a+cardioMinutes(w),0));
  const prevMinutes=prevWs.reduce((a,w)=>a+n(w.duration),0),prevVolume=prevWs.reduce((a,w)=>a+workoutVolume(w),0),prevFormal=formalSetCount(prevWs),prevCardio=Math.round(prevWs.reduce((a,w)=>a+cardioMinutes(w),0));
- $('#analysisPeriod').textContent=`統計期間：${rangeDateLabel(days)}${days!=='all'?` · 前一期 ${previousPeriodLabel(days)}`:''}`;
+ $('#analysisPeriod').textContent=tr('analysisUi.period',{current:rangeDateLabel(days)})+(days!=='all'?tr('analysisUi.previous',{previous:previousPeriodLabel(days)}):'');
  $$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
 
  const effortRecorded=effort.high+effort.mid+effort.low;
- $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">分析可信度：${confidence.label} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${confidence.workouts} 次訓練 · ${confidence.formal} 正式組 · 強度紀錄 ${effort.total?Math.round(effortRecorded/effort.total*100):0}% · 動作模式辨識 ${Math.round(confidence.patternRate*100)}%</div></div></div></div>`;
+ $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">${tr('analysisUi.confidence',{label:confidence.label})} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${tr('analysisUi.confidenceMeta',{workouts:confidence.workouts,sets:confidence.formal,effort:effort.total?Math.round(effortRecorded/effort.total*100):0,pattern:Math.round(confidence.patternRate*100)})}</div></div></div></div>`;
 
  const highlights=buildAnalysisHighlights(ws,prevWs,days,confidence,cons);
- $('#analysisHighlights').innerHTML=highlights.map((h,i)=>`<div class="analysis-highlight ${h.kind||'info'}"><div class="rank">${i+1}</div><div><div class="highlight-title">${esc(h.title)}</div><div class="highlight-desc">${esc(h.desc)}</div>${h.programId?`<button class="btn small ghost" style="margin-top:7px" data-analysis-program="${esc(h.programId)}">查看補強課表</button>`:''}</div></div>`).join('');
+ $('#analysisHighlights').innerHTML=highlights.map((h,i)=>`<div class="analysis-highlight ${h.kind||'info'}"><div class="rank">${i+1}</div><div><div class="highlight-title">${esc(h.title)}</div><div class="highlight-desc">${esc(h.desc)}</div>${h.programId?`<button class="btn small ghost" style="margin-top:7px" data-analysis-program="${esc(h.programId)}">${esc(tr('analysisUi.viewProgram'))}</button>`:''}</div></div>`).join('');
  $$('[data-analysis-program]').forEach(b=>b.onclick=()=>showSystemProgramDetail(b.dataset.analysisProgram));
 
  const cmp=(cur,prev)=>days==='all'?'':compareBadge(cur,prev);
  $('#analysisKpis').innerHTML=`
-   <div class="stat"><b>${ws.length}</b><span>訓練次數</span>${cmp(ws.length,prevWs.length)}</div>
-   <div class="stat"><b>${Math.round(totalMinutes)} 分</b><span>訓練時間</span>${cmp(totalMinutes,prevMinutes)}</div>
-   <div class="stat"><b>${formal}</b><span>正式組 ${infoButton('effective_sets')}</span>${cmp(formal,prevFormal)}</div>
-   <div class="stat"><b>${fmtKg(volume)}</b><span>訓練量</span>${cmp(volume,prevVolume)}</div>
-   <div class="stat"><b>${cardio} 分</b><span>有氧時間</span>${cmp(cardio,prevCardio)}</div>`;
+   <div class="stat"><b>${ws.length}</b><span>${esc(tr('analysisUi.workoutCount'))}</span>${cmp(ws.length,prevWs.length)}</div>
+   <div class="stat"><b>${Math.round(totalMinutes)} 分</b><span>${esc(tr('analysisUi.trainingTime'))}</span>${cmp(totalMinutes,prevMinutes)}</div>
+   <div class="stat"><b>${formal}</b><span>${esc(tr('analysisUi.formalSets'))} ${infoButton('effective_sets')}</span>${cmp(formal,prevFormal)}</div>
+   <div class="stat"><b>${fmtKg(volume)}</b><span>${esc(tr('analysisUi.volume'))}</span>${cmp(volume,prevVolume)}</div>
+   <div class="stat"><b>${cardio} 分</b><span>${esc(tr('analysisUi.cardioTime'))}</span>${cmp(cardio,prevCardio)}</div>`;
 
  const fourWeek=stimulusMap(workoutsLastDays(28));
  const muscles=MUSCLES.filter(m=>!['有氧','其他'].includes(m));
@@ -1740,22 +1740,22 @@ function renderAnalysis(){
    const x=stim[m]||{direct:0,indirect:0,total:0},px=prevStim[m]||{total:0};
    const avg=n(fourWeek[m]?.total)/4;
    return `<div class="stim-row">
-     <div class="stim-main"><div><div class="stim-name">${esc(m)}</div><button class="stim-detail-btn" type="button" data-muscle-stim="${esc(m)}">查看來源 ›</button></div><div class="stim-total">${fmtStim(x.total)} 組</div></div>
-     <div class="stim-meta"><span class="tag stim-direct">直接 ${fmtStim(x.direct)}</span><span class="tag stim-indirect">間接 ${fmtStim(x.indirect)}</span><span class="tag">近 4 週平均 ${fmtStim(avg)} / 週</span>${days!=='all'?compareBadge(x.total,px.total):''}</div>
+     <div class="stim-main"><div><div class="stim-name">${esc(m)}</div><button class="stim-detail-btn" type="button" data-muscle-stim="${esc(m)}">${esc(tr('analysisUi.viewSource'))}</button></div><div class="stim-total">${tr('analysisUi.sets',{count:fmtStim(x.total)})}</div></div>
+     <div class="stim-meta"><span class="tag stim-direct">${tr('analysisUi.direct',{count:fmtStim(x.direct)})}</span><span class="tag stim-indirect">${tr('analysisUi.indirect',{count:fmtStim(x.indirect)})}</span><span class="tag">${tr('analysisUi.fourWeekAvg',{count:fmtStim(avg)})}</span>${days!=='all'?compareBadge(x.total,px.total):''}</div>
      <div class="progress"><i style="width:${Math.min(100,n(x.total)/maxStim*100)}%"></i></div>
    </div>`
- }).join('')+`<div class="analysis-note">「刺激組」是估算值。點「查看來源」可以確認哪些動作被算成直接或間接刺激。</div>`;
+ }).join('')+`<div class="analysis-note">${esc(tr('analysisUi.stimulusNote'))}</div>`;
  $$('[data-muscle-stim]').forEach(b=>b.onclick=()=>showMuscleStimulusDetail(b.dataset.muscleStim,ws));
 
  const recorded=effort.high+effort.mid+effort.low;
  const pct=v=>recorded?Math.round(v/recorded*100):0;
  $('#effortAnalysis').innerHTML=recorded?`
    <div class="effort-grid">
-     <div class="effort-box"><b>${effort.high}</b><span>接近力竭<br>${pct(effort.high)}%</span></div>
-     <div class="effort-box"><b>${effort.mid}</b><span>中等偏高<br>${pct(effort.mid)}%</span></div>
-     <div class="effort-box"><b>${effort.low}</b><span>保留較多<br>${pct(effort.low)}%</span></div>
+     <div class="effort-box"><b>${effort.high}</b><span>${esc(tr('analysisUi.nearFailure'))}<br>${pct(effort.high)}%</span></div>
+     <div class="effort-box"><b>${effort.mid}</b><span>${esc(tr('analysisUi.midHigh'))}<br>${pct(effort.mid)}%</span></div>
+     <div class="effort-box"><b>${effort.low}</b><span>${esc(tr('analysisUi.moreReserve'))}<br>${pct(effort.low)}%</span></div>
    </div>
-   <div class="analysis-note">依已記錄 RIR / RPE 的正式組整理。${effort.missing?`另有 ${effort.missing} 組未記錄強度。`:''}</div>`:
+   <div class="analysis-note">${esc(tr('analysisUi.effortNote'))}${effort.missing?tr('analysisUi.missingEffort',{count:effort.missing}):''}</div>`:
    `<div class="empty">${esc(tr('dynamic.noRirRpe'))}</div>`;
 
  $('#pplAnalysis').innerHTML=Object.keys(moves).length?movementMatrixHtml(moves):`<div class="empty">${esc(tr('dynamic.noMovement'))}</div>`;
@@ -1767,8 +1767,8 @@ function renderAnalysis(){
      <div class="stat"><b>${cons.weeks} / ${cons.totalWeeks}</b><span>${esc(tr('dynamic.trainingWeeks'))}</span></div>
      <div class="stat"><b>${cons.longestGap ?? '—'} 天</b><span>${esc(tr('dynamic.longestGap'))}</span></div>
    </div>
-   <div class="analysis-note">這裡只描述訓練規律性，不代表恢復程度或健康評分。</div>`:
-   `<div class="empty">這個期間沒有訓練紀錄。</div>`;
+   <div class="analysis-note">${esc(tr('analysisUi.consistencyNote'))}</div>`:
+   `<div class="empty">${esc(tr('analysisUi.noTraining'))}</div>`;
 
  const performed=analysisPerformedExercises();
  renderAnalysisExerciseBrowser(performed)
@@ -1804,7 +1804,7 @@ function analysisExerciseBrowserCard(item,compact=false){
  const selected=$('#analysisExercise')?.value===item.id;
  const status=item.statusLabel?`<span class="exercise-card-status ${analysisExerciseStatusClass(item)}">${esc(item.statusLabel)}</span>`:'';
  if(compact)return `<button type="button" class="exercise-recent-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span>${status}</button>`;
- return `<button type="button" class="exercise-progress-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-progress-main"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.equipmentName?` · ${esc(item.equipmentName)}`:''}<br>最近 ${fmtDate(item.lastDate)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span></span><span class="exercise-progress-side">${status}</span>${item.statusReason?`<span class="exercise-progress-reason">${esc(item.statusReason)}</span>`:''}</button>`
+ return `<button type="button" class="exercise-progress-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-progress-main"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.equipmentName?` · ${esc(item.equipmentName)}`:''}<br>${tr('analysisUi.recentPrefix')}${fmtDate(item.lastDate)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span></span><span class="exercise-progress-side">${status}</span>${item.statusReason?`<span class="exercise-progress-reason">${esc(item.statusReason)}</span>`:''}</button>`
 }
 
 function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
@@ -1818,8 +1818,8 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
  recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):`<div class="exercise-browser-empty" style="grid-column:1/-1">${esc(tr('dynamic.noExerciseHistory'))}</div>`;
  muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">${esc(tr('dynamic.pickerAll'))}</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
  attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):`<div class="exercise-browser-empty">${esc(tr('dynamic.noAttention'))}</div>`;
- list.innerHTML=view.filtered.length?view.visible.map(item=>analysisExerciseBrowserCard(item)).join('')+(view.hiddenCount?`<div class="actions" style="justify-content:center;margin-top:9px"><button type="button" class="btn small ghost" data-analysis-show-more>顯示更多（還有 ${view.hiddenCount} 個）</button></div>`:''):'<div class="exercise-browser-empty">找不到符合搜尋或肌群條件的動作。</div>';
- if(count)count.textContent=view.hiddenCount?`顯示 ${view.visible.length} / ${view.filtered.length}`:`${view.filtered.length} / ${items.length}`;
+ list.innerHTML=view.filtered.length?view.visible.map(item=>analysisExerciseBrowserCard(item)).join('')+(view.hiddenCount?`<div class="actions" style="justify-content:center;margin-top:9px"><button type="button" class="btn small ghost" data-analysis-show-more>${tr('analysisUi.showMore',{count:view.hiddenCount})}</button></div>`:''):`<div class="exercise-browser-empty">${esc(tr('analysisUi.noFilteredExercise'))}</div>`;
+ if(count)count.textContent=view.hiddenCount?tr('analysisUi.showing',{visible:view.visible.length,total:view.filtered.length}):`${view.filtered.length} / ${items.length}`;
  search.oninput=()=>{analysisExerciseBrowserQuery=search.value;analysisExerciseBrowserExpanded=false;renderAnalysisExerciseBrowser(items)};
  $$('[data-analysis-muscle]').forEach(button=>button.onclick=()=>{analysisExerciseBrowserMuscle=button.dataset.analysisMuscle||'';analysisExerciseBrowserExpanded=false;renderAnalysisExerciseBrowser(items)});
  const showMore=$('[data-analysis-show-more]');if(showMore)showMore.onclick=()=>{analysisExerciseBrowserExpanded=true;renderAnalysisExerciseBrowser(items)};
@@ -1838,30 +1838,30 @@ function renderExerciseAnalysis(id){
  if(type==='cardio'){
    pts=sessions.map(s=>({date:s.date,v:s.distance||s.minutes,label:s.label}));
    const maxMin=Math.max(...sessions.map(s=>s.minutes)),maxDist=Math.max(...sessions.map(s=>s.distance));
-   summary=`<div class="progress-summary"><div class="progress-card"><b>${maxMin} 分</b><span>最長時間</span></div><div class="progress-card"><b>${fmtStim(maxDist)} km</b><span>最長距離</span></div></div>`;
+   summary=`<div class="progress-summary"><div class="progress-card"><b>${maxMin} 分</b><span>${esc(tr('analysisUi.bestDuration'))}</span></div><div class="progress-card"><b>${fmtStim(maxDist)} km</b><span>${esc(tr('analysisUi.bestDistance'))}</span></div></div>`;
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main">${esc(s.label)}${s.speed?` · ${fmtStim(s.speed)} km/h`:''}</div></div>`).join('')
  }else if(type==='duration'){
    pts=sessions.map(s=>({date:s.date,v:s.bestSeconds,label:`${s.bestSeconds} 秒`}));
    const bestSec=Math.max(...sessions.map(s=>s.bestSeconds)),bestTotal=Math.max(...sessions.map(s=>s.totalSeconds));
-   summary=`<div class="progress-summary"><div class="progress-card"><b>${bestSec} 秒</b><span>最佳單組</span></div><div class="progress-card"><b>${bestTotal} 秒</b><span>單次最高總時間</span></div></div>`;
+   summary=`<div class="progress-summary"><div class="progress-card"><b>${bestSec} 秒</b><span>${esc(tr('analysisUi.bestSetTime'))}</span></div><div class="progress-card"><b>${bestTotal} 秒</b><span>${esc(tr('analysisUi.bestTotalTime'))}</span></div></div>`;
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main">最佳 ${s.bestSeconds} 秒 · 總計 ${s.totalSeconds} 秒</div></div>`).join('')
  }else{
    pts=sessions.map(s=>({date:s.date,v:s.bestE1rm||s.maxWeight,label:s.label}));
    const best=bestSetForExercise(id),maxWeight=Math.max(...sessions.map(s=>s.maxWeight)),maxReps=Math.max(...sessions.map(s=>s.maxReps)),maxSessionVolume=Math.max(...sessions.map(s=>s.volume));
    const latestRir=last.rir!=null?last.rir.toFixed(1):'—',latestRpe=last.rpe!=null?last.rpe.toFixed(1):'—';
    summary=`<div class="progress-summary">
-     <div class="progress-card"><b>${best?`${fmtWeight(best.weight)} × ${best.reps}`:'—'}</b><span>歷史最佳組</span></div>
-     <div class="progress-card"><b>${data.settings.show1RM&&best?fmtWeight(best.score||0):'—'}</b><span>估算一次最大重量（e1RM）趨勢</span></div>
-     <div class="progress-card"><b>${fmtWeight(maxWeight)}</b><span>最高重量</span></div>
-     <div class="progress-card"><b>${maxReps}</b><span>單組最多次數</span></div>
-     <div class="progress-card"><b>${fmtKg(maxSessionVolume)}</b><span>單次最高完成量</span></div>
-     <div class="progress-card"><b>${data.settings.intensity==='RIR'?latestRir:latestRpe}</b><span>最近平均 ${data.settings.intensity}</span></div>
+     <div class="progress-card"><b>${best?`${fmtWeight(best.weight)} × ${best.reps}`:'—'}</b><span>${esc(tr('analysisUi.historyBestSet'))}</span></div>
+     <div class="progress-card"><b>${data.settings.show1RM&&best?fmtWeight(best.score||0):'—'}</b><span>${esc(tr('analysisUi.estimated1rm'))}</span></div>
+     <div class="progress-card"><b>${fmtWeight(maxWeight)}</b><span>${esc(tr('analysisUi.maxWeight'))}</span></div>
+     <div class="progress-card"><b>${maxReps}</b><span>${esc(tr('analysisUi.maxReps'))}</span></div>
+     <div class="progress-card"><b>${fmtKg(maxSessionVolume)}</b><span>${esc(tr('analysisUi.maxVolume'))}</span></div>
+     <div class="progress-card"><b>${data.settings.intensity==='RIR'?latestRir:latestRpe}</b><span>${tr('analysisUi.recentAverage',{kind:data.settings.intensity})}</span></div>
    </div>`;
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main"><b>${esc(s.label)}</b>${s.bestE1rm?` · 估算一次最大重量約 ${fmtWeight(s.bestE1rm)}`:''}${s.rir!=null?` · RIR ${s.rir.toFixed(1)}`:''}${s.rpe!=null?` · RPE ${s.rpe.toFixed(1)}`:''} · ${s.sets||0} 組</div></div>`).join('')
  }
  const overloadText=over.transitions?`最近 ${over.transitions+1} 次中，有 ${over.count} 次相較前一次出現進步訊號。`:'至少需要兩次紀錄才能比較。';
- const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>進步趨勢可能趨緩 ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:
-   plat.state==='progress'?`<div class="goodbox" style="margin-top:9px"><b>近期仍有進步訊號</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:'';
+ const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressSlow'))} ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:
+   plat.state==='progress'?`<div class="goodbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressing'))}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:'';
  box.innerHTML=`<div class="record-title">${esc(name)}</div>
    ${summary}
    <div class="section" style="margin-top:12px">${esc(tr('dynamic.recentVsPrevious'))}</div>
