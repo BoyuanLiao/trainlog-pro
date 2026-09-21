@@ -8,6 +8,14 @@
     nav:{home:'首頁',training:'訓練',records:'紀錄',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'本週肌群目標',recentProgress:'最近進步',recentWorkouts:'最近訓練'},
     records:{title:'訓練紀錄',month:'月份',muscle:'肌群',prevMonth:'← 上月',thisMonth:'本月',nextMonth:'下月 →',trained:'有訓練',untrained:'無訓練',today:'今天',trash:'回收筒',trashHint:'30 天後可手動清除'},
+    recordsUi:{
+      trashEmpty:'回收筒是空的。',weekdaySun:'日',weekdayMon:'一',weekdayTue:'二',weekdayWed:'三',weekdayThu:'四',weekdayFri:'五',weekdaySat:'六',
+      calendarAria:'{date} 有訓練 {workouts} 次，共 {sets} 個正式組',calendarNone:'{date} 無訓練',calendarSummary:'{workouts} 次 · {sets} 組',calendarDone:'✓ 已訓練',
+      editBlocked:'目前有尚未完成的訓練。請先完成或放棄目前訓練，再編輯歷史紀錄。',fullEditEntered:'已進入完整編輯模式',
+      name:'名稱',minutes:'訓練分鐘',gymPlaceholder:'選擇或輸入健身房',gymHint:'舊紀錄補上健身房後，也會自動加入健身房設定。',notes:'備註',
+      fullEdit:'完整編輯動作／組數',saveBasic:'只儲存基本資料',copyToday:'複製為今天',moveTrash:'移到回收筒',
+      deload:'Deload',no:'否',yes:'是',manualHint:'建立後會進入完整訓練輸入畫面，因此重量×次數、計時、有氧、體重型與單側訓練都能補登。'
+    },
     analysisUi:{
       period:'統計期間：{current}',previous:' · 前一期 {previous}',confidence:'分析可信度：{label}',
       confidenceMeta:'{workouts} 次訓練 · {sets} 正式組 · 強度紀錄 {effort}% · 動作模式辨識 {pattern}%',viewProgram:'查看補強課表',
