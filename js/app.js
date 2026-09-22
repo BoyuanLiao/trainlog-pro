@@ -807,18 +807,21 @@ function exercisePickerRowHtml(e){
  </div>`
 }
 const BODY_AREAS=[
- ['neck','頸部'],['shoulder_l','左肩'],['shoulder_r','右肩'],['chest','胸部'],['upper_back','上背'],['lower_back','下背'],
- ['elbow_l','左手肘'],['elbow_r','右手肘'],['wrist_l','左手腕'],['wrist_r','右手腕'],['core','腹部／核心'],['hip_l','左髖'],
- ['hip_r','右髖'],['thigh_front','大腿前側'],['thigh_back','大腿後側'],['knee_l','左膝'],['knee_r','右膝'],['calf','小腿'],
- ['ankle_l','左腳踝'],['ankle_r','右腳踝']
+ ['neck','domain.bodyArea.neck'],['shoulder_l','domain.bodyArea.shoulderL'],['shoulder_r','domain.bodyArea.shoulderR'],['chest','domain.bodyArea.chest'],['upper_back','domain.bodyArea.upperBack'],['lower_back','domain.bodyArea.lowerBack'],
+ ['elbow_l','domain.bodyArea.elbowL'],['elbow_r','domain.bodyArea.elbowR'],['wrist_l','domain.bodyArea.wristL'],['wrist_r','domain.bodyArea.wristR'],['core','domain.bodyArea.core'],['hip_l','domain.bodyArea.hipL'],
+ ['hip_r','domain.bodyArea.hipR'],['thigh_front','domain.bodyArea.thighFront'],['thigh_back','domain.bodyArea.thighBack'],['knee_l','domain.bodyArea.kneeL'],['knee_r','domain.bodyArea.kneeR'],['calf','domain.bodyArea.calf'],
+ ['ankle_l','domain.bodyArea.ankleL'],['ankle_r','domain.bodyArea.ankleR']
 ];
 const BODY_STATUS_TYPES={
- soreness:{label:'肌肉痠痛',short:'痠',cls:'soreness'},
- tight:{label:'緊繃／卡卡',short:'緊',cls:'tight'},
- pain:{label:'疼痛／不舒服',short:'痛／不適',cls:'pain'}
+ soreness:{labelKey:'domain.bodyType.soreness',shortKey:'domain.bodyType.sorenessShort',cls:'soreness'},
+ tight:{labelKey:'domain.bodyType.tight',shortKey:'domain.bodyType.tightShort',cls:'tight'},
+ pain:{labelKey:'domain.bodyType.pain',shortKey:'domain.bodyType.painShort',cls:'pain'}
 };
-const BODY_LEVELS={1:'輕微',2:'中等',3:'明顯'};
-function bodyAreaName(id){return BODY_AREAS.find(x=>x[0]===id)?.[1]||id}
+const BODY_LEVELS={1:'domain.bodyLevel.mild',2:'domain.bodyLevel.medium',3:'domain.bodyLevel.strong'};
+function bodyAreaName(id){const key=BODY_AREAS.find(x=>x[0]===id)?.[1];return key?tr(key):id}
+function bodyTypeLabel(type){return tr((BODY_STATUS_TYPES[type]||BODY_STATUS_TYPES.soreness).labelKey)}
+function bodyTypeShort(type){return tr((BODY_STATUS_TYPES[type]||BODY_STATUS_TYPES.soreness).shortKey)}
+function bodyLevelName(level){const key=BODY_LEVELS[n(level)];return key?tr(key):''}
 function todayBodyStatus(date=isoToday()){
  data.bodyStatus=data.bodyStatus||[];
  return data.bodyStatus.find(x=>x.date===date)||{date,entries:[],note:'',updatedAt:''}
@@ -836,20 +839,20 @@ function bodyStatusSummary(status){
  return `${tr('bodyStatus.summaryMarked',{count:es.length})}${important?tr('bodyStatus.summaryImportant',{count:important}):''}`
 }
 function bodyStatusTagsHtml(status){
- return (status?.entries||[]).map(e=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<span class="body-status-tag ${t.cls}">${esc(bodyAreaName(e.area))} · ${esc(t.short)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</span>`}).join('')
+ return (status?.entries||[]).map(e=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<span class="body-status-tag ${t.cls}">${esc(bodyAreaName(e.area))} · ${esc(bodyTypeShort(e.type))} · ${esc(bodyLevelName(e.level))}</span>`}).join('')
 }
 function openBodyStatusModal(date=isoToday()){
  const current=JSON.parse(JSON.stringify(todayBodyStatus(date))),draft={...current,entries:[...(current.entries||[])]};
  let area=BODY_AREAS[0][0],type='soreness',level=1;
  const renderEntries=()=>{
    const box=$('#bodyStatusEntries');if(!box)return;
-   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(t.label)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):`<div class="empty">${esc(tr('bodyStatus.noneToday'))}</div>`;
+   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(bodyTypeLabel(e.type))} · ${esc(bodyLevelName(e.level))}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):`<div class="empty">${esc(tr('bodyStatus.noneToday'))}</div>`;
    $$('[data-body-remove]').forEach(b=>b.onclick=()=>{draft.entries.splice(n(b.dataset.bodyRemove),1);renderEntries()})
  };
  openModal(tr('modal.bodyStatus'),`<div class="card">
    <div class="small">${esc(tr('bodyStatus.intro'))}</div>
    <div class="section" style="margin-top:13px">${esc(tr('bodyStatus.areaStep'))}</div>
-   <div class="body-area-grid">${BODY_AREAS.map((a,i)=>`<button type="button" class="body-area-btn ${i===0?'on':''}" data-body-area="${a[0]}">${a[1]}</button>`).join('')}</div>
+   <div class="body-area-grid">${BODY_AREAS.map((a,i)=>`<button type="button" class="body-area-btn ${i===0?'on':''}" data-body-area="${a[0]}" >${esc(bodyAreaName(a[0]))}</button>`).join('')}</div>
    <div class="section">${esc(tr('bodyStatus.feelingStep'))}</div>
    <div class="body-status-seg"><button type="button" class="on" data-body-type="soreness">${esc(tr('bodyStatus.soreness'))}</button><button type="button" data-body-type="tight">${esc(tr('bodyStatus.tight'))}</button><button type="button" data-body-type="pain">${esc(tr('bodyStatus.pain'))}</button></div>
    <div class="section">${esc(tr('bodyStatus.levelStep'))}</div>
@@ -889,7 +892,7 @@ function bodyStatusExerciseMatch(ex,date=isoToday()){
    return false
  };
  const hits=entries.filter(relevant);if(!hits.length)return null;
- return{hits,strong:hits.some(x=>x.type==='pain'||n(x.level)>=3),text:hits.map(x=>`${bodyAreaName(x.area)} ${BODY_STATUS_TYPES[x.type]?.short||''}${BODY_LEVELS[n(x.level)]?`（${BODY_LEVELS[n(x.level)]}）`:''}`).join('、')}
+ return{hits,strong:hits.some(x=>x.type==='pain'||n(x.level)>=3),text:hits.map(x=>`${bodyAreaName(x.area)} ${bodyTypeShort(x.type)}${bodyLevelName(x.level)?`（${bodyLevelName(x.level)}）`:''}`).join('、')}
 }
 function bodyStatusCardHtml(date=isoToday()){
  const s=todayBodyStatus(date);
