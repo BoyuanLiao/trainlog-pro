@@ -181,6 +181,39 @@
       recentRecords:'最近紀錄',recentVsPrevious:'最近一次 vs 上一次',noProgressSignal:'目前沒有明顯進步訊號',
       onlyOneRecord:'只有一次紀錄，暫時無法比較。'
     },
+    analysisProgress:{
+      previousZero:'前期 0',
+      signal:{
+        cardioTime:'有氧時間增加',distance:'距離增加',speed:'速度增加',duration:'持續時間增加',
+        weight:'重量增加',reps:'同重量次數增加',e1rm:'估算力量提高',volume:'完成量增加',
+        rir:'相近表現更有餘裕',rpe:'相近表現更輕鬆'
+      },
+      plateauInsufficient:'至少需要 4 次可比較的訓練才能判斷進步是否趨緩。',
+      plateauProgress:'最近幾次仍有重量、次數、估算力量、完成量或主觀餘裕的進步訊號。',
+      plateauSlow:'最近 {count} 次在重量、次數、估算力量與完成量上都沒有明顯改善，近期進步趨勢可能趨緩。'
+    },
+    progression:{
+      firstRecord:'第一次紀錄，先以保留 2–3 下餘裕找到工作重量。',
+      durationIncrease:'上次平均 {avg} 秒，已達目標上限，可嘗試每組增加約 {increment} 秒。',
+      durationMaintain:'上次平均 {avg} 秒，先維持並逐步接近 {target} 秒。',
+      cardioMaintain:'有氧建議優先穩定時間與感受，再逐步增加時間、距離或坡度。',
+      increaseLoad:'上次所有正式組達 {repMax} 下且強度可控，建議下次嘗試增加約 {increment} {unit}。',
+      reduceLoad:'上次有組數低於目標範圍，建議維持或小幅降重，優先完成 {repMin}–{repMax} 下。',
+      plateauHard:'最近 3 次在相近重量與次數停滯，而且主觀強度偏高；先檢查恢復狀況，必要時小幅降重或安排較輕的一次。',
+      plateau:'最近 3 次在相近重量與次數沒有明顯提升，可能進入平台期；先維持重量，嘗試增加 1 下、改善動作品質或調整組間休息。',
+      addReps:'上次仍在 {repMin}–{repMax} 下範圍內，建議維持重量並增加完成次數。',
+      action:{
+        newLabel:'建立基準',newReason:'先建立可比較的工作重量與次數',
+        increaseLoadLabel:'↑ 建議加重',increaseLoadReason:'已達目標上限且強度可控',
+        increaseTimeLabel:'↑ 增加時間',increaseTimeReason:'已達目前時間目標上限',
+        addRepsLabel:'＋ 增加次數',addRepsReason:'重量先維持，優先累積次數',
+        plateauLabel:'↔ 可能平台期',plateauReason:'近期進步幅度偏低',
+        reduceLoadLabel:'↓ 調整負重',reduceLoadReason:'有組數低於目標範圍',
+        maintainLabel:'＝ 維持',maintainReason:'維持目前安排並持續累積紀錄',
+        plateauHardReason:'平台期訊號 + 強度偏高'
+      },
+      evidenceNone:'尚無歷史紀錄',evidenceOne:'依上次紀錄',evidenceRecent:'參考最近 {count} 次紀錄'
+    },
     finalUi:{
       machineMinPrefix:'輸入至少 2 個字元，例如 ',machineNoMatchPrefix:'目前找不到相符器械。你仍可以建立自訂動作；也可以嘗試只輸入銘牌上的核心英文，例如 ',
       movementMode:'動作模式',leftWeightPlaceholder:'左{unit}',rightWeightPlaceholder:'右{unit}',dragAria:'拖曳 {name}',infoAria:'{name}說明',
