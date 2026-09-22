@@ -22,7 +22,8 @@ const deps={
   migrate:x=>({...x,migrated:true}),
   freshData:()=>({fresh:true,snapshots:[]}),
   uid:p=>p+'_id',
-  now:()=>new Date('2026-09-20T00:00:00.000Z')
+  now:()=>new Date('2026-09-20T00:00:00.000Z'),
+  defaultSnapshotReason:()=> '自動快照'
 };
 
 assert.throws(()=>Storage.create({...deps,storage:null}),/storage adapter/);
