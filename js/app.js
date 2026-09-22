@@ -45,7 +45,7 @@ function migrate(raw){return migrationCore.migrate(raw)}
 function guessType(e){return migrationCore.guessType(e)}
 function findOrCreateExercise(name,muscle,type,library){return migrationCore.findOrCreateExercise(name,muscle,type,library)}
 let recoveryIssue=null;
-const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid});
+const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid,defaultSnapshotReason:()=>tr('reasons.autoSnapshot')});
 function loadData(){const result=storageCore.loadData();recoveryIssue=result.recoveryIssue;return result.data}
 let data=loadData();
 i18n.setLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
@@ -139,7 +139,7 @@ function renderGymSettings(){
    if(!confirm(info.workouts.length?tr('gym.deleteWithHistory',{name:g.name}):tr('gym.deleteSimple',{name:g.name})))return;
    data.workouts.forEach(w=>{if(w.gymId===g.id){w.gymNameSnapshot=w.gymNameSnapshot||g.name;w.gymId=''}});
    if(data.activeWorkout?.gymId===g.id){data.activeWorkout.gymNameSnapshot=data.activeWorkout.gymNameSnapshot||g.name;data.activeWorkout.gymId=''}
-   data.gyms=data.gyms.filter(x=>x.id!==g.id);save('刪除健身房',true)
+   data.gyms=data.gyms.filter(x=>x.id!==g.id);save(tr('reasons.deleteGym'),true)
  })
 }
 function getLastExerciseRecord(exId,beforeDate='9999-12-31'){
@@ -555,7 +555,7 @@ function renderResume(){
  const b=$('#resumeBanner');if(!data.activeWorkout){b.innerHTML='';return}
  b.innerHTML=`<div class="banner"><b>${esc(tr('dynamic.resumeTitle'))}</b> ${esc(data.activeWorkout.name)} · ${esc(data.activeWorkout.date)}
  <div class="actions" style="margin-top:7px"><button class="btn small primary" id="resumeBtn">${esc(tr('dynamic.resume'))}</button><button class="btn small danger" id="discardActive">${esc(tr('dynamic.discard'))}</button></div></div>`;
- $('#resumeBtn').onclick=()=>goPage('trainPage');$('#discardActive').onclick=()=>{if(confirm(tr('dialogs.discardResume'))){data.activeWorkout=null;save('放棄訓練',true)}}
+ $('#resumeBtn').onclick=()=>goPage('trainPage');$('#discardActive').onclick=()=>{if(confirm(tr('dialogs.discardResume'))){data.activeWorkout=null;save(tr('reasons.discardWorkout'),true)}}
 }
 const COACH_GOALS={
  general:{label:'一般健康／建立習慣',terms:['一般健身','建立習慣','基礎肌力','全身','體能'],cats:['完全新手','全身訓練']},
@@ -667,9 +667,9 @@ function currentPlanProgram(){return data.currentPlan?SYSTEM_PROGRAMS.find(p=>p.
 function currentPlanWeek(){if(!data.currentPlan?.startedDate)return 1;return Math.max(1,Math.floor(Math.max(0,daysBetween(data.currentPlan.startedDate,isoToday()))/7)+1)}
 function adoptCurrentPlan(programId,from='recommendation'){
  const p=SYSTEM_PROGRAMS.find(x=>x.id===programId);if(!p)return;if(data.currentPlan&&data.currentPlan.programId!==programId&&!confirm(tr('dialogs.replacePlan',{current:currentPlanProgram()?.nameZh||'訓練計畫',next:p.nameZh})))return;
- const rec=coachProgramScore(p,coachGoal());data.currentPlan={id:uid('plan'),programId:p.id,startedDate:isoToday(),blockWeeks:n(data.settings.blockWeeks)||6,goal:coachGoal(),scoreAtStart:rec.score,createdAt:new Date().toISOString(),source:from};data.todayAdjustment={date:isoToday(),mode:'normal',focusMuscle:''};save('設定目前訓練計畫',true);toast(tr('feedback.planSet',{weeks:data.currentPlan.blockWeeks,name:p.nameZh}))
+ const rec=coachProgramScore(p,coachGoal());data.currentPlan={id:uid('plan'),programId:p.id,startedDate:isoToday(),blockWeeks:n(data.settings.blockWeeks)||6,goal:coachGoal(),scoreAtStart:rec.score,createdAt:new Date().toISOString(),source:from};data.todayAdjustment={date:isoToday(),mode:'normal',focusMuscle:''};save(tr('reasons.setCurrentPlan'),true);toast(tr('feedback.planSet',{weeks:data.currentPlan.blockWeeks,name:p.nameZh}))
 }
-function endCurrentPlan(){if(!data.currentPlan)return;if(confirm(tr('dialogs.endPlan'))){data.currentPlan=null;data.todayAdjustment=null;save('結束目前訓練計畫',true);toast(tr('feedback.planEnded'))}}
+function endCurrentPlan(){if(!data.currentPlan)return;if(confirm(tr('dialogs.endPlan'))){data.currentPlan=null;data.todayAdjustment=null;save(tr('reasons.endCurrentPlan'),true);toast(tr('feedback.planEnded'))}}
 function todayAdjustment(){const t=data.todayAdjustment;if(t?.date===isoToday()&&TODAY_ADJUSTMENTS[t.mode])return t;return{date:isoToday(),mode:'normal',focusMuscle:''}}
 function setTodayAdjustment(mode,focusMuscle=''){if(!TODAY_ADJUSTMENTS[mode])mode='normal';data.todayAdjustment={date:isoToday(),mode,focusMuscle:focusMuscle||''};localStorage.setItem(APP_KEY,JSON.stringify(data));renderHome();toast(tr('feedback.todayAdjustment',{label:TODAY_ADJUSTMENTS[mode].label}))}
 function programDayBodyPenalty(day){let penalty=0;(day?.items||[]).forEach(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId),m=bodyStatusExerciseMatch(ex,isoToday());if(m)penalty+=m.strong?6:2});return penalty}
@@ -708,7 +708,7 @@ function bindCoachUI(scope=document){
 function startCoachRecommendedDay(rec){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceActiveForPlan')))return;const built=coachDayBuild(rec),p=built.p,day=built.day,date=isoToday(),adj=built.adjustment;
  const exercises=built.items.map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return null;const se=makeSessionExercise({...ex,...it},date);if(it.todayEasy&&(se.sets||[]).length){se.sets=se.sets.slice(0,Math.max(1,n(it.targetSets)||2))}if(ex.type==='cardio'){const base=n(se.cardio?.minutes)||20;se.cardio.minutes=adj.mode==='easy'?Math.min(15,base):adj.mode==='short'?Math.min(10,base):base}return se}).filter(Boolean);
- data.activeWorkout={id:uid('w'),date,name:`${p.nameZh}｜${day.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:`目前計畫： ${p.nameZh}｜長期目的：${COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel()}｜今日調整：${TODAY_ADJUSTMENTS[adj.mode].label}`,programDayMeta:{...(day.dayMeta||{}),trainingGoal:COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel(),coachNote:`目前為 ${n(data.currentPlan?.blockWeeks)||6} 週計畫；今日使用「${TODAY_ADJUSTMENTS[adj.mode].label}」。這次調整不會改寫長期設定。`},gymId:data.settings.preferredGymId||'',gymNameSnapshot:data.gyms.find(g=>g.id===data.settings.preferredGymId)?.name||'',deload:p.progression==='deload'||adj.mode==='easy',preStatus:{},pain:'',coachRecommendation:{programId:p.id,goal:data.currentPlan?.goal||coachGoal(),score:rec.score,dayIndex:rec.dayIndex,planInstanceId:data.currentPlan?.id||'',todayMode:adj.mode},exercises};save('開始目前計畫今日訓練',true);goPage('trainPage')
+ data.activeWorkout={id:uid('w'),date,name:`${p.nameZh}｜${day.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:`目前計畫： ${p.nameZh}｜長期目的：${COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel()}｜今日調整：${TODAY_ADJUSTMENTS[adj.mode].label}`,programDayMeta:{...(day.dayMeta||{}),trainingGoal:COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel(),coachNote:`目前為 ${n(data.currentPlan?.blockWeeks)||6} 週計畫；今日使用「${TODAY_ADJUSTMENTS[adj.mode].label}」。這次調整不會改寫長期設定。`},gymId:data.settings.preferredGymId||'',gymNameSnapshot:data.gyms.find(g=>g.id===data.settings.preferredGymId)?.name||'',deload:p.progression==='deload'||adj.mode==='easy',preStatus:{},pain:'',coachRecommendation:{programId:p.id,goal:data.currentPlan?.goal||coachGoal(),score:rec.score,dayIndex:rec.dayIndex,planInstanceId:data.currentPlan?.id||'',todayMode:adj.mode},exercises};save(tr('reasons.startCurrentPlanDay'),true);goPage('trainPage')
 }
 function goalProgramRecommendationsHtml(){
  const cp=currentPlanProgram(),rs=coachRecommendations(coachGoal(),3);return `${cp?`<div class="card current-plan-card"><div class="record-head"><div><b>目前 ${n(data.currentPlan.blockWeeks)||6} 週計畫：${esc(cp.nameZh)}</b><div class="record-meta">第 ${Math.min(currentPlanWeek(),n(data.currentPlan.blockWeeks)||6)} 週 · 長期目標 ${esc(COACH_GOALS[data.currentPlan.goal]?.label||coachGoalLabel())}</div></div><button class="btn small ghost" data-plan-reevaluate>${esc(tr("residual.r255f1025"))}</button></div></div>`:''}<div class="card"><div class="record-head"><div><b>${esc(tr("residual.rda966763"))}</b><div class="record-meta">${esc(tr("residual.r24c32392"))}</div></div><span class="tag">${esc(coachGoalLabel())}</span></div><div class="coach-alt-grid" style="margin-top:9px">${rs.map(r=>`<div class="coach-alt-card"><div class="coach-match">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> · ${r.score}/100</span></div><div class="coach-alt-title">${esc(r.p.nameZh)}</div><div class="coach-alt-meta">${r.p.daysPerWeek} 日/週 · 約 ${r.p.duration} 分</div><div class="actions" style="margin-top:7px"><button class="btn small ghost" data-program-detail="${esc(r.p.id)}">${esc(tr("residual.r9caf61f6"))}</button><button class="btn small primary" data-plan-adopt="${esc(r.p.id)}">${esc(tr("residual.rd692f32a"))}</button></div></div>`).join('')}</div></div>`
@@ -971,7 +971,7 @@ function saveActiveAsTemplate(){
  openModal(tr('modal.newTrainingPlan'),`<div class="card"><div class="field"><label>${esc(tr('trainingUi.workoutName'))}</label><input id="drawerTplName" value="${esc(w.name||tr('drawer.defaultTemplateName'))}"></div><div class="small">${esc(tr('drawer.templateHint',{count:w.exercises.length}))}</div><button class="btn primary" id="drawerTplSave" style="margin-top:12px">${esc(tr('drawer.saveTemplate'))}</button></div>`,()=>$('#drawerTplSave').onclick=()=>{
    const name=$('#drawerTplName').value.trim()||tr('drawer.defaultTemplateName');
    data.templates.push({id:uid('tpl'),name,nameEn:'',items:w.exercises.map(e=>({exerciseId:e.exerciseId,targetSets:Math.max(1,(e.sets||[]).length||n(getExercise(e.exerciseId)?.targetSets)||3)}))});
-   save('從訓練建立課表',true);closeModal();toast(tr('feedback.planCreated'))
+   save(tr('reasons.createPlanFromWorkout'),true);closeModal();toast(tr('feedback.planCreated'))
  })
 }
 function toggleAllExerciseCards(){
@@ -1237,11 +1237,11 @@ function startTemplate(id,date=isoToday()){
  if(data.activeWorkout){goPage('trainPage');return}
  const t=data.templates.find(x=>x.id===id);if(!t)return;
  data.activeWorkout=trainingLifecycle.createTemplateWorkout(t,{id:uid('w'),date,startedAt:new Date().toISOString(),resolveExercise:getExercise,makeSessionExercise});
- save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+ save(tr('reasons.startWorkout'),true);openSessionMeta(true);goPage('trainPage')
 }
 function startBlank(date=isoToday()){
- data.activeWorkout=trainingLifecycle.createBlankWorkout({id:uid('w'),date,startedAt:new Date().toISOString()});
- save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+ data.activeWorkout=trainingLifecycle.createBlankWorkout({id:uid('w'),date,startedAt:new Date().toISOString(),name:tr('homeUi.freeTraining')});
+ save(tr('reasons.startWorkout'),true);openSessionMeta(true);goPage('trainPage')
 }
 function openSessionMeta(first=false){
  const w=data.activeWorkout,p=w.preStatus||{};
@@ -1259,17 +1259,17 @@ function finishWorkout(){
  const editingId=w.editingWorkoutId||'';
  if(editingId){
    const idx=data.workouts.findIndex(x=>x.id===editingId);if(idx<0){alert(tr('trainingUi.missingOriginal'));return}
-   snapshot('歷史訓練編輯前');
+   snapshot(tr('reasons.beforeHistoryEdit'));
    const updated=trainingLifecycle.finalizeHistoryEdit(w,editingId);
    const next=[...data.workouts];next[idx]=updated;data.workouts=trainingLifecycle.sortWorkouts(next);
    data.activeWorkout=null;
-   save('編輯訓練內容',false);
+   save(tr('reasons.editWorkoutContent'),false);
    const summary=tr('trainingUi.summary',{exercises:updated.exercises.length,sets:effectiveSets(updated),volume:fmtKg(workoutVolume(updated)),cardio:Math.round(cardioMinutes(updated))});
    openModal(tr('modal.savedEdit'),`<div class="card"><div class="record-title">${esc(updated.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">${esc(tr('trainingUi.done'))}</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('recordsPage')});
    return;
  }
  const completed=trainingLifecycle.finalizeWorkout(w,{endedAt:new Date().toISOString(),bodyStatusSnapshot:todayBodyStatus(w.date)});
- data.workouts=trainingLifecycle.appendCompletedWorkout(data.workouts,completed);data.activeWorkout=null;save('完成訓練',true);
+ data.workouts=trainingLifecycle.appendCompletedWorkout(data.workouts,completed);data.activeWorkout=null;save(tr('reasons.finishWorkout'),true);
  const prs=countPRsInWorkout(completed),summary=tr('trainingUi.summary',{exercises:completed.exercises.length,sets:effectiveSets(completed),volume:fmtKg(workoutVolume(completed)),cardio:Math.round(cardioMinutes(completed))})+(prs?tr('trainingUi.summaryPr',{count:prs}):'');
  openModal(tr('modal.workoutDone'),`<div class="card"><div class="record-title">${esc(completed.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">${esc(tr('trainingUi.done'))}</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('homePage')})
 }
@@ -1467,8 +1467,8 @@ function renderRecords(){
  $('#recordList').innerHTML=filtered.length?filtered.map(workoutCardHtml).join(''):`<div class="card empty">${esc(tr('messages.recordsEmpty'))}</div>`;
  $$('#recordList [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open));
  $('#trashList').innerHTML=data.trash.length?data.trash.map(t=>`<div class="record"><div class="record-head"><div><b>${esc(t.item.name)}</b><div class="record-meta">${esc(tr('dynamic.deletedAt'))} ${i18n.formatDate(new Date(t.deletedAt),{dateStyle:'short',timeStyle:'short'})}</div></div><div class="actions"><button class="btn small good" data-restore="${t.id}">${esc(tr('dynamic.restore'))}</button><button class="btn small danger" data-purge="${t.id}">${esc(tr('dynamic.purge'))}</button></div></div></div>`).join(''):`<div class="card empty">${esc(tr('recordsUi.trashEmpty'))}</div>`;
- $$('[data-restore]').forEach(b=>b.onclick=()=>{const t=data.trash.find(x=>x.id===b.dataset.restore);if(t){data.workouts.push(t.item);data.trash=data.trash.filter(x=>x.id!==t.id);save('復原紀錄',true);toast(tr('feedback.recordRestored'))}})
- $$('[data-purge]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.purgeRecord'))){data.trash=data.trash.filter(x=>x.id!==b.dataset.purge);save('永久刪除',true)}})
+ $$('[data-restore]').forEach(b=>b.onclick=()=>{const t=data.trash.find(x=>x.id===b.dataset.restore);if(t){data.workouts.push(t.item);data.trash=data.trash.filter(x=>x.id!==t.id);save(tr('reasons.restoreRecord'),true);toast(tr('feedback.recordRestored'))}})
+ $$('[data-purge]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.purgeRecord'))){data.trash=data.trash.filter(x=>x.id!==b.dataset.purge);save(tr('reasons.purgeRecord'),true)}})
 }
 function renderCalendar(mk){
  const [y,m]=mk.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0),heads=[tr('recordsUi.weekdaySun'),tr('recordsUi.weekdayMon'),tr('recordsUi.weekdayTue'),tr('recordsUi.weekdayWed'),tr('recordsUi.weekdayThu'),tr('recordsUi.weekdayFri'),tr('recordsUi.weekdaySat')];let html=heads.map(h=>`<div class="calhead">${h}</div>`).join('');
@@ -1495,15 +1495,15 @@ function editWorkout(id){
  <div>${w.exercises.map(e=>`<div class="record"><b>${esc(e.nameSnapshot)}</b><div class="small">${esc(e.muscle)} · ${esc(lastExerciseSummary(e))}</div></div>`).join('')}</div>
  <div class="actions"><button class="btn primary" id="ewFullEdit">${esc(tr('recordsUi.fullEdit'))}</button><button class="btn ghost" id="ewSave">${esc(tr('recordsUi.saveBasic'))}</button><button class="btn ghost" id="ewCopy">${esc(tr('recordsUi.copyToday'))}</button><button class="btn danger" id="ewDelete">${esc(tr('recordsUi.moveTrash'))}</button></div>`,()=>{
    $('#ewFullEdit').onclick=()=>beginHistoryEdit(id);
-   $('#ewSave').onclick=()=>{snapshot('歷史訓練基本資料編輯前');w.name=$('#ewName').value.trim()||w.name;w.date=$('#ewDate').value;w.duration=clamp($('#ewDuration').value,0,1440);const gym=ensureGymByName($('#ewGymName').value);w.gymId=gym?.id||'';w.gymNameSnapshot=gym?.name||'';w.deload=$('#ewDeload').checked;w.notes=$('#ewNotes').value;save('編輯紀錄',false);closeModal();toast(tr('feedback.recordSaved'))};
-   $('#ewCopy').onclick=()=>{if(data.activeWorkout&&!confirm(tr('dialogs.overwriteActive')))return;data.activeWorkout=JSON.parse(JSON.stringify(w));data.activeWorkout.id=uid('w');data.activeWorkout.date=isoToday();data.activeWorkout.status='active';data.activeWorkout.startedAt=new Date().toISOString();data.activeWorkout.endedAt='';data.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.completed=false));save('複製訓練',true);closeModal();goPage('trainPage')};
-   $('#ewDelete').onclick=()=>{data.trash.unshift({id:uid('trash'),deletedAt:new Date().toISOString(),item:JSON.parse(JSON.stringify(w))});data.workouts=data.workouts.filter(x=>x.id!==w.id);save('刪除紀錄',true);closeModal();toast(tr('feedback.recordTrashed'))}
+   $('#ewSave').onclick=()=>{snapshot(tr('reasons.beforeBasicHistoryEdit'));w.name=$('#ewName').value.trim()||w.name;w.date=$('#ewDate').value;w.duration=clamp($('#ewDuration').value,0,1440);const gym=ensureGymByName($('#ewGymName').value);w.gymId=gym?.id||'';w.gymNameSnapshot=gym?.name||'';w.deload=$('#ewDeload').checked;w.notes=$('#ewNotes').value;save(tr('reasons.editRecord'),false);closeModal();toast(tr('feedback.recordSaved'))};
+   $('#ewCopy').onclick=()=>{if(data.activeWorkout&&!confirm(tr('dialogs.overwriteActive')))return;data.activeWorkout=JSON.parse(JSON.stringify(w));data.activeWorkout.id=uid('w');data.activeWorkout.date=isoToday();data.activeWorkout.status='active';data.activeWorkout.startedAt=new Date().toISOString();data.activeWorkout.endedAt='';data.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.completed=false));save(tr('reasons.copyWorkout'),true);closeModal();goPage('trainPage')};
+   $('#ewDelete').onclick=()=>{data.trash.unshift({id:uid('trash'),deletedAt:new Date().toISOString(),item:JSON.parse(JSON.stringify(w))});data.workouts=data.workouts.filter(x=>x.id!==w.id);save(tr('reasons.deleteRecord'),true);closeModal();toast(tr('feedback.recordTrashed'))}
  })
 }
 function manualEntry(){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceForManual')))return;
  openModal(tr('modal.manualEntry'),`<div class="grid2"><div class="field"><label>${esc(tr('trainingUi.date'))}</label><input type="date" id="meDate" value="${isoToday()}"></div><div class="field"><label>${esc(tr('recordsUi.name'))}</label><input id="meName" value="${esc(tr('dynamic.manualName'))}"></div><div class="field"><label>${esc(tr('dynamic.actualMinutes'))}</label><input type="number" id="meDur" value="60" min="0" max="1440"></div><div class="field"><label>${esc(tr('recordsUi.deload'))}</label><select id="meDeload"><option value="0">${esc(tr('recordsUi.no'))}</option><option value="1">${esc(tr('recordsUi.yes'))}</option></select></div></div><p class="small">${esc(tr('recordsUi.manualHint'))}</p><button class="btn primary" id="meCreate">${esc(tr('dynamic.createManual'))}</button>`,()=>{
-   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||tr('dynamic.manualName'),duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save('開始手動補登',true);closeModal();goPage('trainPage');toast(tr('feedback.manualStarted'))}
+   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||tr('dynamic.manualName'),duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save(tr('reasons.startManual'),true);closeModal();goPage('trainPage');toast(tr('feedback.manualStarted'))}
  })
 }
 
@@ -1958,14 +1958,14 @@ function importSystemProgram(id,keepModal=false){
  p.workouts.forEach((w,i)=>{
    data.templates.push({id:`tpl_${p.id}_${stamp}_${i}`,name:`${p.nameZh}｜${w.nameZh}`,nameEn:`${p.nameEn} | ${w.nameEn}`,sourceProgramId:p.id,sourceVersion:p.version,dayMeta:JSON.parse(JSON.stringify(w.dayMeta||{})),items:JSON.parse(JSON.stringify(w.items))});
  });
- save('加入系統 Program',true);toast(tr('feedback.systemProgramAdded',{count:p.workouts.length}));
+ save(tr('reasons.importSystemProgram'),true);toast(tr('feedback.systemProgramAdded',{count:p.workouts.length}));
  if(keepModal)closeModal();
 }
 function startSystemProgramDay(id,dayIndex=0){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceForSystemProgram')))return;
  const p=SYSTEM_PROGRAMS.find(x=>x.id===id),w=p?.workouts?.[dayIndex];if(!p||!w)return;
  data.activeWorkout={id:uid('w'),date:isoToday(),name:`${p.nameZh}｜${w.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:`系統課表： ${p.nameZh}`,programDayMeta:JSON.parse(JSON.stringify(w.dayMeta||{})),gymId:'',gymNameSnapshot:'',deload:p.progression==='deload',preStatus:{},pain:'',exercises:w.items.map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);return ex?makeSessionExercise({...ex,...it},isoToday()):null}).filter(Boolean)};
- closeModal();save('開始系統課表',true);goPage('trainPage');
+ closeModal();save(tr('reasons.startSystemProgram'),true);goPage('trainPage');
 }
 let programDisplayLimit=18;
 function renderSystemPrograms(){
@@ -2031,7 +2031,7 @@ function addSystemEquipmentToMine(id){
      if(same){toast(tr('feedback.equipmentExists'));return}
      const mapped=models.find(x=>x.brand===brand&&(x.model===model||x.name===model));
      data.equipment.push({id:uid('eq'),name:custom||e.nameZh,nameEn:e.nameEn,systemEquipmentId:id,category:e.category,brand,model,series:mapped?.series||'',modelName:mapped?.name||'',weightUnit:'kg'});
-     save('加入我的器材',true);closeModal();toast(tr('feedback.equipmentAdded'))
+     save(tr('reasons.addMyEquipment'),true);closeModal();toast(tr('feedback.equipmentAdded'))
    }
  })
 }
@@ -2052,7 +2052,7 @@ function showExerciseDetail(id){
  });
 }
 function copySystemExercise(id){
- const e=getExercise(id);if(!e)return;const c=JSON.parse(JSON.stringify(e));c.id=uid('ex');c.system=false;c.name=e.name+'（我的）';data.exerciseLibrary.push(c);save('複製系統動作',true);closeModal();toast(tr('feedback.exerciseCopied'));
+ const e=getExercise(id);if(!e)return;const c=JSON.parse(JSON.stringify(e));c.id=uid('ex');c.system=false;c.name=e.name+'（我的）';data.exerciseLibrary.push(c);save(tr('reasons.copySystemExercise'),true);closeModal();toast(tr('feedback.exerciseCopied'));
 }
 function renderGlossaryIndex(){
  const box=$('#glossaryIndex');if(!box)return;const q=($('#glossarySearch')?.value||'').trim().toLowerCase();
@@ -2085,19 +2085,19 @@ function renderSettings(){
  if(hg)hg.textContent=tr('finalUi.gymsTotal',{count:data.gyms.length});
  if(hme)hme.textContent=tr('finalUi.myEquipmentTotal',{count:data.equipment.length});
  $('#templateList').innerHTML=data.templates.length?data.templates.map(t=>`<div class="template-item"><div class="record-head"><div><b>${esc(t.name)}</b> ${t.sourceProgramId?'<span class="source-pill">FROM SYSTEM</span>':''}<div class="record-meta">${tr('drawer.historyExerciseCount',{count:t.items.length})}${t.nameEn?' · '+esc(t.nameEn):''}</div></div><div class="actions"><button class="btn small ghost" data-edit-tpl="${t.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-del-tpl="${t.id}">${esc(tr('gym.delete'))}</button></div></div>${t.dayMeta?.focusSummary?`<div class="small" style="margin-top:7px"><b>${esc(t.dayMeta.dayTitle||'訓練重點')}</b> · ${esc(t.dayMeta.focusSummary)}</div>`:''}<div class="tagrow" style="margin-top:8px">${t.items.map(i=>`<span class="tag">${esc(getExercise(i.exerciseId)?.name||'已刪除動作')}</span>`).join('')}</div></div>`).join(''):'<div class="card empty">${esc(tr("residual.r1a327ebb"))}</div>';
- $$('[data-edit-tpl]').forEach(b=>b.onclick=()=>editTemplate(b.dataset.editTpl));$$('[data-del-tpl]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.deleteTemplate'))){data.templates=data.templates.filter(t=>t.id!==b.dataset.delTpl);save('刪除課表',true)}});
+ $$('[data-edit-tpl]').forEach(b=>b.onclick=()=>editTemplate(b.dataset.editTpl));$$('[data-del-tpl]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.deleteTemplate'))){data.templates=data.templates.filter(t=>t.id!==b.dataset.delTpl);save(tr('reasons.deleteTemplate'),true)}});
  renderLibrary();
  renderGymSettings();
  $('#equipmentList').innerHTML=data.equipment.length?data.equipment.map(e=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${esc(e.name)}</div><div class="snapshot-reason">${e.brand?esc(e.brand):'未指定品牌'}${e.model?` · ${esc(e.model)}`:''}${e.series?` · ${esc(e.series)}`:''} · 重量標示 ${normalizeWeightUnit(e.weightUnit||'kg')}</div></div><div class="actions"><button class="btn small ghost" data-eq-unit="${e.id}">${normalizeWeightUnit(e.weightUnit||'kg')} ↔</button><button class="btn small danger" data-deleq="${e.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="empty">${esc(tr("residual.raf76980d"))}</div>';
- $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save('修改器材重量單位',false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
- $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save('刪除器材',true)});
+ $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save(tr('reasons.changeEquipmentUnit'),false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
+ $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save(tr('reasons.deleteEquipment'),true)});
  $('#setTrainingGoal').value=coachGoal();$('#setSessionMinutes').value=String(n(data.settings.sessionMinutes)||60);$('#setExperienceLevel').value=data.settings.experienceLevel||'beginner';$('#setEquipmentPreference').value=data.settings.equipmentPreference||'machine';$('#setBlockWeeks').value=String(n(data.settings.blockWeeks)||6);$('#setPreferredGym').innerHTML='<option value="">${esc(tr("residual.recc7c9f4"))}</option>'+data.gyms.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');$('#setPreferredGym').value=data.settings.preferredGymId||'';$('#priorityMuscleOptions').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<label><input type="checkbox" data-priority-muscle="${m}" ${priorityMuscles().includes(m)?'checked':''}>${m}</label>`).join('');const wd=['日','一','二','三','四','五','六'],avs=availableWeekdays();$('#availableWeekdayOptions').innerHTML=wd.map((x,i)=>`<label><input type="checkbox" data-available-weekday="${i}" ${avs.includes(i)?'checked':''}>週${x}</label>`).join('');$('#setAllowConsecutiveDays').checked=!!data.settings.allowConsecutiveDays;$('#setUnit').value=data.settings.unit;$('#setIntensity').value=data.settings.intensity;$('#setRest').value=data.settings.defaultRest;$('#setWeeklySessions').value=data.settings.weeklySessions;$('#setCardioGoal').value=data.settings.weeklyCardio;$('#setWeekStart').value=String(data.settings.weekStart);$('#setWarmup').checked=!!data.settings.includeWarmup;$('#set1rm').checked=!!data.settings.show1RM;
  $('#setUiLevel').value=uiLevel();const tutBtn=$('#openTutorialFromSettings');if(tutBtn)tutBtn.onclick=openTutorialAgain;$('#setRestTimerPosition').value=data.settings.restTimerPosition||'top';$('#setTrainingNotes').checked=data.settings.trainingNotes!==false;$('#setTrainingAutoLoad').checked=data.settings.trainingAutoLoad!==false;$('#setTrainingIntervalTimer').checked=data.settings.trainingIntervalTimer!==false;$('#setRestTimerSound').checked=data.settings.restTimerSound!==false;
  $('#muscleGoalInputs').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<div class="field"><label>${m}</label><input type="number" min="0" max="50" data-mgoal="${m}" value="${n((data.settings.weeklyMuscleGoals||{})[m])}"></div>`).join('');
  $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||'已刪除動作')}</b><div class="record-meta">目標 ${fmtWeight(g.weight)} × ${g.reps}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="small">${esc(tr("residual.r00862c41"))}</div>';
- $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save('刪除力量目標',true)});
+ $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save(tr('reasons.deleteStrengthGoal'),true)});
  $('#snapshotList').innerHTML=data.snapshots.length?data.snapshots.map(s=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${new Date(s.at).toLocaleString('zh-TW')}</div><div class="snapshot-reason">${esc(s.reason||'自動備份')}</div></div><button class="btn small ghost" data-restore-snap="${s.id}">${esc(tr("residual.rf1b5cda4"))}</button></div>`).join(''):'<div class="empty">${esc(tr("residual.r4cdd5477"))}</div>';
- $$('[data-restore-snap]').forEach(b=>b.onclick=()=>{const s=data.snapshots.find(x=>x.id===b.dataset.restoreSnap);if(s&&confirm(tr('dialogs.restoreSnapshot'))){snapshot('恢復前');const snaps=data.snapshots;data=migrate(JSON.parse(JSON.stringify(s.payload)));data.snapshots=snaps;save('恢復快照',false);toast(tr('feedback.snapshotRestored'))}})
+ $$('[data-restore-snap]').forEach(b=>b.onclick=()=>{const s=data.snapshots.find(x=>x.id===b.dataset.restoreSnap);if(s&&confirm(tr('dialogs.restoreSnapshot'))){snapshot(tr('reasons.beforeRestore'));const snaps=data.snapshots;data=migrate(JSON.parse(JSON.stringify(s.payload)));data.snapshots=snaps;save(tr('reasons.restoreSnapshot'),false);toast(tr('feedback.snapshotRestored'))}})
 }
 function renderLibrary(){
  const q=($('#libSearch')?.value||'').toLowerCase();
@@ -2105,7 +2105,7 @@ function renderLibrary(){
  const shown=items.slice(0,80);
  $('#libraryList').innerHTML=shown.map(e=>`<div class="library-item"><div class="record-head"><div><b>${esc(e.name)}</b> ${e.system?'<span class="source-pill">SYSTEM</span>':'<span class="source-pill">MY</span>'}<div class="eq-en">${esc(e.nameEn||'')}</div><div class="record-meta">${esc((e.aliases||[]).join(' / '))}</div></div><div class="actions">${e.system?`<button class="btn small primary" data-viewlib="${e.id}">${esc(tr("residual.rbb048236"))}</button><button class="btn small ghost" data-copylib="${e.id}">${esc(tr("residual.r80173301"))}</button>`:`<button class="btn small ghost" data-editlib="${e.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-dellib="${e.id}">${esc(tr('gym.delete'))}</button>`}</div></div><div class="tagrow" style="margin-top:8px"><span class="tag">${esc(e.muscle)}</span><span class="tag">${esc(TYPES.find(t=>t[0]===e.type)?.[1]||e.type)}</span><span class="tag">${e.targetSets} 組 · ${e.repMin}–${e.repMax}</span><span class="tag">休 ${e.rest}s</span>${e.pattern&&GLOSSARY[PATTERN_INFO[e.pattern]]?`<span class="tag">${esc(GLOSSARY[PATTERN_INFO[e.pattern]].zh)} ${infoButton(PATTERN_INFO[e.pattern])}</span>`:''}</div></div>`).join('')+(items.length>shown.length?`<div class="card small">目前顯示前 ${shown.length} 個；可用搜尋快速找到其他系統動作。</div>`:'');
  $$('[data-viewlib]').forEach(b=>b.onclick=()=>showExerciseDetail(b.dataset.viewlib));$$('[data-copylib]').forEach(b=>b.onclick=()=>copySystemExercise(b.dataset.copylib));
- $$('[data-editlib]').forEach(b=>b.onclick=()=>editExerciseLib(b.dataset.editlib));$$('[data-dellib]').forEach(b=>b.onclick=()=>{if(data.templates.some(t=>t.items.some(i=>i.exerciseId===b.dataset.dellib))){alert(tr('finalUi.exerciseInUse'));return}if(confirm(tr('dialogs.deleteCustomExercise'))){data.exerciseLibrary=data.exerciseLibrary.filter(e=>e.id!==b.dataset.dellib);save('刪除動作',true)}})
+ $$('[data-editlib]').forEach(b=>b.onclick=()=>editExerciseLib(b.dataset.editlib));$$('[data-dellib]').forEach(b=>b.onclick=()=>{if(data.templates.some(t=>t.items.some(i=>i.exerciseId===b.dataset.dellib))){alert(tr('finalUi.exerciseInUse'));return}if(confirm(tr('dialogs.deleteCustomExercise'))){data.exerciseLibrary=data.exerciseLibrary.filter(e=>e.id!==b.dataset.dellib);save(tr('reasons.deleteExercise'),true)}})
 }
 function normalizeMachineLookupText(v){
  return String(v||'').toLowerCase()
@@ -2242,14 +2242,14 @@ function previewImport(incoming,type,fileName){
  const migrated=migrate(incoming),existing=new Map(data.workouts.map(w=>[w.id,w])),newCount=migrated.workouts.filter(w=>!existing.has(w.id)).length,dup=migrated.workouts.length-newCount;
  const modeOptions=type==='json'?`<option value="restore">${esc(tr("residual.r54649a64"))}</option><option value="merge">${esc(tr("residual.r828f27b9"))}</option><option value="skip">${esc(tr("residual.r65015b25"))}</option>`:`<option value="merge">${esc(tr("residual.r23627781"))}</option><option value="skip">${esc(tr("residual.r383678cd"))}</option>`;
  openModal(tr('modal.importPreview'),`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的${type==='json'?'完整備份':'表格資料'}</div></div>${importSummaryHtml(migrated,type,newCount,dup,incoming)}<div class="field"><label>${esc(tr("residual.r355ebb85"))}</label><select id="impMode">${modeOptions}</select><div class="hint">${esc(tr("residual.rf191fe9c"))}</div></div><button class="btn primary" id="impConfirm">${esc(tr("residual.r320fc068"))}</button>`,()=>$('#impConfirm').onclick=()=>{
-   const mode=$('#impMode').value;snapshot('匯入前');const beforeSnapshots=[...(data.snapshots||[])];
+   const mode=$('#impMode').value;snapshot(tr('reasons.beforeImport'));const beforeSnapshots=[...(data.snapshots||[])];
    if(mode==='restore'&&type==='json'){
      const importedSnapshots=[...(migrated.snapshots||[])];data=migrated;data.snapshots=mergeSnapshots(beforeSnapshots,importedSnapshots);
    }else{
      const map=new Map(data.workouts.map(w=>[w.id,w]));migrated.workouts.forEach(w=>{if(mode==='merge'||!map.has(w.id))map.set(w.id,w)});data.workouts=[...map.values()];
      data.exerciseLibrary=mergeById(data.exerciseLibrary,migrated.exerciseLibrary);data.templates=mergeById(data.templates,migrated.templates);data.gyms=mergeById(data.gyms,migrated.gyms);data.equipment=mergeById(data.equipment,migrated.equipment);data.bodyStatus=mergeBodyStatus(data.bodyStatus,migrated.bodyStatus);data.strengthGoals=mergeById(data.strengthGoals,migrated.strengthGoals);data.snapshots=beforeSnapshots;
    }
-   syncGymsFromHistory(false);save('匯入資料',false);closeModal();toast(mode==='restore'?tr('feedback.importRestored'):tr('feedback.importMerged'))
+   syncGymsFromHistory(false);save(tr('reasons.importData'),false);closeModal();toast(mode==='restore'?tr('feedback.importRestored'):tr('feedback.importMerged'))
  })
 }
 function csvEscape(v){return'"'+String(v??'').replace(/"/g,'""')+'"'}
@@ -2282,8 +2282,8 @@ $$('.settings-back').forEach(b=>b.onclick=()=>showSettingsView('hub'));
 ['programSearch','programCategory','programDays','programLevel','programDuration','programEquip','programGoal'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener(id==='programSearch'?'input':'change',()=>{programDisplayLimit=18;renderSystemPrograms()})});
 ['systemEqSearch','systemEqCategory','systemEqResistance','systemEqBrand'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener(id==='systemEqSearch'?'input':'change',()=>{equipmentDisplayLimit=24;renderSystemEquipment()})});
 const gs=$('#glossarySearch');if(gs)gs.oninput=renderGlossaryIndex;
-$('#addGym').onclick=()=>{const name=prompt(tr('prompts.gymName'));if(!name?.trim())return;const existed=gymByName(name);if(existed){toast(tr('feedback.gymExists'));return}ensureGymByName(name);save('新增健身房',true)};
-$('#syncGymsFromHistory').onclick=()=>{const added=syncGymsFromHistory(false);if(added)save('從訓練紀錄帶入健身房',true);else toast(tr('finalUi.noNewGym'))};
+$('#addGym').onclick=()=>{const name=prompt(tr('prompts.gymName'));if(!name?.trim())return;const existed=gymByName(name);if(existed){toast(tr('feedback.gymExists'));return}ensureGymByName(name);save(tr('reasons.addGym'),true)};
+$('#syncGymsFromHistory').onclick=()=>{const added=syncGymsFromHistory(false);if(added)save(tr('reasons.syncGyms'),true);else toast(tr('finalUi.noNewGym'))};
 $('#addEquipment').onclick=()=>{openModal(tr('modal.newMyEquipment'),`<div class="card">
  <div class="field"><label>${esc(tr("residual.r5a66610b"))}</label><input id="manualEqName" placeholder="${esc(tr("residual.r0ccc5e3e"))}"></div>
  <div class="field"><label>${esc(tr("residual.r89f4b900"))}</label><input id="manualEqBrand" list="manualEqBrands" placeholder="Life Fitness、Hammer Strength..."><datalist id="manualEqBrands">${EQUIPMENT_BRANDS.map(b=>`<option value="${esc(b)}"></option>`).join('')}</datalist></div>
@@ -2291,14 +2291,14 @@ $('#addEquipment').onclick=()=>{openModal(tr('modal.newMyEquipment'),`<div class
  <button class="btn primary" id="manualEqSave">${esc(tr('trainingUi.save'))}</button></div>`,()=>$('#manualEqSave').onclick=()=>{
    const name=$('#manualEqName').value.trim();if(!name){toast(tr('feedback.equipmentNameRequired'));return}
    data.equipment.push({id:uid('eq'),name,brand:$('#manualEqBrand').value.trim(),model:$('#manualEqModel').value.trim()});
-   save('新增器材',true);closeModal()
+   save(tr('reasons.addEquipment'),true);closeModal()
  })};
-$('#addStrengthGoal').onclick=()=>{const unit=normalizeWeightUnit(data.settings.unit);openModal(tr('modal.newStrengthGoal'),`<div class="field"><label>${esc(tr("residual.re93ee504"))}</label><select id="sgEx">${data.exerciseLibrary.filter(e=>['weight_reps','bodyweight','unilateral'].includes(e.type)).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div><div class="grid2"><div class="field"><label>目標重量（${unit}）</label><input id="sgW" type="number" step=".1"><div class="hint">${esc(tr("residual.r19b89a0e"))}</div></div><div class="field"><label>${esc(tr("residual.rdc36d1d9"))}</label><input id="sgR" type="number" value="10"></div></div><button class="btn primary" id="sgSave">${esc(tr('trainingUi.save'))}</button>`,()=>$('#sgSave').onclick=()=>{data.strengthGoals.push({id:uid('goal'),exerciseId:$('#sgEx').value,weight:toKg(clamp($('#sgW').value,0,5000),unit),reps:clamp($('#sgR').value,1,300)});save('新增力量目標',true);closeModal();toast(tr('feedback.strengthGoalAdded'))})};
-$('#saveSettings').onclick=()=>{const hadPlan=!!data.currentPlan;data.settings.preferencesSetupCompleted=true;data.settings.trainingGoal=$('#setTrainingGoal').value;data.settings.sessionMinutes=n($('#setSessionMinutes').value)||60;data.settings.experienceLevel=$('#setExperienceLevel').value;data.settings.equipmentPreference=$('#setEquipmentPreference').value;data.settings.blockWeeks=n($('#setBlockWeeks').value)||6;data.settings.preferredGymId=$('#setPreferredGym').value||'';data.settings.priorityMuscles=$$('[data-priority-muscle]:checked').map(x=>x.dataset.priorityMuscle);data.settings.availableWeekdays=$$('[data-available-weekday]:checked').map(x=>n(x.dataset.availableWeekday));data.settings.allowConsecutiveDays=$('#setAllowConsecutiveDays').checked;data.settings.unit=$('#setUnit').value;data.settings.intensity=$('#setIntensity').value;data.settings.defaultRest=clamp($('#setRest').value,15,900);data.settings.weeklySessions=clamp($('#setWeeklySessions').value,1,14);data.settings.weeklyCardio=clamp($('#setCardioGoal').value,0,2000);data.settings.weekStart=n($('#setWeekStart').value);data.settings.includeWarmup=$('#setWarmup').checked;data.settings.show1RM=$('#set1rm').checked;data.settings.uiLevel=$('#setUiLevel').value;data.settings.restTimerPosition=$('#setRestTimerPosition').value;data.settings.trainingNotes=$('#setTrainingNotes').checked;data.settings.trainingAutoLoad=$('#setTrainingAutoLoad').checked;data.settings.trainingIntervalTimer=$('#setTrainingIntervalTimer').checked;data.settings.restTimerSound=$('#setRestTimerSound').checked;data.settings.weeklyMuscleGoals=data.settings.weeklyMuscleGoals||{};$$('[data-mgoal]').forEach(i=>data.settings.weeklyMuscleGoals[i.dataset.mgoal]=clamp(i.value,0,50));save('修改設定',true);toast(hadPlan?tr('feedback.settingsSavedPlan'):tr('feedback.settingsSaved'))};
+$('#addStrengthGoal').onclick=()=>{const unit=normalizeWeightUnit(data.settings.unit);openModal(tr('modal.newStrengthGoal'),`<div class="field"><label>${esc(tr("residual.re93ee504"))}</label><select id="sgEx">${data.exerciseLibrary.filter(e=>['weight_reps','bodyweight','unilateral'].includes(e.type)).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div><div class="grid2"><div class="field"><label>目標重量（${unit}）</label><input id="sgW" type="number" step=".1"><div class="hint">${esc(tr("residual.r19b89a0e"))}</div></div><div class="field"><label>${esc(tr("residual.rdc36d1d9"))}</label><input id="sgR" type="number" value="10"></div></div><button class="btn primary" id="sgSave">${esc(tr('trainingUi.save'))}</button>`,()=>$('#sgSave').onclick=()=>{data.strengthGoals.push({id:uid('goal'),exerciseId:$('#sgEx').value,weight:toKg(clamp($('#sgW').value,0,5000),unit),reps:clamp($('#sgR').value,1,300)});save(tr('reasons.addStrengthGoal'),true);closeModal();toast(tr('feedback.strengthGoalAdded'))})};
+$('#saveSettings').onclick=()=>{const hadPlan=!!data.currentPlan;data.settings.preferencesSetupCompleted=true;data.settings.trainingGoal=$('#setTrainingGoal').value;data.settings.sessionMinutes=n($('#setSessionMinutes').value)||60;data.settings.experienceLevel=$('#setExperienceLevel').value;data.settings.equipmentPreference=$('#setEquipmentPreference').value;data.settings.blockWeeks=n($('#setBlockWeeks').value)||6;data.settings.preferredGymId=$('#setPreferredGym').value||'';data.settings.priorityMuscles=$$('[data-priority-muscle]:checked').map(x=>x.dataset.priorityMuscle);data.settings.availableWeekdays=$$('[data-available-weekday]:checked').map(x=>n(x.dataset.availableWeekday));data.settings.allowConsecutiveDays=$('#setAllowConsecutiveDays').checked;data.settings.unit=$('#setUnit').value;data.settings.intensity=$('#setIntensity').value;data.settings.defaultRest=clamp($('#setRest').value,15,900);data.settings.weeklySessions=clamp($('#setWeeklySessions').value,1,14);data.settings.weeklyCardio=clamp($('#setCardioGoal').value,0,2000);data.settings.weekStart=n($('#setWeekStart').value);data.settings.includeWarmup=$('#setWarmup').checked;data.settings.show1RM=$('#set1rm').checked;data.settings.uiLevel=$('#setUiLevel').value;data.settings.restTimerPosition=$('#setRestTimerPosition').value;data.settings.trainingNotes=$('#setTrainingNotes').checked;data.settings.trainingAutoLoad=$('#setTrainingAutoLoad').checked;data.settings.trainingIntervalTimer=$('#setTrainingIntervalTimer').checked;data.settings.restTimerSound=$('#setRestTimerSound').checked;data.settings.weeklyMuscleGoals=data.settings.weeklyMuscleGoals||{};$$('[data-mgoal]').forEach(i=>data.settings.weeklyMuscleGoals[i.dataset.mgoal]=clamp(i.value,0,50));save(tr('reasons.changeSettings'),true);toast(hadPlan?tr('feedback.settingsSavedPlan'):tr('feedback.settingsSaved'))};
 $('#runSelfCheck').onclick=()=>renderSelfCheck(runAppSelfCheck());$('#exportJson').onclick=exportJSON;$('#exportCsv').onclick=exportCSV;
 $('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(JSON.parse(await f.text()),'json',f.name)}catch{alert(tr('finalUi.invalidJson'))}e.target.value=''};
 $('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert(tr('finalUi.invalidCsv'))}e.target.value=''};
-$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save('重新初始化',false);toast(tr('feedback.allCleared'))}};
+$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
 
 $('#recordMonth').value=monthKey();
 renderAll();
