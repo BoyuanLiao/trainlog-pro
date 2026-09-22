@@ -14,6 +14,7 @@
     const freshData = options.freshData;
     const uid = options.uid;
     const now = typeof options.now === 'function' ? options.now : () => new Date();
+    const defaultSnapshotReason = options.defaultSnapshotReason;
 
     if (!storage || typeof storage.getItem !== 'function' || typeof storage.setItem !== 'function') {
       throw new Error('TrainLogStorage.create requires a storage adapter');
@@ -61,7 +62,7 @@
     }
 
     function save(data, reason = '', takeSnapshot = false, render) {
-      if (takeSnapshot) snapshot(data, reason || '自動快照');
+      if (takeSnapshot) snapshot(data, reason || (typeof defaultSnapshotReason === 'function' ? defaultSnapshotReason() : String(defaultSnapshotReason || 'snapshot')));
       storage.setItem(appKey, JSON.stringify(data));
       if (typeof render === 'function') render();
     }

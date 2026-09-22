@@ -89,20 +89,20 @@
     const effortRate = effort.total ? effortRecorded / effort.total : 0;
     const patternRate = exTotal ? recognized / exTotal : 0;
     let level = 'low';
-    let label = '低';
+    let labelKey = 'analysisUi.confidenceLow';
 
     if (list.length < 2 || formal < 6) {
       level = 'insufficient';
-      label = '資料不足';
+      labelKey = 'analysisUi.confidenceInsufficient';
     } else if (list.length >= 6 && formal >= 30 && effortRate >= 0.6 && patternRate >= 0.75) {
       level = 'high';
-      label = '高';
+      labelKey = 'analysisUi.confidenceHigh';
     } else if (list.length >= 3 && formal >= 15 && patternRate >= 0.5) {
       level = 'medium';
-      label = '中';
+      labelKey = 'analysisUi.confidenceMedium';
     }
 
-    return { level, label, formal, workouts: list.length, effortRate, patternRate };
+    return { level, labelKey, formal, workouts: list.length, effortRate, patternRate };
   }
 
 

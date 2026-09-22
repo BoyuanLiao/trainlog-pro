@@ -3,10 +3,12 @@ const APP_KEY='trainlogProData';
 const APP_VERSION='2.11.0';
 const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
+const MUSCLE_I18N={'胸':'domain.muscle.chest','背':'domain.muscle.back','腿':'domain.muscle.legs','肩膀':'domain.muscle.shoulders','二頭':'domain.muscle.biceps','三頭':'domain.muscle.triceps','腹部':'domain.muscle.core','有氧':'domain.muscle.cardio','其他':'domain.muscle.other'};
 const TYPES=[
-  ['weight_reps','重量 × 次數'],['duration','計時'],['cardio','有氧'],['bodyweight','體重型'],['unilateral','單側']
+  ['weight_reps','domain.type.weightReps'],['duration','domain.type.duration'],['cardio','domain.type.cardio'],['bodyweight','domain.type.bodyweight'],['unilateral','domain.type.unilateral']
 ];
-const KINDS=[['warmup','暖身'],['working','正式'],['drop','Drop'],['failure','Failure'],['backoff','Back-off']];
+const KINDS=[['warmup','domain.kind.warmup'],['working','domain.kind.working'],['drop','domain.kind.drop'],['failure','domain.kind.failure'],['backoff','domain.kind.backoff']];
+const WEEKDAY_KEYS=['domain.weekday.sun','domain.weekday.mon','domain.weekday.tue','domain.weekday.wed','domain.weekday.thu','domain.weekday.fri','domain.weekday.sat'];
 const PPL={胸:'Push',肩膀:'Push',三頭:'Push',背:'Pull',二頭:'Pull',腿:'Legs',腹部:'Core',有氧:'Cardio',其他:'Other'};
 const PATTERN_INFO={horizontal_push:'horizontal_push',horizontal_pull:'horizontal_pull',vertical_push:'vertical_push',vertical_pull:'vertical_pull',knee_dominant:'knee_dominant',hip_extension:'hip_extension',knee_flexion:'knee_flexion',knee_extension:'knee_extension',shoulder_abduction:'shoulder_abduction',elbow_flexion:'elbow_flexion',elbow_extension:'elbow_extension',core_flexion:'core_flexion',rotation:'rotation'};
 
@@ -14,6 +16,9 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const i18n=window.TrainLogI18n;
 const tr=(key,vars)=>i18n.t(key,vars);
 const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function displayMuscle(value){const key=MUSCLE_I18N[value];return key?tr(key):String(value??'')}
+function displayType(value){const row=TYPES.find(x=>x[0]===value);return row?tr(row[1]):String(value??'')}
+function displayKind(value){const row=KINDS.find(x=>x[0]===value);return row?tr(row[1]):String(value??'')}
 const {n,clamp,isoToday,parseDate,isoDate,daysBetween,monthKey,fmtDate,LB_PER_KG,normalizeWeightUnit,toKg,fromKg,cleanWeightNumber,est1rm}=window.TrainLogUtils;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function fmtWeightNumber(weightKg,unit=(data?.settings?.unit||'kg')){return cleanWeightNumber(fromKg(weightKg,unit))}
@@ -45,7 +50,7 @@ function migrate(raw){return migrationCore.migrate(raw)}
 function guessType(e){return migrationCore.guessType(e)}
 function findOrCreateExercise(name,muscle,type,library){return migrationCore.findOrCreateExercise(name,muscle,type,library)}
 let recoveryIssue=null;
-const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid});
+const storageCore=window.TrainLogStorage.create({appKey:APP_KEY,legacyKey:'fitnessRecordsV1',storage:localStorage,migrate,freshData,uid,defaultSnapshotReason:()=>tr('reasons.autoSnapshot')});
 function loadData(){const result=storageCore.loadData();recoveryIssue=result.recoveryIssue;return result.data}
 let data=loadData();
 i18n.setLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
@@ -139,7 +144,7 @@ function renderGymSettings(){
    if(!confirm(info.workouts.length?tr('gym.deleteWithHistory',{name:g.name}):tr('gym.deleteSimple',{name:g.name})))return;
    data.workouts.forEach(w=>{if(w.gymId===g.id){w.gymNameSnapshot=w.gymNameSnapshot||g.name;w.gymId=''}});
    if(data.activeWorkout?.gymId===g.id){data.activeWorkout.gymNameSnapshot=data.activeWorkout.gymNameSnapshot||g.name;data.activeWorkout.gymId=''}
-   data.gyms=data.gyms.filter(x=>x.id!==g.id);save('刪除健身房',true)
+   data.gyms=data.gyms.filter(x=>x.id!==g.id);save(tr('reasons.deleteGym'),true)
  })
 }
 function getLastExerciseRecord(exId,beforeDate='9999-12-31'){
@@ -156,7 +161,7 @@ function rollingStart(days){
 function workoutsLastDays(days){const s=rollingStart(days);return data.workouts.filter(w=>w.date>=s&&w.date<=isoToday())}
 function rangeDateLabel(days){
  if(days==='all'){
-   if(!data.workouts.length)return'尚無訓練資料';
+   if(!data.workouts.length)return tr('analysisDynamic.noTrainingData');
    const first=[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date))[0]?.date||isoToday();
    return `${fmtDate(first)} – ${fmtDate(isoToday())}`;
  }
@@ -174,7 +179,7 @@ function stimulusMap(workouts){
   profileForExercise:exerciseStimulusProfile,
   sourceForExercise:e=>{
    const basis=exerciseAnalysisBasis(e);
-   return{key:e.exerciseId||e.nameSnapshot||'unknown',name:e.nameSnapshot||basis.lib.name||'動作',pattern:basis.pattern,equipment:basis.eq?.nameZh||''}
+   return{key:e.exerciseId||e.nameSnapshot||'unknown',name:e.nameSnapshot||basis.lib.name||tr('analysisDynamic.exerciseFallback'),pattern:basis.pattern,equipment:basis.eq?.nameZh||''}
   }
  })
 }
@@ -194,11 +199,12 @@ function previousPeriodLabel(days){
  const d=Math.max(1,n(days)),curStart=rollingStart(d),prevEnd=shiftIso(curStart,-1),prevStart=shiftIso(prevEnd,-(d-1));
  return `${fmtDate(prevStart)} – ${fmtDate(prevEnd)}`
 }
+function localizedMessage(value){return value?.messageKey?tr(value.messageKey,value.messageParams||{}):String(value?.text||'')}
 function comparePct(cur,prev){return window.TrainLogProgress.comparePct(cur,prev)}
 function compareBadge(cur,prev){
  const c=comparePct(cur,prev);if(!c)return'';
  const arrow=c.dir==='up'?'↑':c.dir==='down'?'↓':'→';
- return `<span class="compare-badge ${c.dir}">${arrow} ${esc(c.text)}</span>`
+ return `<span class="compare-badge ${c.dir}">${arrow} ${esc(c.messageKey?localizedMessage(c):c.text)}</span>`
 }
 function analysisConfidence(workouts){return window.TrainLogAnalysis.analysisConfidence(workouts,{formalSetCount,patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}
 function exerciseSessionMetrics(exId){
@@ -207,14 +213,14 @@ function exerciseSessionMetrics(exId){
    const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;
    if(e.type==='cardio'){
      const c=e.cardio||{};
-     sessions.push({date:w.date,type:'cardio',minutes:n(c.minutes),distance:n(c.distanceKm),speed:n(c.speed),volume:0,rir:null,rpe:null,label:`${n(c.minutes)} 分${n(c.distanceKm)?` · ${n(c.distanceKm)} km`:''}`});
+     sessions.push({date:w.date,type:'cardio',minutes:n(c.minutes),distance:n(c.distanceKm),speed:n(c.speed),volume:0,rir:null,rpe:null,label:tr('analysisDynamic.cardioSession',{minutes:n(c.minutes),distance:n(c.distanceKm)?` · ${n(c.distanceKm)} km`:''})});
      return
    }
    const sets=(e.sets||[]).filter(s=>s.completed&&s.kind!=='warmup');
    if(!sets.length)return;
    if(e.type==='duration'){
      const bestSeconds=Math.max(0,...sets.map(s=>n(s.seconds))),totalSeconds=sets.reduce((a,s)=>a+n(s.seconds),0);
-     sessions.push({date:w.date,type:'duration',bestSeconds,totalSeconds,volume:totalSeconds,rir:null,rpe:null,label:`最佳 ${bestSeconds} 秒`});return
+     sessions.push({date:w.date,type:'duration',bestSeconds,totalSeconds,volume:totalSeconds,rir:null,rpe:null,label:tr('analysisDynamic.durationBest',{seconds:bestSeconds})});return
    }
    let maxWeight=0,maxReps=0,bestE1rm=0,bestSet=null,volume=0;
    const repByWeight={};const rirs=[],rpes=[];
@@ -231,7 +237,7 @@ function exerciseSessionMetrics(exId){
      if(s.rpe!==''&&s.rpe!=null)rpes.push(n(s.rpe))
    });
    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
-   sessions.push({date:w.date,type:e.type,maxWeight,maxReps,bestE1rm,bestSet,volume,repByWeight,rir:avg(rirs),rpe:avg(rpes),sets:sets.length,label:bestSet?`${fmtWeightNumber(bestSet.weight)}${data.settings.unit}×${bestSet.reps}`:`${sets.length} 組`})
+   sessions.push({date:w.date,type:e.type,maxWeight,maxReps,bestE1rm,bestSet,volume,repByWeight,rir:avg(rirs),rpe:avg(rpes),sets:sets.length,label:bestSet?`${fmtWeightNumber(bestSet.weight)}${data.settings.unit}×${bestSet.reps}`:tr('analysisDynamic.setsCount',{count:sets.length})})
  });
  return sessions
 }
@@ -241,23 +247,23 @@ function plateauDetail(exId){return window.TrainLogProgress.plateauFromSessions(
 function movementMatrixHtml(moves){
  const cell=p=>`<div class="pattern-cell"><b>${n(moves[p]||0)}</b><span>${esc(patternDisplayName(p))}</span></div>`;
  const groups=[
-  ['上半身｜水平', ['horizontal_push','horizontal_pull']],
-  ['上半身｜垂直', ['vertical_push','vertical_pull']],
-  ['下半身｜膝部', ['knee_dominant','knee_flexion']],
-  ['下半身｜髖部', ['hip_extension','hip_abduction']],
-  ['手臂', ['elbow_flexion','elbow_extension']],
-  ['核心', ['core_stability','rotation']]
+  ['analysisDynamic.groupHorizontal', ['horizontal_push','horizontal_pull']],
+  ['analysisDynamic.groupVertical', ['vertical_push','vertical_pull']],
+  ['analysisDynamic.groupKnee', ['knee_dominant','knee_flexion']],
+  ['analysisDynamic.groupHip', ['hip_extension','hip_abduction']],
+  ['analysisDynamic.groupArms', ['elbow_flexion','elbow_extension']],
+  ['analysisDynamic.groupCore', ['core_stability','rotation']]
  ];
  const coverage=['horizontal_push','horizontal_pull','vertical_push','vertical_pull','knee_dominant','knee_flexion','hip_extension','core_stability'];
- return `<div class="pattern-matrix">${groups.map(([name,ps])=>`<div class="pattern-group"><div class="pattern-group-title">${name}</div><div class="pattern-pair">${ps.map(cell).join('')}</div></div>`).join('')}</div>
+ return `<div class="pattern-matrix">${groups.map(([name,ps])=>`<div class="pattern-group"><div class="pattern-group-title">${esc(tr(name))}</div><div class="pattern-pair">${ps.map(cell).join('')}</div></div>`).join('')}</div>
  <div class="coverage-tags">${coverage.map(p=>`<span class="coverage-tag ${n(moves[p])>0?'hit':''}">${n(moves[p])>0?'✓':'—'} ${esc(patternDisplayName(p))}</span>`).join('')}</div>
- <div class="analysis-note">這裡呈現近期訓練分布與覆蓋情況，不假設 Push / Pull 或不同腿部模式必須符合固定比例。</div>`
+ <div class="analysis-note">${esc(tr("residual.r8b7fede0"))}</div>`
 }
 function persistentMovementBias(){
  const days=28,end=isoToday(),pairs=[
-  {a:'horizontal_push',b:'horizontal_pull',aName:'水平推',bName:'水平拉'},
-  {a:'vertical_push',b:'vertical_pull',aName:'垂直推',bName:'垂直拉'},
-  {a:'knee_dominant',b:'knee_flexion',aName:'膝主導',bName:'膝屈曲'}
+  {a:'horizontal_push',b:'horizontal_pull',aNameKey:'analysisDynamic.horizontalPush',bNameKey:'analysisDynamic.horizontalPull'},
+  {a:'vertical_push',b:'vertical_pull',aNameKey:'analysisDynamic.verticalPush',bNameKey:'analysisDynamic.verticalPull'},
+  {a:'knee_dominant',b:'knee_flexion',aNameKey:'analysisDynamic.kneeDominant',bNameKey:'analysisDynamic.kneeFlexion'}
  ];
  for(const pair of pairs){
    let aWins=0,bWins=0,usable=0,totalA=0,totalB=0;
@@ -267,8 +273,8 @@ function persistentMovementBias(){
      totalA+=a;totalB+=b;if(a+b<4)continue;usable++;
      if(a>b*1.4&&a-b>=2)aWins++;else if(b>a*1.4&&b-a>=2)bWins++
    }
-   if(usable>=3&&aWins>=3){const programId=pair.a==='horizontal_push'?'p_posture_pushpull_2':pair.a==='vertical_push'?'p_posture_verticalpull_2':pair.a==='knee_dominant'?'p_posture_posteriorchain_2':'';return{title:`${pair.aName}持續多於${pair.bName}`,desc:`最近 4 個七天區間中，有 ${aWins} 個區間的${pair.aName}正式組明顯較多。這代表近期訓練分布偏向${pair.aName}，不是姿勢或肌力失衡診斷。`,kind:'watch',programId}};
-   if(usable>=3&&bWins>=3)return{title:`${pair.bName}持續多於${pair.aName}`,desc:`最近 4 個七天區間中，有 ${bWins} 個區間的${pair.bName}正式組明顯較多。這代表近期訓練分布偏向${pair.bName}，不是姿勢或肌力失衡診斷。`,kind:'watch'}
+   if(usable>=3&&aWins>=3){const programId=pair.a==='horizontal_push'?'p_posture_pushpull_2':pair.a==='vertical_push'?'p_posture_verticalpull_2':pair.a==='knee_dominant'?'p_posture_posteriorchain_2':'';const a=tr(pair.aNameKey),b=tr(pair.bNameKey);return{title:tr('analysisDynamic.biasTitle',{a,b}),desc:tr('analysisDynamic.biasDesc',{wins:aWins,a,b}),kind:'watch',programId}};
+   if(usable>=3&&bWins>=3){const a=tr(pair.bNameKey),b=tr(pair.aNameKey);return{title:tr('analysisDynamic.biasTitle',{a,b}),desc:tr('analysisDynamic.biasDesc',{wins:bWins,a,b}),kind:'watch'}}
  }
  return null
 }
@@ -279,7 +285,7 @@ function strongestRecentExerciseProgress(workouts){
    const ss=exerciseSessionMetrics(id);if(ss.length<2)return;
    const cur=ss.at(-1),prev=ss.at(-2);if(!workouts.some(w=>w.date===cur.date))return;
    const signals=progressSignals(prev,cur);if(!signals.length)return;
-   const lib=getExercise(id),name=lib?.name||(data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id)?.nameSnapshot)||'動作';
+   const lib=getExercise(id),name=lib?.name||(data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id)?.nameSnapshot)||tr('analysisDynamic.exerciseFallback');
    const score=signals.length+(prev.bestE1rm&&cur.bestE1rm?Math.max(0,(cur.bestE1rm-prev.bestE1rm)/prev.bestE1rm)*10:0);
    if(!best||score>best.score)best={id,name,signals,score,cur,prev}
  });
@@ -288,19 +294,19 @@ function strongestRecentExerciseProgress(workouts){
 function buildAnalysisHighlights(ws,prevWs,days,confidence,cons){
  const out=[];
  if(confidence.level==='insufficient'){
-   out.push({kind:'info',title:'目前資料還不夠多',desc:`這個期間只有 ${confidence.workouts} 次訓練、${confidence.formal} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。`})
+   out.push({kind:'info',title:tr('analysisDynamic.insufficientTitle'),desc:tr('analysisDynamic.insufficientDesc',{workouts:confidence.workouts,sets:confidence.formal})})
  }
  const prog=strongestRecentExerciseProgress(ws);
- if(prog)out.push({kind:'good',title:`${prog.name} 出現進步訊號`,desc:`和上一次相比：${prog.signals.slice(0,3).map(x=>x.text).join('、')}。`});
+ if(prog)out.push({kind:'good',title:tr('analysisDynamic.progressTitle',{name:prog.name}),desc:tr('analysisDynamic.progressDesc',{signals:prog.signals.slice(0,3).map(localizedMessage).join('、')})});
  const bias=persistentMovementBias();if(bias&&confidence.level!=='insufficient')out.push(bias);
- if(cons.totalWeeks>=2&&cons.weeks===cons.totalWeeks&&ws.length>=2)out.push({kind:'good',title:'近期訓練保持連續',desc:`統計期間涵蓋的 ${cons.totalWeeks} 個週區間都有訓練紀錄，平均約 ${cons.avgPerWeek.toFixed(1)} 次／週。`});
+ if(cons.totalWeeks>=2&&cons.weeks===cons.totalWeeks&&ws.length>=2)out.push({kind:'good',title:tr('analysisDynamic.consistencyTitle'),desc:tr('analysisDynamic.consistencyDesc',{weeks:cons.totalWeeks,average:cons.avgPerWeek.toFixed(1)})});
  if(days!=='all'&&prevWs.length){
    const curVol=ws.reduce((a,w)=>a+workoutVolume(w),0),prevVol=prevWs.reduce((a,w)=>a+workoutVolume(w),0),c=comparePct(curVol,prevVol);
-   if(c&&c.pct!=null&&Math.abs(c.pct)>=20)out.push({kind:'info',title:`訓練量較前一期${c.pct>0?'增加':'減少'}`,desc:`目前期間為 ${fmtKg(curVol)}，前一期為 ${fmtKg(prevVol)}，變化約 ${Math.abs(Math.round(c.pct))}%。這只是量的變化，不自動代表好或壞。`})
+   if(c&&c.pct!=null&&Math.abs(c.pct)>=20){const direction=tr(c.pct>0?'analysisDynamic.increase':'analysisDynamic.decrease');out.push({kind:'info',title:tr('analysisDynamic.volumeChangeTitle',{direction}),desc:tr('analysisDynamic.volumeChangeDesc',{current:fmtKg(curVol),previous:fmtKg(prevVol),percent:Math.abs(Math.round(c.pct))})})}
  }
  const effort=effortStats(ws),rate=effort.total?(effort.high+effort.mid+effort.low)/effort.total:0;
- if(effort.total>=8&&rate<.5)out.push({kind:'info',title:'RIR / RPE 紀錄較少',desc:`目前只有約 ${Math.round(rate*100)}% 的正式組有強度紀錄，補上 RIR / RPE 後，進步與疲勞分析會更可靠。`});
- if(!out.length)out.push({kind:'info',title:'先累積更多可比較紀錄',desc:'目前沒有明顯需要優先提醒的變化。持續記錄重量、次數與 RIR / RPE，之後會更容易看出趨勢。'});
+ if(effort.total>=8&&rate<.5)out.push({kind:'info',title:tr('analysisDynamic.effortSparseTitle'),desc:tr('analysisDynamic.effortSparseDesc',{percent:Math.round(rate*100)})});
+ if(!out.length)out.push({kind:'info',title:tr('analysisDynamic.collectMoreTitle'),desc:tr('analysisDynamic.collectMoreDesc')});
  return out.slice(0,3)
 }
 function recentMuscleLoad(days=7){
@@ -321,14 +327,14 @@ function progressionAdvice(exId){
    limit:5
  })
 }
-function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv):null}
+function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv,(key,vars)=>tr(key,vars)):null}
 function progressionToneClass(view){return view?.tone==='good'?'good':view?.tone==='warn'?'warn':''}
 function progressionApplyLabel(adv,ex,e){
  if(!adv||!trainingProgressionActions.canApply(adv))return'';
- if(adv.action==='add_reps')return'套用：未完成正式組每組 +1 下';
- if(adv.action==='increase_time')return`套用：未完成正式組每組 +${n(ex?.increment)||5} 秒`;
+ if(adv.action==='add_reps')return tr('analysisDynamic.applyReps');
+ if(adv.action==='increase_time')return tr('analysisDynamic.applyTime',{seconds:n(ex?.increment)||5});
  const unit=exerciseInputUnit(e),inc=machineIncrementForUnit(ex,unit),sign=adv.action==='reduce_load'?'−':'+';
- return`套用：未完成正式組 ${sign}${cleanWeightNumber(inc)} ${unit}`
+ return tr('analysisDynamic.applyWeight',{sign,increment:cleanWeightNumber(inc),unit})
 }
 function plateau(exId){
  const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(!s.completed)return;best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push({date:w.date,v:best})});
@@ -338,67 +344,67 @@ function validateWorkout(w){
  const issues=[];(w.exercises||[]).forEach(e=>{
    (e.sets||[]).forEach(s=>{
     const maxW=1000;
-    if(n(s.weight)>maxW||n(s.leftWeight)>maxW||n(s.rightWeight)>maxW)issues.push(`${e.nameSnapshot} 有非常高的重量`);
-    if(n(s.reps)>300||n(s.leftReps)>300||n(s.rightReps)>300)issues.push(`${e.nameSnapshot} 有異常高的次數`);
-    if(n(s.seconds)>7200)issues.push(`${e.nameSnapshot} 單組時間超過 2 小時`);
+    if(n(s.weight)>maxW||n(s.leftWeight)>maxW||n(s.rightWeight)>maxW)issues.push(tr('analysisDynamic.highWeight',{name:e.nameSnapshot}));
+    if(n(s.reps)>300||n(s.leftReps)>300||n(s.rightReps)>300)issues.push(tr('analysisDynamic.highReps',{name:e.nameSnapshot}));
+    if(n(s.seconds)>7200)issues.push(tr('analysisDynamic.longSet',{name:e.nameSnapshot}));
    });
-   if(n(e.cardio?.minutes)>600)issues.push(`${e.nameSnapshot} 有氧時間超過 10 小時`);
-   if(n(e.cardio?.distanceKm)>500)issues.push(`${e.nameSnapshot} 距離看起來異常`);
-   if(n(e.cardio?.incline)>40)issues.push(`${e.nameSnapshot} 坡度看起來異常`);
+   if(n(e.cardio?.minutes)>600)issues.push(tr('analysisDynamic.longCardio',{name:e.nameSnapshot}));
+   if(n(e.cardio?.distanceKm)>500)issues.push(tr('analysisDynamic.largeDistance',{name:e.nameSnapshot}));
+   if(n(e.cardio?.incline)>40)issues.push(tr('analysisDynamic.largeIncline',{name:e.nameSnapshot}));
  });return issues
 }
 
 const APP_COACH_STEPS=[
- {selector:'#quickStart',title:'開始訓練',copy:'要開始今天的訓練，直接點右上角「開始訓練」。'},
- {selector:'.nav button[data-page="trainPage"]',title:'訓練頁',copy:'選課表、開始空白訓練，以及進行中的重量與次數記錄都在這裡。'},
- {selector:'.nav button[data-page="recordsPage"]',title:'訓練紀錄',copy:'完成訓練後，到「紀錄」查看過去每次實際完成的內容。'},
- {selector:'.nav button[data-page="analysisPage"]',title:'分析',copy:'累積一些訓練後，可以在「分析」查看進步、PR 與長期趨勢。'},
- {selector:'.nav button[data-page="settingsPage"]',title:'設定',copy:'課表、器械、健身房、訓練偏好與備份都集中在設定裡。'}
+ {selector:'#quickStart',titleKey:'tutorialCopy.s01Title',copyKey:'tutorialCopy.s01Copy'},
+ {selector:'.nav button[data-page="trainPage"]',titleKey:'tutorialCopy.s02Title',copyKey:'tutorialCopy.s02Copy'},
+ {selector:'.nav button[data-page="recordsPage"]',titleKey:'tutorialCopy.s03Title',copyKey:'tutorialCopy.s03Copy'},
+ {selector:'.nav button[data-page="analysisPage"]',titleKey:'tutorialCopy.s04Title',copyKey:'tutorialCopy.s04Copy'},
+ {selector:'.nav button[data-page="settingsPage"]',titleKey:'tutorialCopy.s05Title',copyKey:'tutorialCopy.s05Copy'}
 ];
 
 const PAGE_COACH_STEPS={
  home:[
-  {selector:'#homeSuggestion',title:'今天建議',copy:'這裡會顯示今天最適合進行的訓練安排，以及目前計畫的下一個訓練日。'},
-  {selector:'#quickStart',title:'直接開始',copy:'確認今天的安排後，從這裡直接進入訓練。'},
-  {selector:'#recentProgress',title:'最近進步',copy:'有新的重量、次數或 PR 時，可以從這裡快速看到近期變化。'},
-  {selector:'#recentWorkouts',title:'最近訓練',copy:'想確認上次做了什麼，可以從這裡快速回顧最近紀錄。'}
+  {selector:'#homeSuggestion',titleKey:'tutorialCopy.s06Title',copyKey:'tutorialCopy.s06Copy'},
+  {selector:'#quickStart',titleKey:'tutorialCopy.s07Title',copyKey:'tutorialCopy.s07Copy'},
+  {selector:'#recentProgress',titleKey:'tutorialCopy.s08Title',copyKey:'tutorialCopy.s08Copy'},
+  {selector:'#recentWorkouts',titleKey:'tutorialCopy.s09Title',copyKey:'tutorialCopy.s09Copy'}
  ],
  trainLanding:[
-  {selector:'#trainLanding .hero',title:'開始今天的訓練',copy:'還沒有進行中的訓練時，這裡是訓練頁的主要入口。'},
-  {selector:'#trainStartBtn',title:'我的模板',copy:'使用你已經儲存的訓練模板快速開始。'},
-  {selector:'#browseProgramsBtn',title:'系統課表庫',copy:'想換課表時，可以從這裡瀏覽系統提供的訓練計畫。'},
-  {selector:'#trainCoachPicks',title:'目前計畫與推薦',copy:'長期課表與適合你的推薦會集中顯示在這裡。'}
+  {selector:'#trainLanding .hero',titleKey:'tutorialCopy.s10Title',copyKey:'tutorialCopy.s10Copy'},
+  {selector:'#trainStartBtn',titleKey:'tutorialCopy.s11Title',copyKey:'tutorialCopy.s11Copy'},
+  {selector:'#browseProgramsBtn',titleKey:'tutorialCopy.s12Title',copyKey:'tutorialCopy.s12Copy'},
+  {selector:'#trainCoachPicks',titleKey:'tutorialCopy.s13Title',copyKey:'tutorialCopy.s13Copy'}
  ],
  workout:[
-  {selector:'#sessionExercises > *',title:'動作卡',copy:'每張卡片代表一個動作；動作名稱、上次紀錄、重量、次數與組數都集中在這裡。'},
-  {selector:'#activeWorkout [data-demo]',title:'動作說明',copy:'不熟悉動作時，從「說明」查看操作提示與 YouTube 示範。'},
-  {selector:'#activeWorkout [data-unit]',title:'kg / lb',copy:'器械標示 kg 就用 kg，標示 lb 就切換成 lb；App 會自動換算保存。'},
-  {selector:'#activeWorkout [data-set="weight"]',title:'輸入重量',copy:'把這一組實際使用的重量填在這裡。'},
-  {selector:'#activeWorkout [data-set="reps"]',title:'輸入次數',copy:'做完後，把這組實際完成的次數填在這裡。'},
-  {selector:'#activeWorkout .advanced-set-quick',title:'快速調整',copy:'可以快速加減重量、增減次數，或直接複製上一組。'},
-  {selector:'#activeWorkout [data-complete]',title:'完成這組',copy:'確認重量與次數後按「完成這組」；只有完成的組數才會進入主要紀錄。'},
-  {selector:'.rest-quick-card',title:'休息計時器',copy:'完成一組後可以使用休息倒數，也能快速選 60、90、120 或 180 秒。'},
-  {selector:'#openTrainingTools',title:'訓練工具',copy:'從這裡新增動作、調整順序、收起動作卡，或切換顯示層次。'},
-  {selector:'#finishWorkout',title:'完成訓練',copy:'全部做完後，點這裡儲存本次訓練，之後就能在紀錄與分析查看結果。'}
+  {selector:'#sessionExercises > *',titleKey:'tutorialCopy.s14Title',copyKey:'tutorialCopy.s14Copy'},
+  {selector:'#activeWorkout [data-demo]',titleKey:'tutorialCopy.s15Title',copyKey:'tutorialCopy.s15Copy'},
+  {selector:'#activeWorkout [data-unit]',titleKey:'tutorialCopy.s16Title',copyKey:'tutorialCopy.s16Copy'},
+  {selector:'#activeWorkout [data-set="weight"]',titleKey:'tutorialCopy.s17Title',copyKey:'tutorialCopy.s17Copy'},
+  {selector:'#activeWorkout [data-set="reps"]',titleKey:'tutorialCopy.s18Title',copyKey:'tutorialCopy.s18Copy'},
+  {selector:'#activeWorkout .advanced-set-quick',titleKey:'tutorialCopy.s19Title',copyKey:'tutorialCopy.s19Copy'},
+  {selector:'#activeWorkout [data-complete]',titleKey:'tutorialCopy.s20Title',copyKey:'tutorialCopy.s20Copy'},
+  {selector:'.rest-quick-card',titleKey:'tutorialCopy.s21Title',copyKey:'tutorialCopy.s21Copy'},
+  {selector:'#openTrainingTools',titleKey:'tutorialCopy.s22Title',copyKey:'tutorialCopy.s22Copy'},
+  {selector:'#finishWorkout',titleKey:'tutorialCopy.s23Title',copyKey:'tutorialCopy.s23Copy'}
  ],
  records:[
-  {selector:'#recordsPage .section',title:'訓練紀錄',copy:'這一頁集中保存每一次已完成或手動補登的訓練。'},
-  {selector:'#recordsPage .calendar',title:'日期與月份',copy:'有訓練的日期會特別標示，可以用日期快速找到過去紀錄。'},
-  {selector:'#recordsPage .record',title:'紀錄清單',copy:'點開一筆紀錄，可以查看當天所有動作、重量、次數與組數。'},
+  {selector:'#recordsPage .section',titleKey:'tutorialCopy.s24Title',copyKey:'tutorialCopy.s24Copy'},
+  {selector:'#recordsPage .calendar',titleKey:'tutorialCopy.s25Title',copyKey:'tutorialCopy.s25Copy'},
+  {selector:'#recordsPage .record',titleKey:'tutorialCopy.s26Title',copyKey:'tutorialCopy.s26Copy'},
  ],
  analysis:[
-  {selector:'#analysisPage select',title:'分析期間',copy:'先選 7 天、30 天、90 天或全部，再看你想比較的時間範圍。'},
-  {selector:'#analysisPage .card',title:'本期重點',copy:'先看上方重點摘要；App 會整理目前最值得注意的進步與變化。'},
-  {selector:'#analysisPage',title:'分析內容',copy:'往下可以查看肌群刺激、動作模式、進步與 PR 等長期趨勢。'}
+  {selector:'#analysisPage select',titleKey:'tutorialCopy.s27Title',copyKey:'tutorialCopy.s27Copy'},
+  {selector:'#analysisPage .card',titleKey:'tutorialCopy.s28Title',copyKey:'tutorialCopy.s28Copy'},
+  {selector:'#analysisPage',titleKey:'tutorialCopy.s29Title',copyKey:'tutorialCopy.s29Copy'}
  ],
  settings:[
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(1), #settingsPage .card:nth-of-type(1)',title:'課表與訓練計畫',copy:'管理系統課表、自己的課表與目前訓練計畫。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(2), #settingsPage .card:nth-of-type(2)',title:'動作與器械',copy:'查找系統動作、器械，以及建立自己的動作。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(3), #settingsPage .card:nth-of-type(3)',title:'健身房與我的器材',copy:'建立不同健身房，並記住你常用的器械。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(4), #settingsPage .card:nth-of-type(4)',title:'訓練偏好與目標',copy:'調整訓練目標、每週天數、時間與器材偏好。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(5), #settingsPage .card:nth-of-type(5)',title:'健身術語與說明',copy:'看不懂 RIR、RPE、e1RM 等術語時，可以從這裡查詢。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(6), #settingsPage .card:nth-of-type(6)',title:'資料與備份',copy:'匯入、匯出與建立本機備份都放在這裡。'},
-  {selector:'#openTutorialFromSettings',title:'重新查看教學',copy:'之後忘記某個功能時，可以從設定最下面重新啟動操作教學。'}
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(1), #settingsPage .card:nth-of-type(1)',titleKey:'tutorialCopy.s30Title',copyKey:'tutorialCopy.s30Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(2), #settingsPage .card:nth-of-type(2)',titleKey:'tutorialCopy.s31Title',copyKey:'tutorialCopy.s31Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(3), #settingsPage .card:nth-of-type(3)',titleKey:'tutorialCopy.s32Title',copyKey:'tutorialCopy.s32Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(4), #settingsPage .card:nth-of-type(4)',titleKey:'tutorialCopy.s33Title',copyKey:'tutorialCopy.s33Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(5), #settingsPage .card:nth-of-type(5)',titleKey:'tutorialCopy.s34Title',copyKey:'tutorialCopy.s34Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(6), #settingsPage .card:nth-of-type(6)',titleKey:'tutorialCopy.s35Title',copyKey:'tutorialCopy.s35Copy'},
+  {selector:'#openTutorialFromSettings',titleKey:'tutorialCopy.s36Title',copyKey:'tutorialCopy.s36Copy'}
  ]
 };
 
@@ -443,11 +449,11 @@ function renderCoachStep(){
  const s=steps[coachIndex],target=coachTarget(s);
  if(!target){coachIndex++;renderCoachStep();return}
  target.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});
- $('#coachStepLabel').textContent=`操作教學 ${coachIndex+1} / ${steps.length}`;
- $('#coachTitle').textContent=s.title;$('#coachCopy').textContent=s.copy;
+ $('#coachStepLabel').textContent=tr('finalUi.coachStep',{current:coachIndex+1,total:steps.length});
+ $('#coachTitle').textContent=tr(s.titleKey);$('#coachCopy').textContent=tr(s.copyKey);
  $('#coachProgress').innerHTML=steps.map((_,i)=>`<i class="${i<=coachIndex?'on':''}"></i>`).join('');
  $('#coachPrev').style.visibility=coachIndex===0?'hidden':'visible';
- $('#coachNext').textContent=coachIndex===steps.length-1?(coachTour.kind==='app'?'開始設定':'完成教學'):'下一步';
+ $('#coachNext').textContent=coachIndex===steps.length-1?(coachTour.kind==='app'?tr('finalUi.coachStartSetup'):tr('finalUi.coachFinish')):tr('finalUi.coachNext');
  setTimeout(positionCoach,220)
 }
 function startCoachTour(kind='app',steps=null,pageKey=null){
@@ -517,7 +523,7 @@ function renderFirstSetup(){
  if(!pending)return;
  document.body.style.overflow='hidden';
  const selected=new Set(Array.isArray(data.settings.priorityMuscles)?data.settings.priorityMuscles.slice(0,2):[]);
- $('#firstPriorityMuscles').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<button type="button" data-first-muscle="${esc(m)}" class="${selected.has(m)?'on':''}">${esc(m)}</button>`).join('');
+ $('#firstPriorityMuscles').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<button type="button" data-first-muscle="${esc(m)}" class="${selected.has(m)?'on':''}">${esc(displayMuscle(m))}</button>`).join('');
  $$('[data-first-muscle]').forEach(b=>b.onclick=()=>{
    const m=b.dataset.firstMuscle;
    if(selected.has(m))selected.delete(m);
@@ -554,15 +560,15 @@ function renderResume(){
  const b=$('#resumeBanner');if(!data.activeWorkout){b.innerHTML='';return}
  b.innerHTML=`<div class="banner"><b>${esc(tr('dynamic.resumeTitle'))}</b> ${esc(data.activeWorkout.name)} · ${esc(data.activeWorkout.date)}
  <div class="actions" style="margin-top:7px"><button class="btn small primary" id="resumeBtn">${esc(tr('dynamic.resume'))}</button><button class="btn small danger" id="discardActive">${esc(tr('dynamic.discard'))}</button></div></div>`;
- $('#resumeBtn').onclick=()=>goPage('trainPage');$('#discardActive').onclick=()=>{if(confirm(tr('dialogs.discardResume'))){data.activeWorkout=null;save('放棄訓練',true)}}
+ $('#resumeBtn').onclick=()=>goPage('trainPage');$('#discardActive').onclick=()=>{if(confirm(tr('dialogs.discardResume'))){data.activeWorkout=null;save(tr('reasons.discardWorkout'),true)}}
 }
 const COACH_GOALS={
- general:{label:'一般健康／建立習慣',terms:['一般健身','建立習慣','基礎肌力','全身','體能'],cats:['完全新手','全身訓練']},
- hypertrophy:{label:'增肌',terms:['增肌'],cats:['全身訓練','Upper / Lower','PPL','部位強化']},
- strength:{label:'增加肌力',terms:['肌力','力量','基礎肌力'],cats:['全身訓練','Upper / Lower','PPL']},
- fat_loss:{label:'減脂／體能',terms:['心肺','有氧','體能','一般健身','時間效率'],cats:['混合／有氧','時間效率','全身訓練']},
- posture:{label:'體態平衡／舒緩',terms:['體態','平衡','補強','舒緩','控制','上背','後鏈'],cats:['體態舒緩／平衡補強']},
- recovery:{label:'恢復／輕量',terms:['恢復','輕量','Deload','活動'],cats:['恢復／減量']}
+ general:{labelKey:'coachMeta.goal.general',terms:['一般健身','建立習慣','基礎肌力','全身','體能'],cats:['完全新手','全身訓練']},
+ hypertrophy:{labelKey:'coachMeta.goal.hypertrophy',terms:['增肌'],cats:['全身訓練','Upper / Lower','PPL','部位強化']},
+ strength:{labelKey:'coachMeta.goal.strength',terms:['肌力','力量','基礎肌力'],cats:['全身訓練','Upper / Lower','PPL']},
+ fat_loss:{labelKey:'coachMeta.goal.fatLoss',terms:['心肺','有氧','體能','一般健身','時間效率'],cats:['混合／有氧','時間效率','全身訓練']},
+ posture:{labelKey:'coachMeta.goal.posture',terms:['體態','平衡','補強','舒緩','控制','上背','後鏈'],cats:['體態舒緩／平衡補強']},
+ recovery:{labelKey:'coachMeta.goal.recovery',terms:['恢復','輕量','Deload','活動'],cats:['恢復／減量']}
 };
 const COACH_SUPPLEMENTS={
  general:['ex_legpress','ex_chestpress','ex_latpull','ex_row','ex_legcurl','ex_shoulder','ex_abcrunch','ex_treadmill'],
@@ -573,14 +579,16 @@ const COACH_SUPPLEMENTS={
  recovery:['ex_treadmill','ex_elliptical','ex_wallslide','ex_deadbug','ex_birddog','ex_glutebridge_bw','ex_pecstretch','ex_thoracic_ext','ex_hipflexor_stretch']
 };
 const TODAY_ADJUSTMENTS={
- normal:{label:'照原計畫',desc:'依目前 4–8 週計畫照常訓練。'},
- short:{label:'只有 30 分鐘',desc:'只保留今天最重要的動作，長期計畫不變。'},
- easy:{label:'今天比較累',desc:'減少部分組數與輔助動作，不把單日疲勞當成永久課表變更。'},
- fresh:{label:'今天狀態很好',desc:'維持原計畫；是否加重仍依實際完成次數與 RIR／RPE 判斷。'},
- focus:{label:'想多練一個部位',desc:'時間允許時加一個指定部位的輔助動作，只影響今天。'}
+ normal:{labelKey:'coachMeta.adjustment.normalLabel',descKey:'coachMeta.adjustment.normalDesc'},
+ short:{labelKey:'coachMeta.adjustment.shortLabel',descKey:'coachMeta.adjustment.shortDesc'},
+ easy:{labelKey:'coachMeta.adjustment.easyLabel',descKey:'coachMeta.adjustment.easyDesc'},
+ fresh:{labelKey:'coachMeta.adjustment.freshLabel',descKey:'coachMeta.adjustment.freshDesc'},
+ focus:{labelKey:'coachMeta.adjustment.focusLabel',descKey:'coachMeta.adjustment.focusDesc'}
 };
 function coachGoal(){return COACH_GOALS[data.settings.trainingGoal]?data.settings.trainingGoal:'general'}
-function coachGoalLabel(goal=coachGoal()){return COACH_GOALS[goal]?.label||COACH_GOALS.general.label}
+function coachGoalLabel(goal=coachGoal()){return tr(COACH_GOALS[goal]?.labelKey||COACH_GOALS.general.labelKey)}
+function todayAdjustmentLabel(mode){return tr(TODAY_ADJUSTMENTS[mode]?.labelKey||TODAY_ADJUSTMENTS.normal.labelKey)}
+function todayAdjustmentDesc(mode){return tr(TODAY_ADJUSTMENTS[mode]?.descKey||TODAY_ADJUSTMENTS.normal.descKey)}
 function coachTargetExerciseCount(goal=coachGoal(),minutes=n(data.settings.sessionMinutes)||60){
  if(goal==='recovery')return minutes<=30?4:5;if(goal==='posture')return minutes<=30?5:6;
  if(minutes<=30)return 5;if(minutes<=45)return 6;if(minutes<=60)return 7;return 8
@@ -605,7 +613,7 @@ function maxNonConsecutiveAvailable(days){
 function programHardFit(p){
  const limits=[],weekly=Math.min(7,Math.max(1,n(data.settings.weeklySessions)||3)),mins=n(data.settings.sessionMinutes)||60,days=availableWeekdays();
  if(n(p.daysPerWeek)>weekly)limits.push(`需要 ${p.daysPerWeek} 天，但目前每週目標只有 ${weekly} 天`);
- if(n(p.duration)>mins+30)limits.push(`單次約 ${p.duration} 分，明顯超過可用 ${mins} 分`);
+ if(n(p.duration)>mins+30)limits.push(`單次約 ${esc(tr('finalUi.minutes',{count:p.duration}))}，明顯超過可用 ${mins} 分`);
  if(days.length&&n(p.daysPerWeek)>days.length)limits.push(`可訓練星期只有 ${days.length} 天`);
  if(days.length&&!data.settings.allowConsecutiveDays&&n(p.daysPerWeek)>maxNonConsecutiveAvailable(days))limits.push('目前可用星期無法避免連續重訓日');
  if((data.settings.experienceLevel||'beginner')==='beginner'&&p.level==='中階')limits.push('目前經驗設定為完全新手，先不推薦純中階課表');
@@ -618,35 +626,35 @@ function programPatternProfile(p){const out={};(p.workouts||[]).forEach(w=>(w.it
 function programExerciseIds(p){return new Set((p.workouts||[]).flatMap(w=>(w.items||[]).map(i=>i.exerciseId)))}
 function recommendationGymInfo(){const id=data.settings.preferredGymId||'';if(!id)return null;const g=data.gyms.find(x=>x.id===id);if(!g)return null;return{g,...gymUsageInfo(g)}}
 function programEquipmentCoverage(p){
- const info=recommendationGymInfo();if(!info||(!info.equipment.length&&info.workouts.length<2))return{score:10,status:'unknown',direct:0,substitute:0,total:0,text:'健身房器材資料不足，暫不因器材扣分'};
+ const info=recommendationGymInfo();if(!info||(!info.equipment.length&&info.workouts.length<2))return{score:10,status:'unknown',direct:0,substitute:0,total:0,text:tr('coachReasons.equipmentUnknown')};
  const available=new Set(info.equipment.map(x=>x.id)),required=[];for(const w of p.workouts||[])for(const it of w.items||[]){const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(ex?.equipmentId&&!required.some(x=>x.exerciseId===ex.id))required.push(ex)}
- if(!required.length)return{score:15,status:'known',direct:0,substitute:0,total:0,text:'此課表幾乎不依賴固定器械'};
+ if(!required.length)return{score:15,status:'known',direct:0,substitute:0,total:0,text:tr('coachReasons.equipmentNone')};
  let direct=0,substitute=0;for(const ex of required){if(available.has(ex.equipmentId)){direct++;continue}const ok=(ex.alternatives||[]).some(id=>{const a=getExercise(id)||SYSTEM_EXERCISES.find(x=>x.id===id);return a?.equipmentId&&available.has(a.equipmentId)});if(ok)substitute++}
- const ratio=(direct+substitute*.7)/required.length,score=Math.round(15*ratio);return{score,status:'known',direct,substitute,total:required.length,text:`${info.g.name}：直接可用 ${direct}/${required.length}${substitute?`，另有 ${substitute} 個可替代`:''}`}
+ const ratio=(direct+substitute*.7)/required.length,score=Math.round(15*ratio),substituteText=substitute?tr('coachReasons.equipmentSubstitute',{count:substitute}):'';return{score,status:'known',direct,substitute,total:required.length,text:tr('coachReasons.equipmentCoverage',{gym:info.g.name,direct,total:required.length,substitute:substituteText})}
 }
 function priorityMuscleScore(p){
- const pri=priorityMuscles();if(!pri.length)return{score:8,text:'未指定優先部位，以全身平衡為主'};const prof=programMuscleProfile(p),vals=pri.map(m=>n(prof[m]));const avg=vals.reduce((a,b)=>a+b,0)/vals.length,score=Math.max(2,Math.min(10,Math.round(avg>=8?10:avg>=5?8:avg>=3?6:4)));return{score,text:`優先部位 ${pri.join('、')}：課表每週估算刺激 ${vals.map((v,i)=>`${pri[i]} ${fmtStim(v)}`).join('、')}`}
+ const pri=priorityMuscles();if(!pri.length)return{score:8,text:tr('coachReasons.priorityNone')};const prof=programMuscleProfile(p),vals=pri.map(m=>n(prof[m]));const avg=vals.reduce((a,b)=>a+b,0)/vals.length,score=Math.max(2,Math.min(10,Math.round(avg>=8?10:avg>=5?8:avg>=3?6:4)));return{score,text:tr('coachReasons.priorityCoverage',{muscles:pri.map(displayMuscle).join('、'),values:vals.map((v,i)=>`${displayMuscle(pri[i])} ${fmtStim(v)}`).join('、')})}
 }
 function buildCoachContext(){const ws=workoutsLastDays(28);return{ws,stimulus:ws.length>=2?stimulusMap(ws):{},movement:ws.length>=2?movementStats(ws):{},progressing:progressingExerciseIds()}}
 function recentVolumeNeedScore(p,ctx){
- const ws=ctx?.ws||workoutsLastDays(28);if(ws.length<2)return{score:7,text:'近 28 天資料較少，訓練量需求採中性評分'};const cur=ctx?.stimulus||stimulusMap(ws),prof=programMuscleProfile(p),goals=data.settings.weeklyMuscleGoals||{},needs=[];
+ const ws=ctx?.ws||workoutsLastDays(28);if(ws.length<2)return{score:7,text:tr('coachReasons.volumeNeutral')};const cur=ctx?.stimulus||stimulusMap(ws),prof=programMuscleProfile(p),goals=data.settings.weeklyMuscleGoals||{},needs=[];
  for(const m of MUSCLES.filter(x=>!['有氧','其他'].includes(x))){const goal=n(goals[m]);if(!goal)continue;const avg=n(cur[m]?.total)/4,gap=Math.max(0,goal-avg);if(gap>=1.5)needs.push({m,gap,program:n(prof[m])})}
- if(!needs.length)return{score:8,text:'近期各主要肌群沒有明顯低於目前週目標'};const covered=needs.filter(x=>x.program>=Math.min(x.gap,3)).length,score=Math.max(3,Math.min(10,Math.round(4+6*covered/needs.length)));return{score,text:`近期較需要補足：${needs.slice(0,3).map(x=>`${x.m} 約差 ${fmtStim(x.gap)} 組/週`).join('、')}`}
+ if(!needs.length)return{score:8,text:tr('coachReasons.volumeOkay')};const covered=needs.filter(x=>x.program>=Math.min(x.gap,3)).length,score=Math.max(3,Math.min(10,Math.round(4+6*covered/needs.length)));return{score,text:tr('coachReasons.volumeNeed',{items:needs.slice(0,3).map(x=>tr('coachReasons.volumeNeedItem',{muscle:displayMuscle(x.m),sets:fmtStim(x.gap)})).join('、')})}
 }
 function movementNeedScore(p,ctx){
- const ws=ctx?.ws||workoutsLastDays(28);if(ws.length<2)return{score:4,text:'動作模式資料較少，採中性評分'};const r=ctx?.movement||movementStats(ws),pp=programPatternProfile(p),need=[];
+ const ws=ctx?.ws||workoutsLastDays(28);if(ws.length<2)return{score:4,text:tr('coachReasons.movementNeutral')};const r=ctx?.movement||movementStats(ws),pp=programPatternProfile(p),need=[];
  const hp=n(r.horizontal_push),hr=n(r.horizontal_pull),vp=n(r.vertical_push),vr=n(r.vertical_pull),kd=n(r.knee_dominant)+n(r.knee_extension),post=n(r.knee_flexion)+n(r.hip_extension);
  if(hp>hr*1.4+2)need.push('horizontal_pull');if(hr>hp*1.8+4)need.push('horizontal_push');if(vp>vr*1.4+2)need.push('vertical_pull');if(vr>vp*2+4)need.push('vertical_push');if(kd>post*1.5+3)need.push('knee_flexion','hip_extension');if(post>kd*1.8+4)need.push('knee_dominant');
- const uniq=[...new Set(need)];if(!uniq.length)return{score:5,text:'近期動作模式沒有明顯單向偏多'};const covered=uniq.filter(x=>n(pp[x])>0).length;return{score:Math.max(1,Math.round(5*covered/uniq.length)),text:`近期可補強：${uniq.map(patternDisplayName).join('、')}`}
+ const uniq=[...new Set(need)];if(!uniq.length)return{score:5,text:tr('coachReasons.movementOkay')};const covered=uniq.filter(x=>n(pp[x])>0).length;return{score:Math.max(1,Math.round(5*covered/uniq.length)),text:tr('coachReasons.movementNeed',{patterns:uniq.map(patternDisplayName).join('、')})}
 }
 function progressingExerciseIds(){
  const ids=new Set();for(const ex of data.exerciseLibrary){const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===ex.id);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(s.completed&&n(s.reps)>0)best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push(best)});if(pts.length>=2&&pts.at(-1)>pts.at(-2)*1.01)ids.add(ex.id)}return ids
 }
-function continuityScore(p,ctx){const prog=ctx?.progressing||progressingExerciseIds();if(!prog.size)return{score:4,text:'目前沒有足夠的近期進步序列可比較'};const ids=programExerciseIds(p),kept=[...prog].filter(x=>ids.has(x));return{score:Math.min(5,2+Math.min(3,kept.length)),text:kept.length?`保留 ${kept.length} 個近期仍在進步的動作`:'近期進步中的動作與此課表重疊較少'}}
+function continuityScore(p,ctx){const prog=ctx?.progressing||progressingExerciseIds();if(!prog.size)return{score:4,text:tr('coachReasons.continuityNone')};const ids=programExerciseIds(p),kept=[...prog].filter(x=>ids.has(x));return{score:Math.min(5,2+Math.min(3,kept.length)),text:kept.length?tr('coachReasons.continuityKept',{count:kept.length}):tr('coachReasons.continuityLow')}}
 function scheduleScore(p){
- const weekly=Math.min(7,Math.max(1,n(data.settings.weeklySessions)||3)),mins=n(data.settings.sessionMinutes)||60;let daysScore=n(p.daysPerWeek)===weekly?10:n(p.daysPerWeek)===weekly-1?7:4;const td=Math.abs(n(p.duration)-mins),timeScore=td<=5?5:td<=15?4:td<=25?2:1;return{score:daysScore+timeScore,text:`${p.daysPerWeek} 日/週 · 約 ${p.duration} 分鐘；設定為 ${weekly} 日/週 · ${mins} 分鐘`}
+ const weekly=Math.min(7,Math.max(1,n(data.settings.weeklySessions)||3)),mins=n(data.settings.sessionMinutes)||60;let daysScore=n(p.daysPerWeek)===weekly?10:n(p.daysPerWeek)===weekly-1?7:4;const td=Math.abs(n(p.duration)-mins),timeScore=td<=5?5:td<=15?4:td<=25?2:1;return{score:daysScore+timeScore,text:tr('coachReasons.schedule',{days:`${tr('finalUi.daysPerWeek',{count:p.daysPerWeek})} · ${tr('coachUi.aboutMinutes',{minutes:p.duration})}`,targetDays:tr('finalUi.daysPerWeek',{count:weekly}),targetMinutes:tr('coachUi.aboutMinutes',{minutes:mins})})}
 }
-function preferenceScore(p){const pref=data.settings.equipmentPreference||'machine';if(pref==='machine')return{score:p.equipmentMode==='全機械'?5:p.equipmentMode==='機械＋滑輪'?4:2,text:p.equipmentMode==='全機械'?'符合器械為主偏好':`課表形式：${p.equipmentMode}`};return{score:['全機械','機械＋滑輪'].includes(p.equipmentMode)?5:3,text:`課表形式：${p.equipmentMode}`}}
+function preferenceScore(p){const pref=data.settings.equipmentPreference||'machine';if(pref==='machine')return{score:p.equipmentMode==='全機械'?5:p.equipmentMode==='機械＋滑輪'?4:2,text:p.equipmentMode==='全機械'?tr('coachReasons.preferenceMatch'):tr('coachReasons.preferenceMode',{mode:p.equipmentMode})};return{score:['全機械','機械＋滑輪'].includes(p.equipmentMode)?5:3,text:tr('coachReasons.preferenceMode',{mode:p.equipmentMode})}}
 function coachProgramScore(p,goal=coachGoal(),ctx=null){
  const c=ctx||buildCoachContext(),hard=programHardFit(p),goalRaw=programGoalFit(p,goal),goalScore=Math.max(0,Math.min(25,Math.round(goalRaw/55*25))),sched=scheduleScore(p),equip=programEquipmentCoverage(p),exp=programExperienceScore(p),pri=priorityMuscleScore(p),vol=recentVolumeNeedScore(p,c),move=movementNeedScore(p,c),cont=continuityScore(p,c),pref=preferenceScore(p);
  const dimensions={goal:goalScore,schedule:sched.score,equipment:equip.score,experience:exp,priority:pri.score,volume:vol.score,movement:move.score,continuity:cont.score,preference:pref.score};const rawScore=Object.values(dimensions).reduce((a,b)=>a+n(b),0),score=Math.max(0,Math.min(100,Math.round(rawScore)));
@@ -665,12 +673,12 @@ function coachProgramDayIndex(p){
 function currentPlanProgram(){return data.currentPlan?SYSTEM_PROGRAMS.find(p=>p.id===data.currentPlan.programId)||null:null}
 function currentPlanWeek(){if(!data.currentPlan?.startedDate)return 1;return Math.max(1,Math.floor(Math.max(0,daysBetween(data.currentPlan.startedDate,isoToday()))/7)+1)}
 function adoptCurrentPlan(programId,from='recommendation'){
- const p=SYSTEM_PROGRAMS.find(x=>x.id===programId);if(!p)return;if(data.currentPlan&&data.currentPlan.programId!==programId&&!confirm(tr('dialogs.replacePlan',{current:currentPlanProgram()?.nameZh||'訓練計畫',next:p.nameZh})))return;
- const rec=coachProgramScore(p,coachGoal());data.currentPlan={id:uid('plan'),programId:p.id,startedDate:isoToday(),blockWeeks:n(data.settings.blockWeeks)||6,goal:coachGoal(),scoreAtStart:rec.score,createdAt:new Date().toISOString(),source:from};data.todayAdjustment={date:isoToday(),mode:'normal',focusMuscle:''};save('設定目前訓練計畫',true);toast(tr('feedback.planSet',{weeks:data.currentPlan.blockWeeks,name:p.nameZh}))
+ const p=SYSTEM_PROGRAMS.find(x=>x.id===programId);if(!p)return;if(data.currentPlan&&data.currentPlan.programId!==programId&&!confirm(tr('dialogs.replacePlan',{current:currentPlanProgram()?.nameZh||tr('finalUi.trainingPlan'),next:p.nameZh})))return;
+ const rec=coachProgramScore(p,coachGoal());data.currentPlan={id:uid('plan'),programId:p.id,startedDate:isoToday(),blockWeeks:n(data.settings.blockWeeks)||6,goal:coachGoal(),scoreAtStart:rec.score,createdAt:new Date().toISOString(),source:from};data.todayAdjustment={date:isoToday(),mode:'normal',focusMuscle:''};save(tr('reasons.setCurrentPlan'),true);toast(tr('feedback.planSet',{weeks:data.currentPlan.blockWeeks,name:p.nameZh}))
 }
-function endCurrentPlan(){if(!data.currentPlan)return;if(confirm(tr('dialogs.endPlan'))){data.currentPlan=null;data.todayAdjustment=null;save('結束目前訓練計畫',true);toast(tr('feedback.planEnded'))}}
+function endCurrentPlan(){if(!data.currentPlan)return;if(confirm(tr('dialogs.endPlan'))){data.currentPlan=null;data.todayAdjustment=null;save(tr('reasons.endCurrentPlan'),true);toast(tr('feedback.planEnded'))}}
 function todayAdjustment(){const t=data.todayAdjustment;if(t?.date===isoToday()&&TODAY_ADJUSTMENTS[t.mode])return t;return{date:isoToday(),mode:'normal',focusMuscle:''}}
-function setTodayAdjustment(mode,focusMuscle=''){if(!TODAY_ADJUSTMENTS[mode])mode='normal';data.todayAdjustment={date:isoToday(),mode,focusMuscle:focusMuscle||''};localStorage.setItem(APP_KEY,JSON.stringify(data));renderHome();toast(tr('feedback.todayAdjustment',{label:TODAY_ADJUSTMENTS[mode].label}))}
+function setTodayAdjustment(mode,focusMuscle=''){if(!TODAY_ADJUSTMENTS[mode])mode='normal';data.todayAdjustment={date:isoToday(),mode,focusMuscle:focusMuscle||''};localStorage.setItem(APP_KEY,JSON.stringify(data));renderHome();toast(tr('feedback.todayAdjustment',{label:todayAdjustmentLabel(mode)}))}
 function programDayBodyPenalty(day){let penalty=0;(day?.items||[]).forEach(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId),m=bodyStatusExerciseMatch(ex,isoToday());if(m)penalty+=m.strong?6:2});return penalty}
 function bodySafeAlternative(ex,used){for(const id of ex?.alternatives||[]){if(used.has(id))continue;const a=getExercise(id)||SYSTEM_EXERCISES.find(x=>x.id===id);if(a&&!bodyStatusExerciseMatch(a,isoToday())?.strong)return a}return null}
 function applyBodyStatusToItems(items){
@@ -689,17 +697,17 @@ function coachDayBuild(rec){
  else{items=coachSupplementItems(p,day,goal,target,items);if(adj.mode==='focus')items=addFocusAccessory(items,adj.focusMuscle).slice(0,Math.min(8,target+1))}
  return{p,day,items,adjustment:adj}
 }
-function coachExerciseListHtml(items,p){return `<div class="coach-exercises">${items.map((it,i)=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3;let note='';if(it.bodySubstituteFrom)note=`<div class="coach-ex-extra substitute">因今日身體狀況，由「${esc(it.bodySubstituteFrom)}」替換</div>`;else if(it.todayFocus)note='<div class="coach-ex-extra focus">今天額外加強</div>';else if(it.todayEasy)note='<div class="coach-ex-extra easy">今天減量</div>';else if(it.coachSupplement)note='<div class="coach-ex-extra">依可用時間補入的輔助動作</div>';return `<div class="coach-ex-row"><span class="coach-ex-num">${i+1}</span><div><div class="coach-ex-name">${esc(ex.name)}</div><div class="coach-ex-en">${esc(ex.nameEn||'')}</div>${note}</div><span class="tag">${ex.type==='cardio'?'有氧':sets+' 組'}</span></div>`}).join('')}</div>`}
+function coachExerciseListHtml(items,p){return `<div class="coach-exercises">${items.map((it,i)=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3;let note='';if(it.bodySubstituteFrom)note=`<div class="coach-ex-extra substitute">${esc(tr('coachReasons.bodyReplace',{name:it.bodySubstituteFrom}))}</div>`;else if(it.todayFocus)note='<div class="coach-ex-extra focus">${esc(tr("residual.r6521b0be"))}</div>';else if(it.todayEasy)note='<div class="coach-ex-extra easy">${esc(tr("residual.r615f61be"))}</div>';else if(it.coachSupplement)note='<div class="coach-ex-extra">${esc(tr("residual.r361a5fb3"))}</div>';return `<div class="coach-ex-row"><span class="coach-ex-num">${i+1}</span><div><div class="coach-ex-name">${esc(ex.name)}</div><div class="coach-ex-en">${esc(ex.nameEn||'')}</div>${note}</div><span class="tag">${esc(ex.type==='cardio'?tr('coachReasons.cardio'):tr('coachReasons.sets',{count:sets}))}</span></div>`}).join('')}</div>`}
 function recommendationBreakdownHtml(r){const d=r.dimensions,names={goal:'目標',schedule:'時間安排',equipment:'器材',experience:'經驗',priority:'優先部位',volume:'近期訓練量',movement:'動作模式',continuity:'動作延續',preference:'偏好'},max={goal:25,schedule:15,equipment:15,experience:10,priority:10,volume:10,movement:5,continuity:5,preference:5};return `<div class="recommend-score-grid ui-advanced-only">${Object.entries(d).map(([k,v])=>`<div class="recommend-score-cell"><b>${v}/${max[k]}</b><span>${names[k]}</span></div>`).join('')}</div>${!r.hard.ok?`<div class="recommend-limit">限制：${esc(r.hard.limits.join('；'))}</div>`:''}`}
 function currentPlanRecommendation(){const p=currentPlanProgram();if(!p)return null;const r=coachProgramScore(p,data.currentPlan?.goal||coachGoal());r.dayIndex=coachProgramDayIndex(p);return r}
-function todayAdjustHtml(){const a=todayAdjustment();return `<div class="today-adjust-grid">${Object.entries(TODAY_ADJUSTMENTS).map(([k,v])=>`<button type="button" data-today-adjust="${k}" class="${a.mode===k?'on':''}">${v.label}</button>`).join('')}<button type="button" data-today-body-status>某個部位不舒服</button></div>${a.mode==='focus'?`<div class="today-focus-grid">${MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<button type="button" data-today-focus="${m}" class="${a.focusMuscle===m?'on':''}">${m}</button>`).join('')}</div>`:''}<div class="adjust-note">${esc(TODAY_ADJUSTMENTS[a.mode].desc)}${(todayBodyStatus().entries||[]).length?' 今日身體狀況也會另外套用到動作替換與提醒。':''}</div>`}
+function todayAdjustHtml(){const a=todayAdjustment();return `<div class="today-adjust-grid">${Object.entries(TODAY_ADJUSTMENTS).map(([k,v])=>`<button type="button" data-today-adjust="${k}" class="${a.mode===k?'on':''}">${v.label}</button>`).join('')}<button type="button" data-today-body-status>${esc(tr("residual.r01ec088f"))}</button></div>${a.mode==='focus'?`<div class="today-focus-grid">${MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<button type="button" data-today-focus="${m}" class="${a.focusMuscle===m?'on':''}">${esc(displayMuscle(m))}</button>`).join('')}</div>`:''}<div class="adjust-note">${esc(todayAdjustmentDesc(a.mode))}${(todayBodyStatus().entries||[]).length?tr('coachMeta.bodyStatusExtra'):''}</div>`}
 function coachHomeHtml(){
  const body=bodyStatusCardHtml(isoToday()),cp=data.currentPlan,p=currentPlanProgram();
- if(!cp||!p){const recs=coachRecommendations(coachGoal(),3),r=recs[0];if(!r)return `${body}<div class="card empty">目前沒有可用的長期課表推薦。</div>`;return `${body}<div class="section">目前訓練計畫</div><div class="card coach-primary"><div class="coach-kicker">尚未選定 4–8 週主計畫</div><div class="coach-title">建議先從：${esc(r.p.nameZh)}</div><div class="tagrow" style="margin-top:8px"><span class="tag">長期目標：${esc(coachGoalLabel())}</span><span class="tag">${r.p.daysPerWeek} 日/週</span><span class="tag">約 ${r.p.duration} 分</span><span class="tag">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> ${r.score}/100</span></span></div><div class="coach-reasons">${r.reasons.map(x=>`<div class="coach-reason">${esc(x)}</div>`).join('')}</div>${recommendationBreakdownHtml(r)}<div class="actions" style="margin-top:11px"><button class="btn primary" data-plan-adopt="${esc(r.p.id)}">採用 ${n(data.settings.blockWeeks)||6} 週計畫</button><button class="btn ghost" id="homeReevaluatePlan">比較推薦課表</button></div></div><div class="section">今天的安排</div><div class="card empty">先選定目前訓練計畫，之後首頁會固定依 A／B／C 順序安排，不會每天重新抽一套課表。</div>`}
+ if(!cp||!p){const recs=coachRecommendations(coachGoal(),3),r=recs[0];if(!r)return `${body}<div class="card empty">${esc(tr("residual.r8dcf0f9a"))}</div>`;return `${body}<div class="section">${esc(tr("residual.r0ae2028e"))}</div><div class="card coach-primary"><div class="coach-kicker">${esc(tr("residual.r795da869"))}</div><div class="coach-title">建議先從：${esc(r.p.nameZh)}</div><div class="tagrow" style="margin-top:8px"><span class="tag">長期目標：${esc(coachGoalLabel())}</span><span class="tag">${esc(tr('finalUi.daysPerWeek',{count:r.p.daysPerWeek}))}</span><span class="tag">${esc(tr('coachUi.aboutMinutes',{minutes:r.p.duration}))}</span><span class="tag">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> ${r.score}/100</span></span></div><div class="coach-reasons">${r.reasons.map(x=>`<div class="coach-reason">${esc(x)}</div>`).join('')}</div>${recommendationBreakdownHtml(r)}<div class="actions" style="margin-top:11px"><button class="btn primary" data-plan-adopt="${esc(r.p.id)}">採用 ${esc(tr('finalUi.weekCount',{count:n(data.settings.blockWeeks)||6}))}計畫</button><button class="btn ghost" id="homeReevaluatePlan">${esc(tr("residual.rac0fcbd0"))}</button></div></div><div class="section">${esc(tr("residual.r715b1c13"))}</div><div class="card empty">${esc(tr("residual.r0c231e77"))}</div>`}
  const week=currentPlanWeek(),block=n(cp.blockWeeks)||6,r=currentPlanRecommendation(),built=coachDayBuild(r),day=built.day,progress=Math.min(100,Math.round(week/block*100)),active=!!data.activeWorkout,expired=week>block;
- return `${body}<div class="section">目前訓練計畫</div><div class="card current-plan-card"><div class="record-head"><div><div class="plan-week">第 ${Math.min(week,block)} / ${block} 週${expired?' · 已到重新評估時間':''}</div><div class="current-plan-title">${esc(p.nameZh)}</div><div class="record-meta">長期目標：${esc(COACH_GOALS[cp.goal]?.label||coachGoalLabel())} · ${p.daysPerWeek} 日/週 · 約 ${p.duration} 分</div></div><span class="tag">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> ${r.score}/100</span></span></div><div class="plan-progress"><i style="width:${progress}%"></i></div><div class="actions" style="margin-top:10px"><button class="btn small ghost" id="homeReevaluatePlan">重新評估課表</button><button class="btn small ghost" data-coach-preview="${esc(p.id)}">查看完整計畫</button><button class="btn small danger" id="homeEndPlan">結束計畫</button></div></div><div class="section">今天要做</div><div class="card coach-primary"><div class="coach-kicker">${esc(TODAY_ADJUSTMENTS[built.adjustment.mode].label)}${(todayBodyStatus().entries||[]).length?' · 已納入今日身體狀況':''}</div><div class="coach-title">${esc(day.nameZh)}｜${esc(day.dayMeta?.dayTitle||p.nameZh)}</div><div class="tagrow" style="margin-top:8px"><span class="tag">${built.items.length} 個動作</span><span class="tag">原計畫約 ${p.duration} 分</span>${priorityMuscles().length?`<span class="tag">優先：${esc(priorityMuscles().join('、'))}</span>`:''}</div>${coachExerciseListHtml(built.items,p)}<div class="actions" style="margin-top:11px"><button class="btn primary" id="homeCoachStart">${active?'繼續目前訓練':'開始今天訓練'}</button></div></div><div class="section">今天需要調整嗎？</div><div class="card">${todayAdjustHtml()}<div class="small" style="margin-top:9px">這裡只改今天，不會修改「設定 → 訓練偏好與目標」的長期目標或目前 4–8 週計畫。</div></div>`
+ return `${body}<div class="section">${esc(tr("residual.r0ae2028e"))}</div><div class="card current-plan-card"><div class="record-head"><div><div class="plan-week">第 ${Math.min(week,block)} / ${block} 週${expired?' · 已到重新評估時間':''}</div><div class="current-plan-title">${esc(p.nameZh)}</div><div class="record-meta">長期目標：${esc(coachGoalLabel(cp.goal))} · ${esc(tr('finalUi.daysPerWeek',{count:p.daysPerWeek}))} · 約 ${esc(tr('finalUi.minutes',{count:p.duration}))}</div></div><span class="tag">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> ${r.score}/100</span></span></div><div class="plan-progress"><i style="width:${progress}%"></i></div><div class="actions" style="margin-top:10px"><button class="btn small ghost" id="homeReevaluatePlan">${esc(tr("residual.rabcd84e7"))}</button><button class="btn small ghost" data-coach-preview="${esc(p.id)}">${esc(tr("residual.r73d10828"))}</button><button class="btn small danger" id="homeEndPlan">${esc(tr("residual.rf68c4539"))}</button></div></div><div class="section">${esc(tr("residual.r734e7187"))}</div><div class="card coach-primary"><div class="coach-kicker">${esc(todayAdjustmentLabel(built.adjustment.mode))}${(todayBodyStatus().entries||[]).length?' · 已納入今日身體狀況':''}</div><div class="coach-title">${esc(day.nameZh)}｜${esc(day.dayMeta?.dayTitle||p.nameZh)}</div><div class="tagrow" style="margin-top:8px"><span class="tag">${built.items.length} 個動作</span><span class="tag">原計畫約 ${esc(tr('finalUi.minutes',{count:p.duration}))}</span>${priorityMuscles().length?`<span class="tag">優先：${esc(priorityMuscles().join('、'))}</span>`:''}</div>${coachExerciseListHtml(built.items,p)}<div class="actions" style="margin-top:11px"><button class="btn primary" id="homeCoachStart">${active?'繼續目前訓練':'開始今天訓練'}</button></div></div><div class="section">${esc(tr("residual.r1a342c1b"))}</div><div class="card">${todayAdjustHtml()}<div class="small" style="margin-top:9px">${esc(tr("residual.r008ded82"))}</div></div>`
 }
-function openPlanReevaluation(){const rs=coachRecommendations(coachGoal(),5);openModal(tr('modal.reevaluatePlan'),`<div class="card"><b>長期條件</b><div class="small" style="margin-top:5px">${esc(coachGoalLabel())} · ${n(data.settings.weeklySessions)||3} 日/週 · ${n(data.settings.sessionMinutes)||60} 分 · ${n(data.settings.blockWeeks)||6} 週${priorityMuscles().length?` · 優先 ${esc(priorityMuscles().join('、'))}`:''}</div><div class="small" style="margin-top:5px">今日疲勞或單日不舒服不會改變這份長期排名。</div></div>${rs.map((r,i)=>`<div class="card"><div class="record-head"><div><div class="coach-match">${i+1}. ${coachMatchLabel(r.score)}<span class="ui-advanced-only"> · ${r.score}/100</span></div><div class="coach-alt-title">${esc(r.p.nameZh)}</div><div class="coach-alt-meta">${r.p.daysPerWeek} 日/週 · 約 ${r.p.duration} 分 · ${esc(r.p.goal)}</div></div></div><div class="coach-reasons">${r.reasons.map(x=>`<div class="coach-reason">${esc(x)}</div>`).join('')}</div>${recommendationBreakdownHtml(r)}<div class="actions" style="margin-top:8px"><button class="btn small ghost" data-coach-preview="${esc(r.p.id)}">預覽</button><button class="btn small primary" data-plan-adopt="${esc(r.p.id)}">設為目前計畫</button></div></div>`).join('')}`,()=>{bindCoachUI($('#modalBody'))})}
+function openPlanReevaluation(){const rs=coachRecommendations(coachGoal(),5);openModal(tr('modal.reevaluatePlan'),`<div class="card"><b>${esc(tr("residual.r4191493c"))}</b><div class="small" style="margin-top:5px">${esc(coachGoalLabel())} · ${esc(tr('finalUi.daysPerWeek',{count:n(data.settings.weeklySessions)||3}))} · ${esc(tr('finalUi.minutes',{count:n(data.settings.sessionMinutes)||60}))} · ${esc(tr('finalUi.weekCount',{count:n(data.settings.blockWeeks)||6}))}${priorityMuscles().length?tr('finalUi.priorityInline',{muscles:priorityMuscles().map(displayMuscle).join('、')}):''}</div><div class="small" style="margin-top:5px">${esc(tr("residual.r871527c1"))}</div></div>${rs.map((r,i)=>`<div class="card"><div class="record-head"><div><div class="coach-match">${i+1}. ${coachMatchLabel(r.score)}<span class="ui-advanced-only"> · ${r.score}/100</span></div><div class="coach-alt-title">${esc(r.p.nameZh)}</div><div class="coach-alt-meta">${esc(tr('finalUi.daysPerWeek',{count:r.p.daysPerWeek}))} · ${esc(tr('coachUi.aboutMinutes',{minutes:r.p.duration}))} · ${esc(r.p.goal)}</div></div></div><div class="coach-reasons">${r.reasons.map(x=>`<div class="coach-reason">${esc(x)}</div>`).join('')}</div>${recommendationBreakdownHtml(r)}<div class="actions" style="margin-top:8px"><button class="btn small ghost" data-coach-preview="${esc(r.p.id)}">${esc(tr("residual.r9caf61f6"))}</button><button class="btn small primary" data-plan-adopt="${esc(r.p.id)}">${esc(tr("residual.rd692f32a"))}</button></div></div>`).join('')}`,()=>{bindCoachUI($('#modalBody'))})}
 function bindCoachUI(scope=document){
  scope.querySelectorAll?.('[data-coach-preview]').forEach(b=>b.onclick=()=>showSystemProgramDetail(b.dataset.coachPreview));scope.querySelectorAll?.('[data-plan-adopt]').forEach(b=>b.onclick=()=>{const id=b.dataset.planAdopt;closeModal();adoptCurrentPlan(id)});scope.querySelectorAll?.('[data-today-adjust]').forEach(b=>b.onclick=()=>setTodayAdjustment(b.dataset.todayAdjust,todayAdjustment().focusMuscle));scope.querySelectorAll?.('[data-today-focus]').forEach(b=>b.onclick=()=>setTodayAdjustment('focus',b.dataset.todayFocus));scope.querySelectorAll?.('[data-today-body-status]').forEach(b=>b.onclick=()=>openBodyStatusModal(isoToday()));
  const ree=scope.querySelector?.('#homeReevaluatePlan');if(ree)ree.onclick=openPlanReevaluation;const end=scope.querySelector?.('#homeEndPlan');if(end)end.onclick=endCurrentPlan;const start=scope.querySelector?.('#homeCoachStart');if(start)start.onclick=()=>{if(data.activeWorkout){goPage('trainPage');return}const r=currentPlanRecommendation();if(r)startCoachRecommendedDay(r)}
@@ -707,10 +715,10 @@ function bindCoachUI(scope=document){
 function startCoachRecommendedDay(rec){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceActiveForPlan')))return;const built=coachDayBuild(rec),p=built.p,day=built.day,date=isoToday(),adj=built.adjustment;
  const exercises=built.items.map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return null;const se=makeSessionExercise({...ex,...it},date);if(it.todayEasy&&(se.sets||[]).length){se.sets=se.sets.slice(0,Math.max(1,n(it.targetSets)||2))}if(ex.type==='cardio'){const base=n(se.cardio?.minutes)||20;se.cardio.minutes=adj.mode==='easy'?Math.min(15,base):adj.mode==='short'?Math.min(10,base):base}return se}).filter(Boolean);
- data.activeWorkout={id:uid('w'),date,name:`${p.nameZh}｜${day.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:`目前計畫： ${p.nameZh}｜長期目的：${COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel()}｜今日調整：${TODAY_ADJUSTMENTS[adj.mode].label}`,programDayMeta:{...(day.dayMeta||{}),trainingGoal:COACH_GOALS[data.currentPlan?.goal]?.label||coachGoalLabel(),coachNote:`目前為 ${n(data.currentPlan?.blockWeeks)||6} 週計畫；今日使用「${TODAY_ADJUSTMENTS[adj.mode].label}」。這次調整不會改寫長期設定。`},gymId:data.settings.preferredGymId||'',gymNameSnapshot:data.gyms.find(g=>g.id===data.settings.preferredGymId)?.name||'',deload:p.progression==='deload'||adj.mode==='easy',preStatus:{},pain:'',coachRecommendation:{programId:p.id,goal:data.currentPlan?.goal||coachGoal(),score:rec.score,dayIndex:rec.dayIndex,planInstanceId:data.currentPlan?.id||'',todayMode:adj.mode},exercises};save('開始目前計畫今日訓練',true);goPage('trainPage')
+ data.activeWorkout={id:uid('w'),date,name:`${p.nameZh}｜${day.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:tr('coachMeta.workoutNotes',{program:p.nameZh,goal:coachGoalLabel(data.currentPlan?.goal),adjustment:todayAdjustmentLabel(adj.mode)}),programDayMeta:{...(day.dayMeta||{}),trainingGoal:coachGoalLabel(data.currentPlan?.goal),coachNote:tr('coachMeta.coachNote',{weeks:n(data.currentPlan?.blockWeeks)||6,adjustment:todayAdjustmentLabel(adj.mode)})},gymId:data.settings.preferredGymId||'',gymNameSnapshot:data.gyms.find(g=>g.id===data.settings.preferredGymId)?.name||'',deload:p.progression==='deload'||adj.mode==='easy',preStatus:{},pain:'',coachRecommendation:{programId:p.id,goal:data.currentPlan?.goal||coachGoal(),score:rec.score,dayIndex:rec.dayIndex,planInstanceId:data.currentPlan?.id||'',todayMode:adj.mode},exercises};save(tr('reasons.startCurrentPlanDay'),true);goPage('trainPage')
 }
 function goalProgramRecommendationsHtml(){
- const cp=currentPlanProgram(),rs=coachRecommendations(coachGoal(),3);return `${cp?`<div class="card current-plan-card"><div class="record-head"><div><b>目前 ${n(data.currentPlan.blockWeeks)||6} 週計畫：${esc(cp.nameZh)}</b><div class="record-meta">第 ${Math.min(currentPlanWeek(),n(data.currentPlan.blockWeeks)||6)} 週 · 長期目標 ${esc(COACH_GOALS[data.currentPlan.goal]?.label||coachGoalLabel())}</div></div><button class="btn small ghost" data-plan-reevaluate>重新評估</button></div></div>`:''}<div class="card"><div class="record-head"><div><b>依長期條件推薦</b><div class="record-meta">不使用今天的疲勞／不舒服來永久改變排名</div></div><span class="tag">${esc(coachGoalLabel())}</span></div><div class="coach-alt-grid" style="margin-top:9px">${rs.map(r=>`<div class="coach-alt-card"><div class="coach-match">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> · ${r.score}/100</span></div><div class="coach-alt-title">${esc(r.p.nameZh)}</div><div class="coach-alt-meta">${r.p.daysPerWeek} 日/週 · 約 ${r.p.duration} 分</div><div class="actions" style="margin-top:7px"><button class="btn small ghost" data-program-detail="${esc(r.p.id)}">預覽</button><button class="btn small primary" data-plan-adopt="${esc(r.p.id)}">設為目前計畫</button></div></div>`).join('')}</div></div>`
+ const cp=currentPlanProgram(),rs=coachRecommendations(coachGoal(),3);return `${cp?`<div class="card current-plan-card"><div class="record-head"><div><b>目前 ${n(data.currentPlan.blockWeeks)||6} 週計畫：${esc(cp.nameZh)}</b><div class="record-meta">第 ${Math.min(currentPlanWeek(),n(data.currentPlan.blockWeeks)||6)} 週 · 長期目標 ${esc(coachGoalLabel(data.currentPlan.goal))}</div></div><button class="btn small ghost" data-plan-reevaluate>${esc(tr("residual.r255f1025"))}</button></div></div>`:''}<div class="card"><div class="record-head"><div><b>${esc(tr("residual.rda966763"))}</b><div class="record-meta">${esc(tr("residual.r24c32392"))}</div></div><span class="tag">${esc(coachGoalLabel())}</span></div><div class="coach-alt-grid" style="margin-top:9px">${rs.map(r=>`<div class="coach-alt-card"><div class="coach-match">${coachMatchLabel(r.score)}<span class="ui-advanced-only"> · ${r.score}/100</span></div><div class="coach-alt-title">${esc(r.p.nameZh)}</div><div class="coach-alt-meta">${esc(tr('finalUi.daysPerWeek',{count:r.p.daysPerWeek}))} · ${esc(tr('coachUi.aboutMinutes',{minutes:r.p.duration}))}</div><div class="actions" style="margin-top:7px"><button class="btn small ghost" data-program-detail="${esc(r.p.id)}">${esc(tr("residual.r9caf61f6"))}</button><button class="btn small primary" data-plan-adopt="${esc(r.p.id)}">${esc(tr("residual.rd692f32a"))}</button></div></div>`).join('')}</div></div>`
 }
 function runAppSelfCheck(){
  const results=[];const add=(ok,label,detail='')=>results.push({ok,label,detail});
@@ -727,7 +735,7 @@ function runAppSelfCheck(){
  const backupKeys=Object.keys(freshData()).filter(k=>k!=='snapshots'),snapshotKeys=Object.keys(Object.fromEntries(Object.entries(data).filter(([k])=>k!=='snapshots')));const missingBackupKeys=backupKeys.filter(k=>!snapshotKeys);add(!missingBackupKeys.length,'完整備份欄位涵蓋目前資料結構',missingBackupKeys.join('、'));
  return results
 }
-function renderSelfCheck(results){const box=$('#selfCheckResult');if(!box)return;if(!results){box.innerHTML='';return}const ok=results.every(x=>x.ok);box.innerHTML=`<div class="${ok?'good':'warn'}" style="margin-top:9px;font-weight:900">${ok?'✓ 自我檢查通過':'⚠ 發現需要處理的項目'}</div><div class="selfcheck-list">${results.map(r=>`<div class="selfcheck-item ${r.ok?'ok':'bad'}">${r.ok?'✓':'⚠'} ${esc(r.label)}${r.detail?`<div class="small" style="margin-top:2px">${esc(r.detail)}</div>`:''}</div>`).join('')}</div>`}
+function renderSelfCheck(results){const box=$('#selfCheckResult');if(!box)return;if(!results){box.innerHTML='';return}const ok=results.every(x=>x.ok);box.innerHTML=`<div class="${ok?'good':'warn'}" style="margin-top:9px;font-weight:900">${ok?tr('finalUi.selfCheckOk'):tr('finalUi.selfCheckWarn')}</div><div class="selfcheck-list">${results.map(r=>`<div class="selfcheck-item ${r.ok?'ok':'bad'}">${r.ok?'✓':'⚠'} ${esc(r.label)}${r.detail?`<div class="small" style="margin-top:2px">${esc(r.detail)}</div>`:''}</div>`).join('')}</div>`}
 function renderHome(){
  const week=workoutsThisWeek(),recent30=workoutsLastDays(30);
  $('#homeSuggestion').innerHTML=coachHomeHtml();bindBodyStatusButtons($('#homeSuggestion'));bindCoachUI($('#homeSuggestion'));
@@ -737,16 +745,16 @@ function renderHome(){
  <div class="stat"><b>${Math.round(weekCardio)} / ${cardioGoal}</b><span>${esc(tr('dynamic.cardioMinutes'))}</span></div>
  <div class="stat"><b>${fmtKg(recent30.reduce((a,w)=>a+workoutVolume(w),0))}</b><span>${esc(tr('dynamic.recent30Volume'))}<br><small>${rangeDateLabel(30)}</small></span></div>`;
  const load=recentMuscleLoad(7),goals=data.settings.weeklyMuscleGoals||{};
- $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${m}</b><span>${val} / ${goal||'—'} 組</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
+ $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${esc(displayMuscle(m))}</b><span>${esc(tr('finalUi.groupsValue',{value:`${val} / ${goal||'—'}`}))}</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
  const prog=[];data.exerciseLibrary.filter(ex=>['weight_reps','bodyweight','unilateral','duration'].includes(ex.type)).forEach(ex=>{const adv=progressionAdvice(ex.id);const best=bestSetForExercise(ex.id);if(best&&adv)prog.push({ex,adv,best})});prog.sort((a,b)=>b.best.date.localeCompare(a.best.date));
- $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">最近：${esc(p.best.date)} · ${esc(view.evidence)}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">判斷：${esc(view.reason)}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">累積幾次訓練後，這裡會顯示進步建議。</div>';
- const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||'動作')}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · 目標 ${fmtWeight(g.weight)} × ${g.reps}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
+ $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">${esc(tr('finalUi.recentEvidence',{date:p.best.date,evidence:view.evidence}))}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">${esc(tr('finalUi.judgement',{reason:view.reason}))}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">${esc(tr("residual.r24cff772"))}</div>';
+ const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||tr('analysisDynamic.exerciseFallback'))}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · ${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
  $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):`<div class="card empty">${esc(tr('dynamic.noCompletedWorkout'))}</div>`;$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
 }
-function suggestTemplate(){const r=coachRecommendations(coachGoal(),1)[0];if(r)return{title:r.p.nameZh,reason:r.reasons.join(' · '),templateId:'',systemProgramId:r.p.id};return{title:'自由訓練',reason:'目前沒有可用的系統課表。',templateId:'',systemProgramId:''}}
+function suggestTemplate(){const r=coachRecommendations(coachGoal(),1)[0];if(r)return{title:r.p.nameZh,reason:r.reasons.join(' · '),templateId:'',systemProgramId:r.p.id};return{title:tr('homeUi.freeTraining'),reason:tr('homeUi.noSystemProgram'),templateId:'',systemProgramId:''}}
 function workoutCardHtml(w){
  const sets=effectiveSets(w),vol=workoutVolume(w),prs=countPRsInWorkout(w);
- return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(w.name)} ${w.deload?'<span class="pill">Deload</span>':''}</div><div class="record-meta">${esc(w.date)} · ${n(w.duration)} 分 · ${sets} ${esc(tr('dynamic.completedSets'))}</div></div><button class="btn small ghost" data-open="${esc(w.id)}">編輯</button></div><div class="tagrow" style="margin-top:8px"><span class="tag">${fmtKg(vol)}</span><span class="tag">有氧 ${Math.round(cardioMinutes(w))} 分</span>${prs?`<span class="tag">PR ${prs}</span>`:''}</div></div>`
+ return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(w.name)} ${w.deload?'<span class="pill">Deload</span>':''}</div><div class="record-meta">${esc(w.date)} · ${n(w.duration)} 分 · ${sets} ${esc(tr('dynamic.completedSets'))}</div></div><button class="btn small ghost" data-open="${esc(w.id)}">${esc(tr("residual.r4642d168"))}</button></div><div class="tagrow" style="margin-top:8px"><span class="tag">${fmtKg(vol)}</span><span class="tag">有氧 ${Math.round(cardioMinutes(w))} 分</span>${prs?`<span class="tag">PR ${prs}</span>`:''}</div></div>`
 }
 function countPRsInWorkout(w){
  let count=0;(w.exercises||[]).forEach(e=>{let local=0;(e.sets||[]).forEach(s=>local=Math.max(local,est1rm(n(s.weight),n(s.reps))));if(!local)return;const prior=data.workouts.filter(x=>x.date<w.date);let prev=0;prior.forEach(x=>{const ex=(x.exercises||[]).find(a=>a.exerciseId===e.exerciseId);(ex?.sets||[]).forEach(s=>prev=Math.max(prev,est1rm(n(s.weight),n(s.reps))))});if(local>prev&&prev>0)count++});return count
@@ -772,15 +780,15 @@ function openExerciseDemo(exId){
    <div class="record-title">${esc(ex.name)}</div>
    <div class="small">${esc(ex.nameEn||'')}</div>
    ${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(ex.id,ex.pattern,ex.name,ex.nameEn||'',eq?.nameEn||''):''}
-   <div class="tagrow" style="margin-top:8px"><span class="tag">${esc(ex.muscle||'其他')}</span><span class="tag">${esc(pattern)}</span><span class="tag">${esc(prescription)}</span></div>
-   ${eq?`<div class="small" style="margin-top:8px"><b>對應器械：</b>${esc(eq.nameZh)} / ${esc(eq.nameEn)}</div>`:''}
+   <div class="tagrow" style="margin-top:8px"><span class="tag">${esc(displayMuscle(ex.muscle||'其他'))}</span><span class="tag">${esc(pattern)}</span><span class="tag">${esc(prescription)}</span></div>
+   ${eq?`<div class="small" style="margin-top:8px"><b>${esc(tr("residual.r765d952b"))}</b>${esc(eq.nameZh)} / ${esc(eq.nameEn)}</div>`:''}
    <div class="exercise-demo-copy" style="margin-top:11px">${esc(ex.descZh||ex.notes||'目前沒有額外動作說明。')}</div>
-   ${ex.notes?`<div class="exercise-demo-note"><b>操作重點：</b>${esc(ex.notes)}</div>`:''}
+   ${ex.notes?`<div class="exercise-demo-note"><b>${esc(tr("residual.r73fcb017"))}</b>${esc(ex.notes)}</div>`:''}
  </div>
  <div class="actions">
-   <button class="btn primary" id="demoYtZh">▶ YouTube 中文示範</button>
+   <button class="btn primary" id="demoYtZh">${esc(tr("residual.ra086a676"))}</button>
    <button class="btn ghost" id="demoYtEn">▶ English Proper Form</button>
-   <button class="btn ghost" id="demoFullInfo">ⓘ 完整說明</button>
+   <button class="btn ghost" id="demoFullInfo">${esc(tr("residual.r4bc21e71"))}</button>
  </div>`,()=>{
    $('#demoYtZh').onclick=()=>exerciseYoutubeSearch(ex,'zh');
    $('#demoYtEn').onclick=()=>exerciseYoutubeSearch(ex,'en');
@@ -792,28 +800,31 @@ function exercisePickerRowHtml(e){
  return `<div class="exercise-picker-row">
    <div class="exercise-picker-main">
      <div><div class="exercise-picker-name">${esc(e.name)}</div><div class="exercise-picker-en">${esc(e.nameEn||'')}</div></div>
-     <span class="tag">${esc(e.muscle)}</span>
+     <span class="tag">${esc(displayMuscle(e.muscle))}</span>
    </div>
-   <div class="exercise-picker-meta">${esc(TYPES.find(t=>t[0]===e.type)?.[1]||e.type)}${e.pattern?` · ${esc(patternDisplayName(e.pattern))}`:''}${eq?` · ${esc(eq.nameZh)}`:''}</div>
+   <div class="exercise-picker-meta">${esc(displayType(e.type))}${e.pattern?` · ${esc(patternDisplayName(e.pattern))}`:''}${eq?` · ${esc(eq.nameZh)}`:''}</div>
    <div class="exercise-picker-actions">
-     <button class="btn primary" type="button" data-pick="${esc(e.id)}">＋ 加入這個動作</button>
+     <button class="btn primary" type="button" data-pick="${esc(e.id)}">${esc(tr("residual.rd91a8af4"))}</button>
      <button class="btn ghost" type="button" data-pick-info="${esc(e.id)}">${esc(tr('trainingUi.info'))}</button>
    </div>
  </div>`
 }
 const BODY_AREAS=[
- ['neck','頸部'],['shoulder_l','左肩'],['shoulder_r','右肩'],['chest','胸部'],['upper_back','上背'],['lower_back','下背'],
- ['elbow_l','左手肘'],['elbow_r','右手肘'],['wrist_l','左手腕'],['wrist_r','右手腕'],['core','腹部／核心'],['hip_l','左髖'],
- ['hip_r','右髖'],['thigh_front','大腿前側'],['thigh_back','大腿後側'],['knee_l','左膝'],['knee_r','右膝'],['calf','小腿'],
- ['ankle_l','左腳踝'],['ankle_r','右腳踝']
+ ['neck','domain.bodyArea.neck'],['shoulder_l','domain.bodyArea.shoulderL'],['shoulder_r','domain.bodyArea.shoulderR'],['chest','domain.bodyArea.chest'],['upper_back','domain.bodyArea.upperBack'],['lower_back','domain.bodyArea.lowerBack'],
+ ['elbow_l','domain.bodyArea.elbowL'],['elbow_r','domain.bodyArea.elbowR'],['wrist_l','domain.bodyArea.wristL'],['wrist_r','domain.bodyArea.wristR'],['core','domain.bodyArea.core'],['hip_l','domain.bodyArea.hipL'],
+ ['hip_r','domain.bodyArea.hipR'],['thigh_front','domain.bodyArea.thighFront'],['thigh_back','domain.bodyArea.thighBack'],['knee_l','domain.bodyArea.kneeL'],['knee_r','domain.bodyArea.kneeR'],['calf','domain.bodyArea.calf'],
+ ['ankle_l','domain.bodyArea.ankleL'],['ankle_r','domain.bodyArea.ankleR']
 ];
 const BODY_STATUS_TYPES={
- soreness:{label:'肌肉痠痛',short:'痠',cls:'soreness'},
- tight:{label:'緊繃／卡卡',short:'緊',cls:'tight'},
- pain:{label:'疼痛／不舒服',short:'痛／不適',cls:'pain'}
+ soreness:{labelKey:'domain.bodyType.soreness',shortKey:'domain.bodyType.sorenessShort',cls:'soreness'},
+ tight:{labelKey:'domain.bodyType.tight',shortKey:'domain.bodyType.tightShort',cls:'tight'},
+ pain:{labelKey:'domain.bodyType.pain',shortKey:'domain.bodyType.painShort',cls:'pain'}
 };
-const BODY_LEVELS={1:'輕微',2:'中等',3:'明顯'};
-function bodyAreaName(id){return BODY_AREAS.find(x=>x[0]===id)?.[1]||id}
+const BODY_LEVELS={1:'domain.bodyLevel.mild',2:'domain.bodyLevel.medium',3:'domain.bodyLevel.strong'};
+function bodyAreaName(id){const key=BODY_AREAS.find(x=>x[0]===id)?.[1];return key?tr(key):id}
+function bodyTypeLabel(type){return tr((BODY_STATUS_TYPES[type]||BODY_STATUS_TYPES.soreness).labelKey)}
+function bodyTypeShort(type){return tr((BODY_STATUS_TYPES[type]||BODY_STATUS_TYPES.soreness).shortKey)}
+function bodyLevelName(level){const key=BODY_LEVELS[n(level)];return key?tr(key):''}
 function todayBodyStatus(date=isoToday()){
  data.bodyStatus=data.bodyStatus||[];
  return data.bodyStatus.find(x=>x.date===date)||{date,entries:[],note:'',updatedAt:''}
@@ -826,25 +837,25 @@ function saveBodyStatus(status){
  localStorage.setItem(APP_KEY,JSON.stringify(data));renderAll()
 }
 function bodyStatusSummary(status){
- const es=status?.entries||[];if(!es.length)return'今天沒有標記痠痛或不舒服';
+ const es=status?.entries||[];if(!es.length)return tr('bodyStatus.noneSummary');
  const important=es.filter(x=>x.type==='pain'||n(x.level)>=3).length;
  return `${tr('bodyStatus.summaryMarked',{count:es.length})}${important?tr('bodyStatus.summaryImportant',{count:important}):''}`
 }
 function bodyStatusTagsHtml(status){
- return (status?.entries||[]).map(e=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<span class="body-status-tag ${t.cls}">${esc(bodyAreaName(e.area))} · ${esc(t.short)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</span>`}).join('')
+ return (status?.entries||[]).map(e=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<span class="body-status-tag ${t.cls}">${esc(bodyAreaName(e.area))} · ${esc(bodyTypeShort(e.type))} · ${esc(bodyLevelName(e.level))}</span>`}).join('')
 }
 function openBodyStatusModal(date=isoToday()){
  const current=JSON.parse(JSON.stringify(todayBodyStatus(date))),draft={...current,entries:[...(current.entries||[])]};
  let area=BODY_AREAS[0][0],type='soreness',level=1;
  const renderEntries=()=>{
    const box=$('#bodyStatusEntries');if(!box)return;
-   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(t.label)} · ${esc(BODY_LEVELS[n(e.level)]||'')}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):`<div class="empty">${esc(tr('bodyStatus.noneToday'))}</div>`;
+   box.innerHTML=draft.entries.length?draft.entries.map((e,i)=>{const t=BODY_STATUS_TYPES[e.type]||BODY_STATUS_TYPES.soreness;return `<div class="body-status-entry"><div class="body-status-entry-copy"><div class="body-status-entry-title">${esc(bodyAreaName(e.area))}</div><div class="body-status-entry-meta">${esc(bodyTypeLabel(e.type))} · ${esc(bodyLevelName(e.level))}</div></div><button class="btn small danger" data-body-remove="${i}" type="button">×</button></div>`}).join(''):`<div class="empty">${esc(tr('bodyStatus.noneToday'))}</div>`;
    $$('[data-body-remove]').forEach(b=>b.onclick=()=>{draft.entries.splice(n(b.dataset.bodyRemove),1);renderEntries()})
  };
  openModal(tr('modal.bodyStatus'),`<div class="card">
    <div class="small">${esc(tr('bodyStatus.intro'))}</div>
    <div class="section" style="margin-top:13px">${esc(tr('bodyStatus.areaStep'))}</div>
-   <div class="body-area-grid">${BODY_AREAS.map((a,i)=>`<button type="button" class="body-area-btn ${i===0?'on':''}" data-body-area="${a[0]}">${a[1]}</button>`).join('')}</div>
+   <div class="body-area-grid">${BODY_AREAS.map((a,i)=>`<button type="button" class="body-area-btn ${i===0?'on':''}" data-body-area="${a[0]}" >${esc(bodyAreaName(a[0]))}</button>`).join('')}</div>
    <div class="section">${esc(tr('bodyStatus.feelingStep'))}</div>
    <div class="body-status-seg"><button type="button" class="on" data-body-type="soreness">${esc(tr('bodyStatus.soreness'))}</button><button type="button" data-body-type="tight">${esc(tr('bodyStatus.tight'))}</button><button type="button" data-body-type="pain">${esc(tr('bodyStatus.pain'))}</button></div>
    <div class="section">${esc(tr('bodyStatus.levelStep'))}</div>
@@ -884,7 +895,7 @@ function bodyStatusExerciseMatch(ex,date=isoToday()){
    return false
  };
  const hits=entries.filter(relevant);if(!hits.length)return null;
- return{hits,strong:hits.some(x=>x.type==='pain'||n(x.level)>=3),text:hits.map(x=>`${bodyAreaName(x.area)} ${BODY_STATUS_TYPES[x.type]?.short||''}${BODY_LEVELS[n(x.level)]?`（${BODY_LEVELS[n(x.level)]}）`:''}`).join('、')}
+ return{hits,strong:hits.some(x=>x.type==='pain'||n(x.level)>=3),text:hits.map(x=>`${bodyAreaName(x.area)} ${bodyTypeShort(x.type)}${bodyLevelName(x.level)?`（${bodyLevelName(x.level)}）`:''}`).join('、')}
 }
 function bodyStatusCardHtml(date=isoToday()){
  const s=todayBodyStatus(date);
@@ -894,20 +905,22 @@ function bindBodyStatusButtons(scope=document){
  scope.querySelectorAll?.('[data-open-body-status]').forEach(b=>b.onclick=()=>openBodyStatusModal(b.dataset.openBodyStatus||isoToday()))
 }
 const UI_LEVELS={
- simple:{name:'簡易',short:'隱藏 RIR',desc:'訓練操作與一般模式相同，只隱藏剩餘次數（RIR／RPE）欄位。'},
- standard:{name:'一般',short:'顯示 RIR',desc:'保留完整的一般訓練操作，並顯示剩餘次數（RIR／RPE）。'},
- advanced:{name:'進階',short:'完整控制',desc:'顯示完整組別、RIR／RPE 與進階分析；中文為主，英文縮寫只作輔助。'}
+ simple:{nameKey:'domain.uiLevel.simpleName',shortKey:'domain.uiLevel.simpleShort',descKey:'domain.uiLevel.simpleDesc'},
+ standard:{nameKey:'domain.uiLevel.standardName',shortKey:'domain.uiLevel.standardShort',descKey:'domain.uiLevel.standardDesc'},
+ advanced:{nameKey:'domain.uiLevel.advancedName',shortKey:'domain.uiLevel.advancedShort',descKey:'domain.uiLevel.advancedDesc'}
 };
 function uiLevel(){return data.settings.uiLevel||'standard'}
-function uiLevelName(level=uiLevel()){return UI_LEVELS[level]?.name||'一般'}
+function uiLevelName(level=uiLevel()){return tr(UI_LEVELS[level]?.nameKey||'domain.uiLevel.standardName')}
+function uiLevelShort(level=uiLevel()){return tr(UI_LEVELS[level]?.shortKey||'domain.uiLevel.standardShort')}
+function uiLevelDesc(level=uiLevel()){return tr(UI_LEVELS[level]?.descKey||'domain.uiLevel.standardDesc')}
 function applyUiLevel(){
  const level=uiLevel();document.body.dataset.uiLevel=level;
- const badge=$('#uiLevelHeaderBadge');if(badge)badge.textContent=`${uiLevelName(level)}模式`
+ const badge=$('#uiLevelHeaderBadge');if(badge)badge.textContent=tr('finalUi.uiLevelMode',{level:uiLevelName(level)})
 }
 function syncUiLevelControls(scope=document){
  const cur=uiLevel();
  scope.querySelectorAll?.('[data-ui-level]').forEach(b=>b.classList.toggle('on',b.dataset.uiLevel===cur));
- scope.querySelectorAll?.('.ui-level-hint').forEach(h=>h.textContent=UI_LEVELS[cur]?.desc||'')
+ scope.querySelectorAll?.('.ui-level-hint').forEach(h=>h.textContent=uiLevelDesc(cur))
 }
 function setUiLevel(level){
  if(!UI_LEVELS[level])return;
@@ -923,7 +936,7 @@ function setUiLevel(level){
 }
 function uiLevelSwitchHtml(){
  const cur=uiLevel();
- return `<div class="ui-level-switch">${Object.entries(UI_LEVELS).map(([key,v])=>`<button type="button" class="${cur===key?'on':''}" data-ui-level="${key}">${v.name}<small>${v.short}</small></button>`).join('')}</div><div class="ui-level-hint">${esc(UI_LEVELS[cur].desc)}</div>`
+ return `<div class="ui-level-switch">${Object.entries(UI_LEVELS).map(([key,v])=>`<button type="button" class="${cur===key?'on':''}" data-ui-level="${key}">${v.name}<small>${v.short}</small></button>`).join('')}</div><div class="ui-level-hint">${esc(uiLevelDesc(cur))}</div>`
 }
 function bindUiLevelSwitch(scope=document){
  syncUiLevelControls(scope);
@@ -970,7 +983,7 @@ function saveActiveAsTemplate(){
  openModal(tr('modal.newTrainingPlan'),`<div class="card"><div class="field"><label>${esc(tr('trainingUi.workoutName'))}</label><input id="drawerTplName" value="${esc(w.name||tr('drawer.defaultTemplateName'))}"></div><div class="small">${esc(tr('drawer.templateHint',{count:w.exercises.length}))}</div><button class="btn primary" id="drawerTplSave" style="margin-top:12px">${esc(tr('drawer.saveTemplate'))}</button></div>`,()=>$('#drawerTplSave').onclick=()=>{
    const name=$('#drawerTplName').value.trim()||tr('drawer.defaultTemplateName');
    data.templates.push({id:uid('tpl'),name,nameEn:'',items:w.exercises.map(e=>({exerciseId:e.exerciseId,targetSets:Math.max(1,(e.sets||[]).length||n(getExercise(e.exerciseId)?.targetSets)||3)}))});
-   save('從訓練建立課表',true);closeModal();toast(tr('feedback.planCreated'))
+   save(tr('reasons.createPlanFromWorkout'),true);closeModal();toast(tr('feedback.planCreated'))
  })
 }
 function toggleAllExerciseCards(){
@@ -997,7 +1010,7 @@ function renderTrainingDrawer(){
  <div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.tabPosition'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.tabPositionDesc'))}</div></div><button class="btn small ghost" id="drawerResetTabPosition" type="button">${esc(tr('drawer.resetTop'))}</button></div>
    <div class="drawer-setting" style="display:block"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.inputUnit'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.inputUnitDesc'))}</div></div><div class="drawer-unit-actions"><button class="btn ghost" id="drawerAllKg" type="button">${esc(tr('drawer.allKg'))}</button><button class="btn ghost" id="drawerAllLb" type="button">${esc(tr('drawer.allLb'))}</button></div></div>
-   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.timerPosition'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.timerPositionDesc'))}</div></div><div class="drawer-radio"><label><input type="radio" name="drawerTimerPos" value="top" ${data.settings.restTimerPosition!=='floating'?'checked':''}>${esc(tr('drawer.top'))}</label><label><input type="radio" name="drawerTimerPos" value="floating" ${data.settings.restTimerPosition==='floating'?'checked':''}>小浮窗</label></div></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.timerPosition'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.timerPositionDesc'))}</div></div><div class="drawer-radio"><label><input type="radio" name="drawerTimerPos" value="top" ${data.settings.restTimerPosition!=='floating'?'checked':''}>${esc(tr('drawer.top'))}</label><label><input type="radio" name="drawerTimerPos" value="floating" ${data.settings.restTimerPosition==='floating'?'checked':''}>${esc(tr("residual.r26b86665"))}</label></div></div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.notes'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.notesDesc'))}</div></div><label class="drawer-toggle"><input id="drawerNotes" type="checkbox" ${data.settings.trainingNotes!==false?'checked':''}><span></span></label></div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.autoLoad'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.autoLoadDesc'))}</div></div><label class="drawer-toggle"><input id="drawerAutoLoad" type="checkbox" ${data.settings.trainingAutoLoad!==false?'checked':''}><span></span></label></div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.intervalTimer'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.intervalTimerDesc'))}</div></div><label class="drawer-toggle"><input id="drawerIntervalTimer" type="checkbox" ${data.settings.trainingIntervalTimer!==false?'checked':''}><span></span></label></div>
@@ -1078,7 +1091,7 @@ function renderTrain(){
   ${w.programDayMeta?`<div class="day-focus-live"><div class="small">${esc(tr('trainingUi.todayFocus'))}</div><div class="record-title" style="margin-top:3px">${esc(w.programDayMeta.dayTitle||'')}</div><div class="small" style="margin-top:5px;line-height:1.55">${esc(w.programDayMeta.focusSummary||'')}</div><div class="tagrow" style="margin-top:7px">${(w.programDayMeta.primaryMuscles||[]).length?`<span class="tag">${esc(tr('trainingUi.primary',{value:w.programDayMeta.primaryMuscles.join('・')}))}</span>`:''}${w.programDayMeta.intensityLevel?`<span class="tag">${esc(tr('trainingUi.intensity',{value:w.programDayMeta.intensityLevel}))}</span>`:''}${w.programDayMeta.estimatedMinutes?`<span class="tag">${esc(tr('trainingUi.aboutMinutes',{value:n(w.programDayMeta.estimatedMinutes)}))}</span>`:''}</div>${w.programDayMeta.coachNote?`<div class="small" style="margin-top:7px"><b>${esc(tr('trainingUi.tip'))}</b>${esc(w.programDayMeta.coachNote)}</div>`:''}</div>`:''}
   ${w.pain?`<div class="warnbox" style="margin-top:10px">${esc(tr('trainingUi.pain',{value:w.pain}))}</div>`:''}
  </div>`;
- html+=`<div class="card rest-quick-card"><div class="record-head"><div><b>${esc(tr('trainingUi.restTimer'))}</b><div class="record-meta">${esc(tr('trainingUi.restTimerHint'))}</div></div><button class="btn small ghost" id="timerShow">${esc(tr('trainingUi.show'))}</button></div><div class="quick"><button class="btn ghost" data-timer="60">60秒</button><button class="btn ghost" data-timer="90">90秒</button><button class="btn ghost" data-timer="120">120秒</button><button class="btn ghost" data-timer="180">180秒</button></div></div>`;
+ html+=`<div class="card rest-quick-card"><div class="record-head"><div><b>${esc(tr('trainingUi.restTimer'))}</b><div class="record-meta">${esc(tr('trainingUi.restTimerHint'))}</div></div><button class="btn small ghost" id="timerShow">${esc(tr('trainingUi.show'))}</button></div><div class="quick"><button class="btn ghost" data-timer="60">${esc(tr("residual.r662d6fcb"))}</button><button class="btn ghost" data-timer="90">${esc(tr("residual.r003c623a"))}</button><button class="btn ghost" data-timer="120">${esc(tr("residual.rdd566a34"))}</button><button class="btn ghost" data-timer="180">${esc(tr("residual.r4d35ed32"))}</button></div></div>`;
  html+=`<div id="sessionExercises">${(w.exercises||[]).map((e,i)=>sessionExerciseHtml(e,i)).join('')}</div>`;
  html+=`<div class="actions"><button class="btn ghost" id="sessionAddEx">${esc(tr('trainingUi.addExercise'))}</button><button class="btn ghost" id="sessionReorder">${esc(tr('trainingUi.reorder'))}</button></div>
  <div class="sticky-actions"><div class="actions"><button class="btn good" id="finishWorkout">${isHistoryEdit?tr('trainingUi.saveEdit'):tr('trainingUi.finishWorkout')}</button><button class="btn danger" id="cancelWorkout">${isHistoryEdit?tr('trainingUi.cancelEdit'):tr('trainingUi.discard')}</button></div></div>`;
@@ -1098,9 +1111,9 @@ function sessionExerciseHtml(e,idx){
  }
  const lastText=last?lastExerciseSummary(last.exercise):tr('trainingUi.noPrevious');
  const showNotes=data.settings.trainingNotes!==false,inputUnit=exerciseInputUnit(e);
- const unitTools=!['cardio','duration'].includes(e.type)?`<div class="exercise-unit-line"><span class="exercise-unit-label">${esc(tr('trainingUi.machineUnit'))}</span><span class="exercise-unit-toggle"><button type="button" class="${inputUnit==='kg'?'on':''}" data-ex-unit="${idx},kg">kg</button><button type="button" class="${inputUnit==='lb'?'on':''}" data-ex-unit="${idx},lb">lb</button></span><span class="exercise-unit-note">${inputUnit==='lb'?`<b>lb</b> ${esc(tr('trainingUi.lbStorage').replace('輸入 lb，',''))}`:`<b>kg</b> ${esc(tr('trainingUi.kgStorage').replace('輸入 kg，',''))}`}</span></div>`:'';
+ const unitTools=!['cardio','duration'].includes(e.type)?`<div class="exercise-unit-line"><span class="exercise-unit-label">${esc(tr('trainingUi.machineUnit'))}</span><span class="exercise-unit-toggle"><button type="button" class="${inputUnit==='kg'?'on':''}" data-ex-unit="${idx},kg">kg</button><button type="button" class="${inputUnit==='lb'?'on':''}" data-ex-unit="${idx},lb">lb</button></span><span class="exercise-unit-note">${inputUnit==='lb'?`<b>lb</b> ${esc(tr('finalUi.lbStorageDetail'))}`:`<b>kg</b> ${esc(tr('finalUi.kgStorageDetail'))}`}</span></div>`:'';
  return `<div class="workout-ex ${e.uiCollapsed?'collapsed':''}" data-exblock="${idx}">
-  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(e.muscle)}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="${esc(tr('trainingUi.viewInfo'))}">${esc(tr('trainingUi.info'))}</button></div></div>${unitTools}<div class="record-meta">${esc(tr('trainingUi.previous',{value:lastText}))}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">${esc(tr('trainingUi.bodyRelated',{value:bodyMatch.text}))}${bodyMatch.strong?tr('trainingUi.bodyStrong'):tr('trainingUi.bodyMild')}</div>`:''}${advView?`<div class="small ${progressionToneClass(advView)}" style="margin-top:5px;line-height:1.55"><b>${esc(advView.label)}</b> · ${esc(advView.reason)}<br>${esc(advView.text)}<br><span class="record-meta">${esc(advView.evidence)}</span>${trainingProgressionActions.canApply(adv)?`<div style="margin-top:7px"><button class="btn small primary" type="button" data-apply-progression="${idx}">${esc(progressionApplyLabel(adv,ex,e))}</button></div>`:''}</div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">${esc(tr('trainingUi.equipmentNote'))}${esc(ex.notes)}</div>`:''}</div>
+  <div class="workout-ex-head"><div><div class="exercise-title-line"><div class="record-title">${idx+1}. ${esc(ex.name||e.nameSnapshot)} <span class="pill">${esc(displayMuscle(e.muscle))}</span></div><div class="exercise-title-tools"><button class="btn ghost" type="button" data-ex-info="${idx}" aria-label="${esc(tr('trainingUi.viewInfo'))}">${esc(tr('trainingUi.info'))}</button></div></div>${unitTools}<div class="record-meta">${esc(tr('trainingUi.previous',{value:lastText}))}</div>${bodyMatch?`<div class="exercise-body-warning ${bodyMatch.strong?'strong':''}">${esc(tr('trainingUi.bodyRelated',{value:bodyMatch.text}))}${bodyMatch.strong?tr('trainingUi.bodyStrong'):tr('trainingUi.bodyMild')}</div>`:''}${advView?`<div class="small ${progressionToneClass(advView)}" style="margin-top:5px;line-height:1.55"><b>${esc(advView.label)}</b> · ${esc(advView.reason)}<br>${esc(advView.text)}<br><span class="record-meta">${esc(advView.evidence)}</span>${trainingProgressionActions.canApply(adv)?`<div style="margin-top:7px"><button class="btn small primary" type="button" data-apply-progression="${idx}">${esc(progressionApplyLabel(adv,ex,e))}</button></div>`:''}</div>`:''}${showNotes&&ex.notes?`<div class="small" style="margin-top:5px">${esc(tr('trainingUi.equipmentNote'))}${esc(ex.notes)}</div>`:''}</div>
   <div class="actions"><button class="btn small ghost exercise-collapse-btn" data-collapseex="${idx}" aria-label="${e.uiCollapsed?tr('trainingUi.expand'):tr('trainingUi.collapse')}">${e.uiCollapsed?'⌄':'⌃'}</button><button class="btn small ghost" data-replace="${idx}">${esc(tr('trainingUi.replace'))}</button><button class="btn small danger" data-removeex="${idx}">${esc(tr('trainingUi.remove'))}</button></div></div>
   <div class="workout-ex-body">${body}${showNotes?`<div class="field" style="margin-top:9px"><label>${esc(tr('trainingUi.exerciseNote'))}</label><input data-exnote="${idx}" value="${esc(e.notes||'')}" placeholder="${esc(tr('trainingUi.exerciseNotePlaceholder'))}"></div>`:''}</div>
  </div>`
@@ -1115,17 +1128,17 @@ function lastExerciseSummary(e){
 }
 function intensitySelect(s,eIdx,sIdx){
  if(data.settings.intensity==='RPE'){
-   return `<select data-set="rpe" data-e="${eIdx}" data-s="${sIdx}" class="rircell" aria-label="主觀用力程度 RPE"><option value="">用力程度</option>${[6,6.5,7,7.5,8,8.5,9,9.5,10].map(v=>`<option value="${v}" ${String(s.rpe)===String(v)?'selected':''}>RPE ${v}</option>`).join('')}</select>`
+   return `<select data-set="rpe" data-e="${eIdx}" data-s="${sIdx}" class="rircell" aria-label="${esc(tr("residual.r352c4fe3"))}"><option value="">${esc(tr("residual.r36f23581"))}</option>${[6,6.5,7,7.5,8,8.5,9,9.5,10].map(v=>`<option value="${v}" ${String(s.rpe)===String(v)?'selected':''}>RPE ${v}</option>`).join('')}</select>`
  }
- return `<select data-set="rir" data-e="${eIdx}" data-s="${sIdx}" class="rircell" aria-label="剩餘次數 RIR"><option value="">剩餘次數</option>${[0,1,2,3,4,5].map(v=>`<option value="${v}" ${String(s.rir)===String(v)?'selected':''}>RIR ${v}</option>`).join('')}</select>`
+ return `<select data-set="rir" data-e="${eIdx}" data-s="${sIdx}" class="rircell" aria-label="${esc(tr("residual.rcfbc5e68"))}"><option value="">${esc(tr("residual.rd15abcf5"))}</option>${[0,1,2,3,4,5].map(v=>`<option value="${v}" ${String(s.rir)===String(v)?'selected':''}>RIR ${v}</option>`).join('')}</select>`
 }
 function setRowHtml(e,s,ei,si){
  const kcls='kind-'+(s.kind||'working'),done=s.completed?'setdone':'',unit=exerciseInputUnit(e),inc=machineIncrementForUnit(getExercise(e.exerciseId),unit),bigInc=unit==='lb'?Math.max(10,inc*2):Math.max(5,inc*2);
- if(e.type==='duration')return `<div class="setrow duration ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.seconds'))}</span><input data-set="seconds" data-e="${ei}" data-s="${si}" type="number" min="0" value="${n(s.seconds)}" placeholder="秒"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button></div>`;
- if(e.type==='unilateral')return `<div class="setrow unilateral ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.leftWeight',{unit}))}</span><input data-set="leftWeight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${fmtWeightNumber(s.leftWeight,unit)}" placeholder="左${unit}"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.leftReps'))}</span><input data-set="leftReps" data-e="${ei}" data-s="${si}" type="number" value="${n(s.leftReps)}" placeholder="左次"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.rightWeight',{unit}))}</span><input data-set="rightWeight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${fmtWeightNumber(s.rightWeight,unit)}" placeholder="右${unit}"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button><div class="small" style="grid-column:2/-1"><label class="set-field" style="width:110px;display:inline-grid"><span class="set-field-label">${esc(tr('trainingUi.rightReps'))}</span><input data-set="rightReps" data-e="${ei}" data-s="${si}" type="number" value="${n(s.rightReps)}"></label> <span class="weight-unit-suffix">${tr('trainingUi.weightInput',{unit})}</span></div></div>`;
+ if(e.type==='duration')return `<div class="setrow duration ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.seconds'))}</span><input data-set="seconds" data-e="${ei}" data-s="${si}" type="number" min="0" value="${n(s.seconds)}" placeholder="${esc(tr("residual.r577b1035"))}"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button></div>`;
+ if(e.type==='unilateral')return `<div class="setrow unilateral ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.leftWeight',{unit}))}</span><input data-set="leftWeight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${fmtWeightNumber(s.leftWeight,unit)}" placeholder="${esc(tr("finalUi.leftWeightPlaceholder",{unit}))}"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.leftReps'))}</span><input data-set="leftReps" data-e="${ei}" data-s="${si}" type="number" value="${n(s.leftReps)}" placeholder="${esc(tr("residual.r79126c28"))}"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.rightWeight',{unit}))}</span><input data-set="rightWeight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${fmtWeightNumber(s.rightWeight,unit)}" placeholder="${esc(tr("finalUi.rightWeightPlaceholder",{unit}))}"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button><div class="small" style="grid-column:2/-1"><label class="set-field" style="width:110px;display:inline-grid"><span class="set-field-label">${esc(tr('trainingUi.rightReps'))}</span><input data-set="rightReps" data-e="${ei}" data-s="${si}" type="number" value="${n(s.rightReps)}"></label> <span class="weight-unit-suffix">${tr('trainingUi.weightInput',{unit})}</span></div></div>`;
  const weightVal=fmtWeightNumber(s.weight,unit);
- return `<div class="setrow ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${e.type==='bodyweight'?tr('trainingUi.assistWeight'):tr('trainingUi.weight')}（${unit}）</span><input data-set="weight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${weightVal}" placeholder="${unit}"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.reps'))}</span><input data-set="reps" data-e="${ei}" data-s="${si}" type="number" min="0" value="${n(s.reps)}" placeholder="次數"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button>
- <div class="quick advanced-set-quick" style="grid-column:2/-1"><button class="btn ghost" data-weight-delta="${ei},${si},${-bigInc}">−${cleanWeightNumber(bigInc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${-inc}">−${cleanWeightNumber(inc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${inc}">+${cleanWeightNumber(inc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${bigInc}">+${cleanWeightNumber(bigInc)}${unit}</button><button class="btn ghost" data-delta="${ei},${si},reps,-1">${esc(tr('trainingUi.repsMinus'))}</button><button class="btn ghost" data-delta="${ei},${si},reps,1">${esc(tr('trainingUi.repsPlus'))}</button><button class="btn ghost" data-copy="${ei},${si}">${esc(tr('trainingUi.copyPrevious'))}</button><button class="btn ${s.completed?'good':'primary'}" data-complete="${ei},${si}">${s.completed?tr('trainingUi.completed'):tr('trainingUi.completeSet')}</button>${s.completed?`<div class="simple-effort ui-simple-only"><button class="btn ghost" type="button" data-simple-effort="${ei},${si},easy">${esc(tr('trainingUi.tooEasy'))}</button><button class="btn ghost" type="button" data-simple-effort="${ei},${si},ok">${esc(tr('trainingUi.justRight'))}</button><button class="btn ghost" type="button" data-simple-effort="${ei},${si},hard">${esc(tr('trainingUi.tooHard'))}</button></div>`:''}<select class="set-kind-advanced ui-advanced-only" data-kind="${ei},${si}" style="width:auto;min-height:34px;padding:5px 7px;font-size:11px" aria-label="${esc(tr('trainingUi.setKind'))}">${KINDS.map(([v,l])=>`<option value="${v}" ${s.kind===v?'selected':''}>${l}</option>`).join('')}</select></div></div>`
+ return `<div class="setrow ${kcls} ${done}"><div class="setnum">${si+1}</div><label class="set-field"><span class="set-field-label">${e.type==='bodyweight'?tr('trainingUi.assistWeight'):tr('trainingUi.weight')}（${unit}）</span><input data-set="weight" data-e="${ei}" data-s="${si}" type="number" step=".1" value="${weightVal}" placeholder="${unit}"></label><label class="set-field"><span class="set-field-label">${esc(tr('trainingUi.reps'))}</span><input data-set="reps" data-e="${ei}" data-s="${si}" type="number" min="0" value="${n(s.reps)}" placeholder="${esc(tr("residual.r308b9ffc"))}"></label>${intensitySelect(s,ei,si)}<button class="btn icon danger delcell" data-delset="${ei},${si}">−</button>
+ <div class="quick advanced-set-quick" style="grid-column:2/-1"><button class="btn ghost" data-weight-delta="${ei},${si},${-bigInc}">−${cleanWeightNumber(bigInc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${-inc}">−${cleanWeightNumber(inc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${inc}">+${cleanWeightNumber(inc)}${unit}</button><button class="btn ghost" data-weight-delta="${ei},${si},${bigInc}">+${cleanWeightNumber(bigInc)}${unit}</button><button class="btn ghost" data-delta="${ei},${si},reps,-1">${esc(tr('trainingUi.repsMinus'))}</button><button class="btn ghost" data-delta="${ei},${si},reps,1">${esc(tr('trainingUi.repsPlus'))}</button><button class="btn ghost" data-copy="${ei},${si}">${esc(tr('trainingUi.copyPrevious'))}</button><button class="btn ${s.completed?'good':'primary'}" data-complete="${ei},${si}">${s.completed?tr('trainingUi.completed'):tr('trainingUi.completeSet')}</button>${s.completed?`<div class="simple-effort ui-simple-only"><button class="btn ghost" type="button" data-simple-effort="${ei},${si},easy">${esc(tr('trainingUi.tooEasy'))}</button><button class="btn ghost" type="button" data-simple-effort="${ei},${si},ok">${esc(tr('trainingUi.justRight'))}</button><button class="btn ghost" type="button" data-simple-effort="${ei},${si},hard">${esc(tr('trainingUi.tooHard'))}</button></div>`:''}<select class="set-kind-advanced ui-advanced-only" data-kind="${ei},${si}" style="width:auto;min-height:34px;padding:5px 7px;font-size:11px" aria-label="${esc(tr('trainingUi.setKind'))}">${KINDS.map(([v,l])=>`<option value="${v}" ${s.kind===v?'selected':''}>${esc(tr(l))}</option>`).join('')}</select></div></div>`
 }
 function bindSessionEvents(){
  $$('#activeWorkout [data-set]').forEach(el=>el.addEventListener('change',()=>{const ei=n(el.dataset.e),si=n(el.dataset.s),key=el.dataset.set,ex=data.activeWorkout.exercises[ei],set=ex.sets[si],weightKeys=['weight','leftWeight','rightWeight'];set[key]=el.value===''?'':(weightKeys.includes(key)?toKg(el.value,exerciseInputUnit(ex)):n(el.value));saveActiveOnly()}));
@@ -1151,7 +1164,7 @@ function bindSessionEvents(){
  $('#openTrainingTools').onclick=openTrainingDrawer;
  $$('#activeWorkout [data-collapseex]').forEach(b=>b.onclick=()=>{const e=data.activeWorkout.exercises[n(b.dataset.collapseex)];e.uiCollapsed=!e.uiCollapsed;saveActiveOnly(true)});
  $('#finishWorkout').onclick=finishWorkout;
- $('#cancelWorkout').onclick=()=>{const editing=!!data.activeWorkout?.editingWorkoutId;const msg=editing?tr('dialogs.cancelEdit'):tr('dialogs.discardWorkout');if(confirm(msg)){data.activeWorkout=null;save(editing?'取消歷史編輯':'放棄訓練',true);toast(editing?tr('feedback.editCancelled'):tr('feedback.workoutDiscarded'))}}
+ $('#cancelWorkout').onclick=()=>{const editing=!!data.activeWorkout?.editingWorkoutId;const msg=editing?tr('dialogs.cancelEdit'):tr('dialogs.discardWorkout');if(confirm(msg)){data.activeWorkout=null;save(editing?tr('finalUi.saveCancelEdit'):tr('reasons.discardWorkout'),true);toast(editing?tr('feedback.editCancelled'):tr('feedback.workoutDiscarded'))}}
  $$('#activeWorkout [data-timer]').forEach(b=>b.onclick=()=>startTimer(n(b.dataset.timer),tr('trainingUi.manualRest')));const ts=$('#timerShow');if(ts)ts.onclick=()=>{timerHidden=false;if(!timerEnd)startTimer(n(data.settings.defaultRest)||90,tr('trainingUi.manualRest'));else renderTimer()};
 }
 function saveActiveOnly(rerender=false){localStorage.setItem(APP_KEY,JSON.stringify(data));if(rerender)renderTrain()}
@@ -1236,11 +1249,11 @@ function startTemplate(id,date=isoToday()){
  if(data.activeWorkout){goPage('trainPage');return}
  const t=data.templates.find(x=>x.id===id);if(!t)return;
  data.activeWorkout=trainingLifecycle.createTemplateWorkout(t,{id:uid('w'),date,startedAt:new Date().toISOString(),resolveExercise:getExercise,makeSessionExercise});
- save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+ save(tr('reasons.startWorkout'),true);openSessionMeta(true);goPage('trainPage')
 }
 function startBlank(date=isoToday()){
- data.activeWorkout=trainingLifecycle.createBlankWorkout({id:uid('w'),date,startedAt:new Date().toISOString()});
- save('開始訓練',true);openSessionMeta(true);goPage('trainPage')
+ data.activeWorkout=trainingLifecycle.createBlankWorkout({id:uid('w'),date,startedAt:new Date().toISOString(),name:tr('homeUi.freeTraining')});
+ save(tr('reasons.startWorkout'),true);openSessionMeta(true);goPage('trainPage')
 }
 function openSessionMeta(first=false){
  const w=data.activeWorkout,p=w.preStatus||{};
@@ -1258,17 +1271,17 @@ function finishWorkout(){
  const editingId=w.editingWorkoutId||'';
  if(editingId){
    const idx=data.workouts.findIndex(x=>x.id===editingId);if(idx<0){alert(tr('trainingUi.missingOriginal'));return}
-   snapshot('歷史訓練編輯前');
+   snapshot(tr('reasons.beforeHistoryEdit'));
    const updated=trainingLifecycle.finalizeHistoryEdit(w,editingId);
    const next=[...data.workouts];next[idx]=updated;data.workouts=trainingLifecycle.sortWorkouts(next);
    data.activeWorkout=null;
-   save('編輯訓練內容',false);
+   save(tr('reasons.editWorkoutContent'),false);
    const summary=tr('trainingUi.summary',{exercises:updated.exercises.length,sets:effectiveSets(updated),volume:fmtKg(workoutVolume(updated)),cardio:Math.round(cardioMinutes(updated))});
    openModal(tr('modal.savedEdit'),`<div class="card"><div class="record-title">${esc(updated.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">${esc(tr('trainingUi.done'))}</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('recordsPage')});
    return;
  }
  const completed=trainingLifecycle.finalizeWorkout(w,{endedAt:new Date().toISOString(),bodyStatusSnapshot:todayBodyStatus(w.date)});
- data.workouts=trainingLifecycle.appendCompletedWorkout(data.workouts,completed);data.activeWorkout=null;save('完成訓練',true);
+ data.workouts=trainingLifecycle.appendCompletedWorkout(data.workouts,completed);data.activeWorkout=null;save(tr('reasons.finishWorkout'),true);
  const prs=countPRsInWorkout(completed),summary=tr('trainingUi.summary',{exercises:completed.exercises.length,sets:effectiveSets(completed),volume:fmtKg(workoutVolume(completed)),cardio:Math.round(cardioMinutes(completed))})+(prs?tr('trainingUi.summaryPr',{count:prs}):'');
  openModal(tr('modal.workoutDone'),`<div class="card"><div class="record-title">${esc(completed.name)}</div><div class="small" style="margin-top:7px">${esc(summary)}</div></div><button class="btn primary" id="doneClose">${esc(tr('trainingUi.done'))}</button>`,()=>$('#doneClose').onclick=()=>{closeModal();goPage('homePage')})
 }
@@ -1333,13 +1346,13 @@ function openExercisePicker(onPick){
    const recent=recentMap.get(ex.id);
    const base=exercisePickerRowHtml(ex);
    return recent?base.replace('</div>\n </div>',`<div class="exercise-picker-recent">最近：${esc(recent)}</div></div>\n </div>`):base
- }).join('')||'<div class="empty">找不到符合目前篩選條件的動作。<br><span class="small">可以清除篩選或改用其他搜尋字。</span></div>';
+ }).join('')||'<div class="empty">${esc(tr("residual.r6723d7f4"))}<br><span class="small">${esc(tr("residual.r8d120204"))}</span></div>';
 
  const scopeLabel=()=>{
-   if(state.scope==='recent')return'最近做過';
-   if(state.scope==='mine')return'我的動作';
-   if(state.scope==='gym')return`目前健身房${activeGym?' · '+activeGym.name:''}`;
-   if(state.scope==='equipment')return'我的器材';
+   if(state.scope==='recent')return tr('dynamic.pickerRecent');
+   if(state.scope==='mine')return tr('dynamic.pickerMine');
+   if(state.scope==='gym')return tr('finalUi.currentGym',{gym:activeGym?' · '+activeGym.name:''});
+   if(state.scope==='equipment')return tr('dynamic.pickerEquipment');
    return''
  };
  const renderSummary=()=>{
@@ -1368,7 +1381,7 @@ function openExercisePicker(onPick){
 
  const gymLabel=activeGym?`目前健身房`:'目前健身房（未設定）';
  openModal(tr('modal.chooseExercise'),`<div class="exercise-filter-bar">
-   <div class="field" style="margin-bottom:0"><label>${esc(tr('dynamic.pickerSearchLabel'))}</label><input id="pickSearch" placeholder="Lat Pulldown、腿推、RSL0314..."></div>
+   <div class="field" style="margin-bottom:0"><label>${esc(tr('dynamic.pickerSearchLabel'))}</label><input id="pickSearch" placeholder="${esc(tr("residual.rabb3a213"))}"></div>
    <div class="exercise-filter-quick" id="pickerQuick">
      <button type="button" class="on" data-picker-scope="all">${esc(tr('dynamic.pickerAll'))}</button>
      <button type="button" data-picker-scope="recent">${esc(tr('dynamic.pickerRecent'))}</button>
@@ -1378,13 +1391,13 @@ function openExercisePicker(onPick){
    </div>
    <div>
      <div class="small" style="margin-bottom:5px">${esc(tr('dynamic.pickerMuscle'))}</div>
-     <div class="exercise-muscle-chips" id="pickerMuscles">${MUSCLES.filter(m=>m!=='其他').map(m=>`<button type="button" data-picker-muscle="${esc(m)}">${esc(m)}</button>`).join('')}</div>
+     <div class="exercise-muscle-chips" id="pickerMuscles">${MUSCLES.filter(m=>m!=='其他').map(m=>`<button type="button" data-picker-muscle="${esc(m)}">${esc(displayMuscle(m))}</button>`).join('')}</div>
    </div>
    <div class="exercise-filter-row">
      <div class="field" style="margin:0"><label>${esc(tr('dynamic.pickerResistance'))}</label><select id="pickResistance">
-       <option value="all">全部器材類型</option>
+       <option value="all">${esc(tr("residual.r9ad046b6"))}</option>
        ${resistanceOptions.map(r=>`<option value="${esc(r)}">${esc(resistanceLabels[r]||r)}</option>`).join('')}
-       <option value="none">無器材／其他</option>
+       <option value="none">${esc(tr("residual.rb78e2039"))}</option>
      </select></div>
      <button class="btn ghost exercise-filter-clear" type="button" id="pickClear">${esc(tr('dynamic.pickerClear'))}</button>
    </div>
@@ -1402,16 +1415,16 @@ function openExercisePicker(onPick){
 function openReplaceModal(idx){
  const current=data.activeWorkout.exercises[idx],ex=getExercise(current.exerciseId),alts=(ex?.alternatives||[]).map(getExercise).filter(Boolean);
  const list=[...alts,...data.exerciseLibrary.filter(x=>!alts.some(a=>a.id===x.id)&&x.id!==current.exerciseId&&x.muscle===current.muscle)];
- openModal(tr('modal.replaceExercise'),list.map(x=>`<button class="btn ghost" data-rp="${x.id}" style="width:100%;margin-bottom:7px;text-align:left">${esc(x.name)}<div class="small">${esc(x.muscle)}</div></button>`).join('')||'<div class="empty">沒有替代動作</div>',()=>$$('[data-rp]').forEach(b=>b.onclick=()=>{const replacement=makeSessionExercise(getExercise(b.dataset.rp),data.activeWorkout.date);data.activeWorkout.exercises[idx]=replacement;saveActiveOnly(true);closeModal()}))
+ openModal(tr('modal.replaceExercise'),list.map(x=>`<button class="btn ghost" data-rp="${x.id}" style="width:100%;margin-bottom:7px;text-align:left">${esc(x.name)}<div class="small">${esc(displayMuscle(x.muscle))}</div></button>`).join('')||'<div class="empty">${esc(tr("residual.re7cda89f"))}</div>',()=>$$('[data-rp]').forEach(b=>b.onclick=()=>{const replacement=makeSessionExercise(getExercise(b.dataset.rp),data.activeWorkout.date);data.activeWorkout.exercises[idx]=replacement;saveActiveOnly(true);closeModal()}))
 }
 function openReorderModal(){
  const w=data.activeWorkout;if(!w)return;
  const original=[...w.exercises];
  const rows=original.map((e,i)=>`<div class="reorder-item" data-reorder-key="${i}">
-   <button class="reorder-handle" type="button" data-reorder-handle aria-label="拖曳 ${esc(e.nameSnapshot)}">☷</button>
-   <div class="reorder-copy"><div class="reorder-name"><span data-reorder-number>${i+1}</span>. ${esc(e.nameSnapshot)}</div><div class="reorder-meta">按住左側把手上下拖曳</div></div>
+   <button class="reorder-handle" type="button" data-reorder-handle aria-label="${esc(tr("finalUi.dragAria",{name:e.nameSnapshot}))}">☷</button>
+   <div class="reorder-copy"><div class="reorder-name"><span data-reorder-number>${i+1}</span>. ${esc(e.nameSnapshot)}</div><div class="reorder-meta">${esc(tr("residual.r20ebbb88"))}</div></div>
  </div>`).join('');
- openModal(tr('modal.reorderExercise'),`<div class="reorder-help">直接拖曳左側 ☷ 把手調整順序。放開後會立即儲存，訓練畫面也會同步更新。</div><div class="reorder-list" id="reorderList">${rows}</div><button class="btn primary" id="reorderDone" type="button" style="width:100%;margin-top:12px">${esc(tr('trainingUi.done'))}</button>`,()=>{
+ openModal(tr('modal.reorderExercise'),`<div class="reorder-help">${esc(tr("residual.r9f34cb04"))}</div><div class="reorder-list" id="reorderList">${rows}</div><button class="btn primary" id="reorderDone" type="button" style="width:100%;margin-top:12px">${esc(tr('trainingUi.done'))}</button>`,()=>{
    const list=$('#reorderList');if(!list)return;
    let dragRow=null,pointerId=null,handle=null;
    const renumber=()=>$$('#reorderList [data-reorder-number]').forEach((el,i)=>el.textContent=i+1);
@@ -1458,7 +1471,7 @@ function openReorderModal(){
 }
 
 function renderRecords(){
- const mus=$('#recordMuscle');if(!mus.options.length)mus.innerHTML=`<option value="">${esc(tr('dynamic.allMuscles'))}</option>`+MUSCLES.map(m=>`<option>${m}</option>`).join('');
+ const mus=$('#recordMuscle');if(!mus.options.length)mus.innerHTML=`<option value="">${esc(tr('dynamic.allMuscles'))}</option>`+MUSCLES.map(m=>`<option value="${esc(m)}">${esc(displayMuscle(m))}</option>`).join('');
  if(!$('#recordMonth').value)$('#recordMonth').value=monthKey();
  const mk=$('#recordMonth').value,filter=$('#recordMuscle').value;
  renderCalendar(mk);
@@ -1466,8 +1479,8 @@ function renderRecords(){
  $('#recordList').innerHTML=filtered.length?filtered.map(workoutCardHtml).join(''):`<div class="card empty">${esc(tr('messages.recordsEmpty'))}</div>`;
  $$('#recordList [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open));
  $('#trashList').innerHTML=data.trash.length?data.trash.map(t=>`<div class="record"><div class="record-head"><div><b>${esc(t.item.name)}</b><div class="record-meta">${esc(tr('dynamic.deletedAt'))} ${i18n.formatDate(new Date(t.deletedAt),{dateStyle:'short',timeStyle:'short'})}</div></div><div class="actions"><button class="btn small good" data-restore="${t.id}">${esc(tr('dynamic.restore'))}</button><button class="btn small danger" data-purge="${t.id}">${esc(tr('dynamic.purge'))}</button></div></div></div>`).join(''):`<div class="card empty">${esc(tr('recordsUi.trashEmpty'))}</div>`;
- $$('[data-restore]').forEach(b=>b.onclick=()=>{const t=data.trash.find(x=>x.id===b.dataset.restore);if(t){data.workouts.push(t.item);data.trash=data.trash.filter(x=>x.id!==t.id);save('復原紀錄',true);toast(tr('feedback.recordRestored'))}})
- $$('[data-purge]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.purgeRecord'))){data.trash=data.trash.filter(x=>x.id!==b.dataset.purge);save('永久刪除',true)}})
+ $$('[data-restore]').forEach(b=>b.onclick=()=>{const t=data.trash.find(x=>x.id===b.dataset.restore);if(t){data.workouts.push(t.item);data.trash=data.trash.filter(x=>x.id!==t.id);save(tr('reasons.restoreRecord'),true);toast(tr('feedback.recordRestored'))}})
+ $$('[data-purge]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.purgeRecord'))){data.trash=data.trash.filter(x=>x.id!==b.dataset.purge);save(tr('reasons.purgeRecord'),true)}})
 }
 function renderCalendar(mk){
  const [y,m]=mk.split('-').map(Number),first=new Date(y,m-1,1),last=new Date(y,m,0),heads=[tr('recordsUi.weekdaySun'),tr('recordsUi.weekdayMon'),tr('recordsUi.weekdayTue'),tr('recordsUi.weekdayWed'),tr('recordsUi.weekdayThu'),tr('recordsUi.weekdayFri'),tr('recordsUi.weekdaySat')];let html=heads.map(h=>`<div class="calhead">${h}</div>`).join('');
@@ -1491,18 +1504,18 @@ function beginHistoryEdit(id){
 function editWorkout(id){
  const w=data.workouts.find(x=>x.id===id);if(!w)return;
  openModal(tr('modal.editRecord'),`<div class="card"><div class="field"><label>${esc(tr('recordsUi.name'))}</label><input id="ewName" value="${esc(w.name)}"></div><div class="grid2"><div class="field"><label>${esc(tr('trainingUi.date'))}</label><input id="ewDate" type="date" value="${w.date}"></div><div class="field"><label>${esc(tr('recordsUi.minutes'))}</label><input id="ewDuration" type="number" min="0" max="1440" value="${n(w.duration)}"></div></div><div class="field"><label>${esc(tr('trainingUi.gym'))}</label><input id="ewGymName" list="ewGymOptions" value="${esc(workoutGymName(w))}" placeholder="${esc(tr('recordsUi.gymPlaceholder'))}"><datalist id="ewGymOptions">${data.gyms.map(g=>`<option value="${esc(g.name)}"></option>`).join('')}</datalist><div class="hint">${esc(tr('recordsUi.gymHint'))}</div></div><div class="inline-check"><input id="ewDeload" type="checkbox" ${w.deload?'checked':''}><label for="ewDeload">Deload</label></div><div class="field" style="margin-top:9px"><label>${esc(tr('recordsUi.notes'))}</label><textarea id="ewNotes">${esc(w.notes||'')}</textarea></div></div>
- <div>${w.exercises.map(e=>`<div class="record"><b>${esc(e.nameSnapshot)}</b><div class="small">${esc(e.muscle)} · ${esc(lastExerciseSummary(e))}</div></div>`).join('')}</div>
+ <div>${w.exercises.map(e=>`<div class="record"><b>${esc(e.nameSnapshot)}</b><div class="small">${esc(displayMuscle(e.muscle))} · ${esc(lastExerciseSummary(e))}</div></div>`).join('')}</div>
  <div class="actions"><button class="btn primary" id="ewFullEdit">${esc(tr('recordsUi.fullEdit'))}</button><button class="btn ghost" id="ewSave">${esc(tr('recordsUi.saveBasic'))}</button><button class="btn ghost" id="ewCopy">${esc(tr('recordsUi.copyToday'))}</button><button class="btn danger" id="ewDelete">${esc(tr('recordsUi.moveTrash'))}</button></div>`,()=>{
    $('#ewFullEdit').onclick=()=>beginHistoryEdit(id);
-   $('#ewSave').onclick=()=>{snapshot('歷史訓練基本資料編輯前');w.name=$('#ewName').value.trim()||w.name;w.date=$('#ewDate').value;w.duration=clamp($('#ewDuration').value,0,1440);const gym=ensureGymByName($('#ewGymName').value);w.gymId=gym?.id||'';w.gymNameSnapshot=gym?.name||'';w.deload=$('#ewDeload').checked;w.notes=$('#ewNotes').value;save('編輯紀錄',false);closeModal();toast(tr('feedback.recordSaved'))};
-   $('#ewCopy').onclick=()=>{if(data.activeWorkout&&!confirm(tr('dialogs.overwriteActive')))return;data.activeWorkout=JSON.parse(JSON.stringify(w));data.activeWorkout.id=uid('w');data.activeWorkout.date=isoToday();data.activeWorkout.status='active';data.activeWorkout.startedAt=new Date().toISOString();data.activeWorkout.endedAt='';data.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.completed=false));save('複製訓練',true);closeModal();goPage('trainPage')};
-   $('#ewDelete').onclick=()=>{data.trash.unshift({id:uid('trash'),deletedAt:new Date().toISOString(),item:JSON.parse(JSON.stringify(w))});data.workouts=data.workouts.filter(x=>x.id!==w.id);save('刪除紀錄',true);closeModal();toast(tr('feedback.recordTrashed'))}
+   $('#ewSave').onclick=()=>{snapshot(tr('reasons.beforeBasicHistoryEdit'));w.name=$('#ewName').value.trim()||w.name;w.date=$('#ewDate').value;w.duration=clamp($('#ewDuration').value,0,1440);const gym=ensureGymByName($('#ewGymName').value);w.gymId=gym?.id||'';w.gymNameSnapshot=gym?.name||'';w.deload=$('#ewDeload').checked;w.notes=$('#ewNotes').value;save(tr('reasons.editRecord'),false);closeModal();toast(tr('feedback.recordSaved'))};
+   $('#ewCopy').onclick=()=>{if(data.activeWorkout&&!confirm(tr('dialogs.overwriteActive')))return;data.activeWorkout=JSON.parse(JSON.stringify(w));data.activeWorkout.id=uid('w');data.activeWorkout.date=isoToday();data.activeWorkout.status='active';data.activeWorkout.startedAt=new Date().toISOString();data.activeWorkout.endedAt='';data.activeWorkout.exercises.forEach(e=>e.sets.forEach(s=>s.completed=false));save(tr('reasons.copyWorkout'),true);closeModal();goPage('trainPage')};
+   $('#ewDelete').onclick=()=>{data.trash.unshift({id:uid('trash'),deletedAt:new Date().toISOString(),item:JSON.parse(JSON.stringify(w))});data.workouts=data.workouts.filter(x=>x.id!==w.id);save(tr('reasons.deleteRecord'),true);closeModal();toast(tr('feedback.recordTrashed'))}
  })
 }
 function manualEntry(){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceForManual')))return;
  openModal(tr('modal.manualEntry'),`<div class="grid2"><div class="field"><label>${esc(tr('trainingUi.date'))}</label><input type="date" id="meDate" value="${isoToday()}"></div><div class="field"><label>${esc(tr('recordsUi.name'))}</label><input id="meName" value="${esc(tr('dynamic.manualName'))}"></div><div class="field"><label>${esc(tr('dynamic.actualMinutes'))}</label><input type="number" id="meDur" value="60" min="0" max="1440"></div><div class="field"><label>${esc(tr('recordsUi.deload'))}</label><select id="meDeload"><option value="0">${esc(tr('recordsUi.no'))}</option><option value="1">${esc(tr('recordsUi.yes'))}</option></select></div></div><p class="small">${esc(tr('recordsUi.manualHint'))}</p><button class="btn primary" id="meCreate">${esc(tr('dynamic.createManual'))}</button>`,()=>{
-   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||tr('dynamic.manualName'),duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save('開始手動補登',true);closeModal();goPage('trainPage');toast(tr('feedback.manualStarted'))}
+   $('#meCreate').onclick=()=>{data.activeWorkout={id:uid('w'),date:$('#meDate').value||isoToday(),name:$('#meName').value.trim()||tr('dynamic.manualName'),duration:clamp($('#meDur').value,0,1440),status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:'',gymId:'',gymNameSnapshot:'',deload:$('#meDeload').value==='1',preStatus:{},pain:'',manual:true,exercises:[]};save(tr('reasons.startManual'),true);closeModal();goPage('trainPage');toast(tr('feedback.manualStarted'))}
  })
 }
 
@@ -1513,11 +1526,11 @@ function selectedAnalysisWorkouts(){
 function showMuscleStimulusDetail(muscle,workouts){
  const s=stimulusMap(workouts)[muscle]||{direct:0,indirect:0,total:0,sources:{}};
  const rows=Object.values(s.sources).sort((a,b)=>b.total-a.total);
- openModal(`${muscle}｜肌群刺激明細`,`<div class="card">
-   <div class="grid3"><div class="stat"><b>${fmtStim(s.total)}</b><span>估算刺激組</span></div><div class="stat"><b>${fmtStim(s.direct)}</b><span>直接</span></div><div class="stat"><b>${fmtStim(s.indirect)}</b><span>間接</span></div></div>
-   <div class="analysis-note">計算優先順序：實際動作 → 動作模式 → 所使用器械。主要肌群一般計 1.0；協同肌群依動作估算 0.25 或 0.5。這不是精確的生理刺激測量。</div>
+ openModal(tr('finalUi.muscleStimulusDetail',{muscle}),`<div class="card">
+   <div class="grid3"><div class="stat"><b>${fmtStim(s.total)}</b><span>${esc(tr("residual.rc8493e92"))}</span></div><div class="stat"><b>${fmtStim(s.direct)}</b><span>${esc(tr("residual.r3c8539f2"))}</span></div><div class="stat"><b>${fmtStim(s.indirect)}</b><span>${esc(tr("residual.r8ab76d45"))}</span></div></div>
+   <div class="analysis-note">${esc(tr("residual.r7f5c3e15"))}</div>
  </div>
- <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):'<div class="empty">這個期間沒有相關訓練。</div>'}</div>`);
+ <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):'<div class="empty">${esc(tr("residual.rc23e28d1"))}</div>'}</div>`);
 }
 // TrainLog Pro v2.10.0 analysis intelligence
 let analysisTabState=['overview','muscle','exercise','load'].includes(data.settings.analysisTab)?data.settings.analysisTab:'overview';
@@ -1604,7 +1617,7 @@ function renderAnalysisLoadTrend(ws,days){
       <div class="analysis-week-copy"><b>${esc(analysisWeekLabel(r.key))}</b><span>${r.workouts} 次 · ${r.sets} 正式組 · ${fmtKg(r.volume)}${r.avgRir==null?'':` · 平均 RIR ${r.avgRir.toFixed(1)}`}</span></div>
       <div class="analysis-week-bar"><i style="width:${Math.max(4,Math.round(r.sets/maxSets*100))}%"></i></div>
     </div>`).join('')+
-    '<div class="analysis-note">這裡呈現紀錄中的訓練負荷趨勢，不把它換算成假的「恢復百分比」。不同器械的重量也不應直接互相比較。</div>';
+    '<div class="analysis-note">${esc(tr("residual.rd484f477"))}</div>';
 }
 
 function renderAnalysisMuscleTargets(ws,days){
@@ -1625,12 +1638,12 @@ function renderAnalysisMuscleTargets(ws,days){
     }
     const pct=goal?Math.min(100,actual/goal*100):0;
     return `<div class="analysis-target-row">
-      <div class="topline"><b>${esc(m)}</b><span>${fmtStim(actual)} / ${goal?fmtStim(goal):'—'} 組／週</span></div>
+      <div class="topline"><b>${esc(displayMuscle(m))}</b><span>${fmtStim(actual)} / ${goal?fmtStim(goal):'—'} 組／週</span></div>
       ${goal?`<div class="progress"><i style="width:${pct}%"></i></div>`:''}
       <span class="compare-badge ${cls}">${esc(status)}</span>
     </div>`
   }).join('')+
-  '<div class="analysis-note">「實際」為本期估算肌群刺激換算成每週平均；「目標」來自你的訓練偏好設定。這是依目前計畫比較，不代表生理上的最佳訓練量。</div>';
+  '<div class="analysis-note">${esc(tr("residual.r8e8d434c"))}</div>';
 }
 
 function renderAnalysisMovementGaps(ws,days){
@@ -1644,9 +1657,9 @@ function renderAnalysisMovementGaps(ws,days){
   }
   const gaps=rows.filter(x=>x.sets===0||(max>=4&&x.sets<max*.25))
     .sort((a,b)=>a.sets-b.sets).slice(0,4);
-  root.innerHTML=`<div class="analysis-pattern-chips">${rows.map(x=>`<span class="tag">${esc(patternDisplayName(x.key))} · ${fmtStim(x.perWeek)} 組/週</span>`).join('')}</div>`+
-    (gaps.length?`<div class="analysis-gap-list">${gaps.map(x=>`<div class="analysis-gap-item"><b>${esc(patternDisplayName(x.key))}</b><span>${x.sets===0?'本期沒有紀錄':'相對於本期其他主要模式較少'}</span></div>`).join('')}</div>`:'<div class="good" style="margin-top:10px;font-weight:850">主要動作模式都有出現，沒有明顯的「未記錄」缺口。</div>')+
-    '<div class="analysis-note">缺口只依「本期是否有紀錄」與相對分布提示，不表示每種動作模式都需要相同組數。</div>';
+  root.innerHTML=`<div class="analysis-pattern-chips">${rows.map(x=>`<span class="tag">${esc(patternDisplayName(x.key))} · ${esc(tr('finalUi.setsPerWeek',{count:fmtStim(x.perWeek)}))}</span>`).join('')}</div>`+
+    (gaps.length?`<div class="analysis-gap-list">${gaps.map(x=>`<div class="analysis-gap-item"><b>${esc(patternDisplayName(x.key))}</b><span>${x.sets===0?'本期沒有紀錄':'相對於本期其他主要模式較少'}</span></div>`).join('')}</div>`:'<div class="good" style="margin-top:10px;font-weight:850">${esc(tr("residual.r2803e06c"))}</div>')+
+    '<div class="analysis-note">${esc(tr("residual.rd2b26b9d"))}</div>';
 }
 
 function renderAnalysisProgressOpportunities(ws){
@@ -1665,7 +1678,7 @@ function renderAnalysisProgressOpportunities(ws){
     <div class="record-head"><div><div class="record-title">${esc(x.ex.name)}</div><div class="record-meta">${x.best?.date?`最近最佳：${esc(x.best.date)} · `:''}${esc(x.view.evidence)}</div></div><span class="pill ${progressionToneClass(x.view)}">${esc(x.view.label)}</span></div>
     <div class="small" style="margin-top:8px;font-weight:800">判斷依據：${esc(x.view.reason)}</div>
     <div class="small" style="margin-top:4px;line-height:1.55">${esc(x.view.text||'維持目前安排並持續紀錄。')}</div>
-    ${x.adv.action==='plateau'?`<div class="analysis-note">${x.adv.hardTrend?'最近 3 次趨勢接近平台，而且主觀強度也偏高。':'最近 3 次可比較紀錄的重量、次數與估算強度變化都很小。'}</div>`:x.plateau?.state==='slow'?`<div class="analysis-note">較長期趨勢的進步幅度偏低；這是趨勢提示，不代表已確定停滯。</div>`:''}
+    ${x.adv.action==='plateau'?`<div class="analysis-note">${x.adv.hardTrend?'最近 3 次趨勢接近平台，而且主觀強度也偏高。':'最近 3 次可比較紀錄的重量、次數與估算強度變化都很小。'}</div>`:x.plateau?.state==='slow'?`<div class="analysis-note">${esc(tr("residual.r32169939"))}</div>`:''}
   </div>`).join('')}</div>`;
 }
 
@@ -1698,8 +1711,8 @@ function renderAnalysisPrTimeline(ws){
   const events=analysisPrEvents(ws);
   root.innerHTML=events.length?`<div class="analysis-pr-list">${events.map(e=>`<div class="analysis-pr-item">
     <div class="analysis-pr-dot">★</div><div><b>${esc(e.name)}</b><div class="record-meta">${esc(e.date)} · ${esc(e.kind)}</div><div class="analysis-pr-value">${esc(e.value)}</div></div>
-  </div>`).join('')}</div><div class="analysis-note">e1RM 為公式估算，只適合同一動作、相似器械下觀察自己的長期趨勢。</div>`:
-  '<div class="empty">這個期間還沒有新的可辨識 PR；第一次紀錄會作為基準，不會直接算成 PR。</div>';
+  </div>`).join('')}</div><div class="analysis-note">${esc(tr("residual.r2cce1f14"))}</div>`:
+  '<div class="empty">${esc(tr("residual.r76745630"))}</div>';
 }
 function renderV210Analysis(ws,days){
   renderAnalysisLoadTrend(ws,days);
@@ -1719,7 +1732,7 @@ function renderAnalysis(){
  $$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
 
  const effortRecorded=effort.high+effort.mid+effort.low;
- $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">${tr('analysisUi.confidence',{label:confidence.label})} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${tr('analysisUi.confidenceMeta',{workouts:confidence.workouts,sets:confidence.formal,effort:effort.total?Math.round(effortRecorded/effort.total*100):0,pattern:Math.round(confidence.patternRate*100)})}</div></div></div></div>`;
+ $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">${tr('analysisUi.confidence',{label:confidence.labelKey?tr(confidence.labelKey):confidence.label})} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${tr('analysisUi.confidenceMeta',{workouts:confidence.workouts,sets:confidence.formal,effort:effort.total?Math.round(effortRecorded/effort.total*100):0,pattern:Math.round(confidence.patternRate*100)})}</div></div></div></div>`;
 
  const highlights=buildAnalysisHighlights(ws,prevWs,days,confidence,cons);
  $('#analysisHighlights').innerHTML=highlights.map((h,i)=>`<div class="analysis-highlight ${h.kind||'info'}"><div class="rank">${i+1}</div><div><div class="highlight-title">${esc(h.title)}</div><div class="highlight-desc">${esc(h.desc)}</div>${h.programId?`<button class="btn small ghost" style="margin-top:7px" data-analysis-program="${esc(h.programId)}">${esc(tr('analysisUi.viewProgram'))}</button>`:''}</div></div>`).join('');
@@ -1740,7 +1753,7 @@ function renderAnalysis(){
    const x=stim[m]||{direct:0,indirect:0,total:0},px=prevStim[m]||{total:0};
    const avg=n(fourWeek[m]?.total)/4;
    return `<div class="stim-row">
-     <div class="stim-main"><div><div class="stim-name">${esc(m)}</div><button class="stim-detail-btn" type="button" data-muscle-stim="${esc(m)}">${esc(tr('analysisUi.viewSource'))}</button></div><div class="stim-total">${tr('analysisUi.sets',{count:fmtStim(x.total)})}</div></div>
+     <div class="stim-main"><div><div class="stim-name">${esc(displayMuscle(m))}</div><button class="stim-detail-btn" type="button" data-muscle-stim="${esc(m)}">${esc(tr('analysisUi.viewSource'))}</button></div><div class="stim-total">${tr('analysisUi.sets',{count:fmtStim(x.total)})}</div></div>
      <div class="stim-meta"><span class="tag stim-direct">${tr('analysisUi.direct',{count:fmtStim(x.direct)})}</span><span class="tag stim-indirect">${tr('analysisUi.indirect',{count:fmtStim(x.indirect)})}</span><span class="tag">${tr('analysisUi.fourWeekAvg',{count:fmtStim(avg)})}</span>${days!=='all'?compareBadge(x.total,px.total):''}</div>
      <div class="progress"><i style="width:${Math.min(100,n(x.total)/maxStim*100)}%"></i></div>
    </div>`
@@ -1787,7 +1800,7 @@ function analysisPerformedExercises(){
      const sysEq=SYSTEM_EQUIPMENT.find(x=>x.id===equipmentId);
      const myEq=data.equipment.find(x=>x.id===equipmentId);
      const equipmentName=sysEq?.nameZh||myEq?.name||'';
-     performedMap.set(e.exerciseId,{id:e.exerciseId,name:e.nameSnapshot||lib.name||'已做過的動作',muscle:e.muscle||lib.muscle||'其他',equipmentName,lastDate:w.date});
+     performedMap.set(e.exerciseId,{id:e.exerciseId,name:e.nameSnapshot||lib.name||tr('dynamic.performedExerciseFallback'),muscle:e.muscle||lib.muscle||'其他',equipmentName,lastDate:w.date});
    })
  });
  const attentionWeight={reduce_load:50,plateau:40,increase_load:30,add_reps:20,increase_time:20};
@@ -1803,8 +1816,8 @@ function analysisExerciseStatusClass(item){return item?.statusTone==='good'?'goo
 function analysisExerciseBrowserCard(item,compact=false){
  const selected=$('#analysisExercise')?.value===item.id;
  const status=item.statusLabel?`<span class="exercise-card-status ${analysisExerciseStatusClass(item)}">${esc(item.statusLabel)}</span>`:'';
- if(compact)return `<button type="button" class="exercise-recent-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span>${status}</button>`;
- return `<button type="button" class="exercise-progress-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-progress-main"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(item.muscle)}${item.equipmentName?` · ${esc(item.equipmentName)}`:''}<br>${tr('analysisUi.recentPrefix')}${fmtDate(item.lastDate)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span></span><span class="exercise-progress-side">${status}</span>${item.statusReason?`<span class="exercise-progress-reason">${esc(item.statusReason)}</span>`:''}</button>`
+ if(compact)return `<button type="button" class="exercise-recent-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(displayMuscle(item.muscle))}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span>${status}</button>`;
+ return `<button type="button" class="exercise-progress-card ${selected?'on':''}" data-analysis-exercise-id="${item.id}"><span class="exercise-progress-main"><span class="exercise-card-name">${esc(item.name)}</span><span class="exercise-card-meta">${esc(displayMuscle(item.muscle))}${item.equipmentName?` · ${esc(item.equipmentName)}`:''}<br>${tr('analysisUi.recentPrefix')}${fmtDate(item.lastDate)}${item.lastSummary?` · ${esc(item.lastSummary)}`:''}</span></span><span class="exercise-progress-side">${status}</span>${item.statusReason?`<span class="exercise-progress-reason">${esc(item.statusReason)}</span>`:''}</button>`
 }
 
 function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
@@ -1816,7 +1829,7 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
  search.value=analysisExerciseBrowserQuery;
  const view=exerciseProgressBrowser.buildViewModel(items,{query:analysisExerciseBrowserQuery,muscle:analysisExerciseBrowserMuscle,recentLimit:6,attentionLimit:4,listLimit:6,showAll:analysisExerciseBrowserExpanded});
  recent.innerHTML=view.recent.length?view.recent.map(item=>analysisExerciseBrowserCard(item,true)).join(''):`<div class="exercise-browser-empty" style="grid-column:1/-1">${esc(tr('dynamic.noExerciseHistory'))}</div>`;
- muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">${esc(tr('dynamic.pickerAll'))}</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(m)}</button>`)].join('');
+ muscles.innerHTML=[`<button type="button" class="${analysisExerciseBrowserMuscle?'':'on'}" data-analysis-muscle="">${esc(tr('dynamic.pickerAll'))}</button>`,...view.muscles.map(m=>`<button type="button" class="${analysisExerciseBrowserMuscle===m?'on':''}" data-analysis-muscle="${esc(m)}">${esc(displayMuscle(m))}</button>`)].join('');
  attention.innerHTML=view.attention.length?view.attention.map(item=>analysisExerciseBrowserCard(item)).join(''):`<div class="exercise-browser-empty">${esc(tr('dynamic.noAttention'))}</div>`;
  list.innerHTML=view.filtered.length?view.visible.map(item=>analysisExerciseBrowserCard(item)).join('')+(view.hiddenCount?`<div class="actions" style="justify-content:center;margin-top:9px"><button type="button" class="btn small ghost" data-analysis-show-more>${tr('analysisUi.showMore',{count:view.hiddenCount})}</button></div>`:''):`<div class="exercise-browser-empty">${esc(tr('analysisUi.noFilteredExercise'))}</div>`;
  if(count)count.textContent=view.hiddenCount?tr('analysisUi.showing',{visible:view.visible.length,total:view.filtered.length}):`${view.filtered.length} / ${items.length}`;
@@ -1830,7 +1843,7 @@ function renderAnalysisExerciseBrowser(items=analysisPerformedExercises()){
 function renderExerciseAnalysis(id){
  const box=$('#exerciseAnalysis');
  if(!id){box.innerHTML=`<div class="empty">${esc(tr('dynamic.selectExercise'))}</div>`;return}
- const lib=getExercise(id),sessions=exerciseSessionMetrics(id),histEx=data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id),name=lib?.name||histEx?.nameSnapshot||'已做過的動作';
+ const lib=getExercise(id),sessions=exerciseSessionMetrics(id),histEx=data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id),name=lib?.name||histEx?.nameSnapshot||tr('dynamic.performedExerciseFallback');
  if(!sessions.length){box.innerHTML=`<div class="empty">${esc(tr('dynamic.noAnalyzable'))}</div>`;return}
  const type=sessions.at(-1).type,over=overloadSummary(id),plat=plateauDetail(id),last=sessions.at(-1),prev=sessions.at(-2);
  const lastSignals=prev?progressSignals(prev,last):[];
@@ -1841,7 +1854,7 @@ function renderExerciseAnalysis(id){
    summary=`<div class="progress-summary"><div class="progress-card"><b>${maxMin} 分</b><span>${esc(tr('analysisUi.bestDuration'))}</span></div><div class="progress-card"><b>${fmtStim(maxDist)} km</b><span>${esc(tr('analysisUi.bestDistance'))}</span></div></div>`;
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main">${esc(s.label)}${s.speed?` · ${fmtStim(s.speed)} km/h`:''}</div></div>`).join('')
  }else if(type==='duration'){
-   pts=sessions.map(s=>({date:s.date,v:s.bestSeconds,label:`${s.bestSeconds} 秒`}));
+   pts=sessions.map(s=>({date:s.date,v:s.bestSeconds,label:tr('finalUi.durationSeconds',{seconds:s.bestSeconds})}));
    const bestSec=Math.max(...sessions.map(s=>s.bestSeconds)),bestTotal=Math.max(...sessions.map(s=>s.totalSeconds));
    summary=`<div class="progress-summary"><div class="progress-card"><b>${bestSec} 秒</b><span>${esc(tr('analysisUi.bestSetTime'))}</span></div><div class="progress-card"><b>${bestTotal} 秒</b><span>${esc(tr('analysisUi.bestTotalTime'))}</span></div></div>`;
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main">最佳 ${s.bestSeconds} 秒 · 總計 ${s.totalSeconds} 秒</div></div>`).join('')
@@ -1860,26 +1873,26 @@ function renderExerciseAnalysis(id){
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main"><b>${esc(s.label)}</b>${s.bestE1rm?` · 估算一次最大重量約 ${fmtWeight(s.bestE1rm)}`:''}${s.rir!=null?` · RIR ${s.rir.toFixed(1)}`:''}${s.rpe!=null?` · RPE ${s.rpe.toFixed(1)}`:''} · ${s.sets||0} 組</div></div>`).join('')
  }
  const overloadText=over.transitions?`最近 ${over.transitions+1} 次中，有 ${over.count} 次相較前一次出現進步訊號。`:'至少需要兩次紀錄才能比較。';
- const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressSlow'))} ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:
+ const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressSlow'))} ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(localizedMessage(plat))}</div></div>`:
    plat.state==='progress'?`<div class="goodbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressing'))}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:'';
  box.innerHTML=`<div class="record-title">${esc(name)}</div>
    ${summary}
    <div class="section" style="margin-top:12px">${esc(tr('dynamic.recentVsPrevious'))}</div>
-   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(s.text)}</span>`).join(''):`<span class="signal">${esc(tr('dynamic.noProgressSignal'))}</span>`}</div>`:`<div class="analysis-note">${esc(tr('dynamic.onlyOneRecord'))}</div>`}
+   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(localizedMessage(s))}</span>`).join(''):`<span class="signal">${esc(tr('dynamic.noProgressSignal'))}</span>`}</div>`:`<div class="analysis-note">${esc(tr('dynamic.onlyOneRecord'))}</div>`}
    <div class="analysis-note">${esc(overloadText)} ${infoButton('progressive_overload_detection')}</div>
    ${platBox}
    ${sparkline(pts)}
    <div class="section">${esc(tr('dynamic.recentRecords'))}</div><div class="progress-session-list">${history}</div>`
 }
 function sparkline(pts){
- if(!pts.length)return'<div class="empty">還沒有歷史資料</div>';const arr=pts.slice(-12),vals=arr.map(p=>p.v),min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;const points=arr.map((p,i)=>`${10+i*(280/Math.max(1,arr.length-1))},${105-(p.v-min)/range*85}`).join(' ');return `<svg class="spark" viewBox="0 0 300 120" role="img" aria-label="進步趨勢"><line x1="10" y1="105" x2="290" y2="105" stroke="#40515c"/><polyline fill="none" stroke="#69c4ff" stroke-width="3" points="${points}"/>${arr.map((p,i)=>`<circle cx="${10+i*(280/Math.max(1,arr.length-1))}" cy="${105-(p.v-min)/range*85}" r="4" fill="#f4f7f8"/>`).join('')}</svg>`
+ if(!pts.length)return'<div class="empty">${esc(tr("residual.r97a2dbc7"))}</div>';const arr=pts.slice(-12),vals=arr.map(p=>p.v),min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;const points=arr.map((p,i)=>`${10+i*(280/Math.max(1,arr.length-1))},${105-(p.v-min)/range*85}`).join(' ');return `<svg class="spark" viewBox="0 0 300 120" role="img" aria-label="${esc(tr("residual.re9d8257e"))}"><line x1="10" y1="105" x2="290" y2="105" stroke="#40515c"/><polyline fill="none" stroke="#69c4ff" stroke-width="3" points="${points}"/>${arr.map((p,i)=>`<circle cx="${10+i*(280/Math.max(1,arr.length-1))}" cy="${105-(p.v-min)/range*85}" r="4" fill="#f4f7f8"/>`).join('')}</svg>`
 }
 
 
-function infoButton(id,label='i'){return GLOSSARY[id]?`<button class="info-btn" type="button" data-info="${esc(id)}" aria-label="${esc(GLOSSARY[id].zh)}說明">${label}</button>`:''}
+function infoButton(id,label='i'){return GLOSSARY[id]?`<button class="info-btn" type="button" data-info="${esc(id)}" aria-label="${esc(tr("finalUi.infoAria",{name:GLOSSARY[id].zh}))}">${label}</button>`:''}
 function openGlossary(id){
  const g=GLOSSARY[id];if(!g)return;
- openModal(`${g.zh}｜${g.en}`,`<div class="card bilingual"><b>${esc(g.short)}</b><div style="margin-top:10px">${esc(g.detail)}</div>${g.example?`<div class="en-copy"><b>Example / 範例</b><div>${esc(g.example)}</div></div>`:''}</div>`);
+ openModal(`${g.zh}｜${g.en}`,`<div class="card bilingual"><b>${esc(g.short)}</b><div style="margin-top:10px">${esc(g.detail)}</div>${g.example?`<div class="en-copy"><b>${esc(tr("residual.r5ac84af9"))}</b><div>${esc(g.example)}</div></div>`:''}</div>`);
 }
 function youtubeSearch(q){
  if(!q)return;const url='https://www.youtube.com/results?search_query='+encodeURIComponent(q);window.open(url,'_blank','noopener,noreferrer');
@@ -1887,9 +1900,9 @@ function youtubeSearch(q){
 function systemProgramCardHtml(p){
  const progInfo=p.progression==='double_progression'?`${esc('雙進階法')} ${infoButton('double_progression')}`:p.progression==='deload'?`${esc('Deload')} ${infoButton('deload')}`:`${esc('漸進超負荷')} ${infoButton('progressive_overload')}`;
  return `<div class="sys-card"><div class="record-head"><div><div class="sys-title">${esc(p.nameZh)}</div><div class="sys-en">${esc(p.nameEn)}</div></div><span class="source-pill">SYSTEM</span></div>
- <div class="tagrow" style="margin-top:8px"><span class="tag">${esc(p.category)}</span><span class="tag">${esc(p.level)}</span><span class="tag">${p.daysPerWeek} 日/週</span><span class="tag">約 ${p.duration} 分</span><span class="tag">${esc(p.equipmentMode)}</span><span class="tag">目的：${esc(p.goal)}</span></div>
+ <div class="tagrow" style="margin-top:8px"><span class="tag">${esc(p.category)}</span><span class="tag">${esc(p.level)}</span><span class="tag">${esc(tr('finalUi.daysPerWeek',{count:p.daysPerWeek}))}</span><span class="tag">約 ${esc(tr('finalUi.minutes',{count:p.duration}))}</span><span class="tag">${esc(p.equipmentMode)}</span><span class="tag">目的：${esc(p.goal)}</span></div>
  <div class="sys-desc">${esc(p.descZh)}</div>${p.postureSupport?`<div class="small" style="margin-top:7px;color:var(--accent2)">體態舒緩／平衡補強 ${infoButton('posture_support')}</div>`:''}<div class="small" style="margin-top:7px">${progInfo} · RIR ${esc(p.rir)} ${infoButton('rir')}</div>
- <div class="actions" style="margin-top:10px"><button class="btn small primary" data-program-detail="${esc(p.id)}">預覽</button><button class="btn small ghost" data-program-import="${esc(p.id)}">加入我的模板</button></div></div>`;
+ <div class="actions" style="margin-top:10px"><button class="btn small primary" data-program-detail="${esc(p.id)}">${esc(tr("residual.r9caf61f6"))}</button><button class="btn small ghost" data-program-import="${esc(p.id)}">${esc(tr("residual.r08c92473"))}</button></div></div>`;
 }
 function bindProgramCards(scope=document){
  const root=typeof scope==='string'?$(scope):scope;if(!root)return;
@@ -1926,7 +1939,7 @@ function programDayFocusHtml(w){
      ${m.estimatedMinutes?`<span class="tag">約 ${n(m.estimatedMinutes)} 分</span>`:''}
      ${pats?`<span class="tag">模式：${esc(pats)}</span>`:''}
    </div>
-   <details class="program-day-why"><summary>ⓘ 為什麼這樣安排</summary><div class="why-body">${esc(m.why||'')} ${m.coachNote?`<div style="margin-top:6px"><b>教練提示：</b>${esc(m.coachNote)}</div>`:''}</div></details>
+   <details class="program-day-why"><summary>${esc(tr("residual.ra0a7cbfe"))}</summary><div class="why-body">${esc(m.why||'')} ${m.coachNote?`<div style="margin-top:6px"><b>${esc(tr("residual.r06749c0c"))}</b>${esc(m.coachNote)}</div>`:''}</div></details>
  </div>`;
 }
 function programPrescription(ex,it,p){
@@ -1939,10 +1952,10 @@ function programPrescription(ex,it,p){
 }
 function showSystemProgramDetail(id){
  const p=SYSTEM_PROGRAMS.find(x=>x.id===id);if(!p)return;
- const days=(p.workouts||[]).map((w,i)=>`<div class="program-day">${programDayFocusHtml(w)}<ul>${(w.items||[]).map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3,lo=it.repMin??ex.repMin,hi=it.repMax??ex.repMax;return `<li><b>${esc(ex.name)}</b> <span class="muted">${esc(ex.nameEn||'')}</span><br>${programPrescription(ex,it,p)}</li>`}).join('')}</ul><div class="actions" style="margin-top:8px"><button class="btn small good" data-start-program-day="${esc(p.id)},${i}">開始 ${esc(w.nameZh)}</button></div></div>`).join('');
+ const days=(p.workouts||[]).map((w,i)=>`<div class="program-day">${programDayFocusHtml(w)}<ul>${(w.items||[]).map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3,lo=it.repMin??ex.repMin,hi=it.repMax??ex.repMax;return `<li><b>${esc(ex.name)}</b> <span class="muted">${esc(ex.nameEn||'')}</span><br>${programPrescription(ex,it,p)}</li>`}).join('')}</ul><div class="actions" style="margin-top:8px"><button class="btn small good" data-start-program-day="${esc(p.id)},${i}">${esc(tr('finalUi.startProgramDay',{name:w.nameZh}))}</button></div></div>`).join('');
  const progId=p.progression==='double_progression'?'double_progression':p.progression==='deload'?'deload':'progressive_overload';
- openModal(p.nameZh,`<div class="card"><div class="sys-en">${esc(p.nameEn)}</div><div class="tagrow" style="margin-top:9px"><span class="tag">${esc(p.level)}</span><span class="tag">${p.daysPerWeek} 日/週</span><span class="tag">${p.duration} 分</span><span class="tag">${esc(p.goal)}</span><span class="tag">${esc(p.equipmentMode)}</span></div><div class="sys-desc">${esc(p.descZh)}</div><div class="sys-desc">${esc(p.descEn)}</div>${p.postureSupport?`<div class="warnbox" style="margin-top:10px"><b>使用說明 ${infoButton('posture_support')}</b><div class="small" style="margin-top:4px">${esc(p.supportNote||'此課表為健身補強，不是醫療診斷或治療。')}</div></div>`:''}<div class="hr"></div><div class="small"><b>進階方式：</b>${esc(GLOSSARY[progId]?.zh||p.progression)} ${infoButton(progId)}　<b>建議 RIR：</b>${esc(p.rir)} ${infoButton('rir')}</div><div class="small" style="margin-top:7px"><b>整個 Program 組數概覽：</b>${esc(programSetSummary(p))}</div></div>
- <div class="program-days">${days}</div><div class="actions" style="margin-top:12px"><button class="btn primary" id="programSetPlan">設為目前 ${n(data.settings.blockWeeks)||6} 週計畫</button><button class="btn ghost" id="programImportNow">加入我的模板</button><button class="btn good" id="programStartNow">只開始 Day A</button></div>`,()=>{
+ openModal(p.nameZh,`<div class="card"><div class="sys-en">${esc(p.nameEn)}</div><div class="tagrow" style="margin-top:9px"><span class="tag">${esc(p.level)}</span><span class="tag">${esc(tr('finalUi.daysPerWeek',{count:p.daysPerWeek}))}</span><span class="tag">${esc(tr('finalUi.minutes',{count:p.duration}))}</span><span class="tag">${esc(p.goal)}</span><span class="tag">${esc(p.equipmentMode)}</span></div><div class="sys-desc">${esc(p.descZh)}</div><div class="sys-desc">${esc(p.descEn)}</div>${p.postureSupport?`<div class="warnbox" style="margin-top:10px"><b>${esc(tr('finalUi.supportUse'))} ${infoButton('posture_support')}</b><div class="small" style="margin-top:4px">${esc(p.supportNote||tr('finalUi.supportFallback'))}</div></div>`:''}<div class="hr"></div><div class="small"><b>${esc(tr("residual.r28102a2d"))}</b>${esc(GLOSSARY[progId]?.zh||p.progression)} ${infoButton(progId)}　<b>${esc(tr("residual.rc1960c98"))}</b>${esc(p.rir)} ${infoButton('rir')}</div><div class="small" style="margin-top:7px"><b>${esc(tr("residual.r63314331"))}</b>${esc(programSetSummary(p))}</div></div>
+ <div class="program-days">${days}</div><div class="actions" style="margin-top:12px"><button class="btn primary" id="programSetPlan">設為目前 ${esc(tr('finalUi.weekCount',{count:n(data.settings.blockWeeks)||6}))}計畫</button><button class="btn ghost" id="programImportNow">${esc(tr("residual.r08c92473"))}</button><button class="btn good" id="programStartNow">${esc(tr("residual.r68a96e5e"))}</button></div>`,()=>{
    $('#programSetPlan').onclick=()=>{closeModal();adoptCurrentPlan(id,'program_detail')};
    $('#programImportNow').onclick=()=>importSystemProgram(id,true);
    $('#programStartNow').onclick=()=>startSystemProgramDay(id,0);
@@ -1957,14 +1970,14 @@ function importSystemProgram(id,keepModal=false){
  p.workouts.forEach((w,i)=>{
    data.templates.push({id:`tpl_${p.id}_${stamp}_${i}`,name:`${p.nameZh}｜${w.nameZh}`,nameEn:`${p.nameEn} | ${w.nameEn}`,sourceProgramId:p.id,sourceVersion:p.version,dayMeta:JSON.parse(JSON.stringify(w.dayMeta||{})),items:JSON.parse(JSON.stringify(w.items))});
  });
- save('加入系統 Program',true);toast(tr('feedback.systemProgramAdded',{count:p.workouts.length}));
+ save(tr('reasons.importSystemProgram'),true);toast(tr('feedback.systemProgramAdded',{count:p.workouts.length}));
  if(keepModal)closeModal();
 }
 function startSystemProgramDay(id,dayIndex=0){
  if(data.activeWorkout&&!confirm(tr('dialogs.replaceForSystemProgram')))return;
  const p=SYSTEM_PROGRAMS.find(x=>x.id===id),w=p?.workouts?.[dayIndex];if(!p||!w)return;
- data.activeWorkout={id:uid('w'),date:isoToday(),name:`${p.nameZh}｜${w.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:`系統課表： ${p.nameZh}`,programDayMeta:JSON.parse(JSON.stringify(w.dayMeta||{})),gymId:'',gymNameSnapshot:'',deload:p.progression==='deload',preStatus:{},pain:'',exercises:w.items.map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);return ex?makeSessionExercise({...ex,...it},isoToday()):null}).filter(Boolean)};
- closeModal();save('開始系統課表',true);goPage('trainPage');
+ data.activeWorkout={id:uid('w'),date:isoToday(),name:`${p.nameZh}｜${w.nameZh}`,duration:0,status:'active',startedAt:new Date().toISOString(),endedAt:'',notes:tr('finalUi.systemProgramNote',{name:p.nameZh}),programDayMeta:JSON.parse(JSON.stringify(w.dayMeta||{})),gymId:'',gymNameSnapshot:'',deload:p.progression==='deload',preStatus:{},pain:'',exercises:w.items.map(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);return ex?makeSessionExercise({...ex,...it},isoToday()):null}).filter(Boolean)};
+ closeModal();save(tr('reasons.startSystemProgram'),true);goPage('trainPage');
 }
 let programDisplayLimit=18;
 function renderSystemPrograms(){
@@ -1974,9 +1987,9 @@ function renderSystemPrograms(){
    const text=(p.nameZh+' '+p.nameEn+' '+p.category+' '+p.goal+' '+p.descZh+' '+(p.tags||[]).join(' ')).toLowerCase();
    return(!q||text.includes(q))&&(!cat||p.category===cat)&&(!days||String(p.daysPerWeek)===days)&&(!level||p.level===level)&&(!dur||p.duration<=dur)&&(!eq||p.equipmentMode===eq)&&(!goal||programGoalFit(p,goal)>=25);
  });
- $('#programCount').textContent=`${items.length} / ${SYSTEM_PROGRAMS.length} 套`;
- const shown=items.slice(0,programDisplayLimit);box.innerHTML=shown.length?shown.map(systemProgramCardHtml).join(''):'<div class="card empty">沒有符合條件的系統課表。</div>';
- if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="programMore" style="width:100%">顯示更多（剩 ${items.length-shown.length}）</button>`;
+ $('#programCount').textContent=tr('finalUi.programCount',{visible:items.length,total:SYSTEM_PROGRAMS.length});
+ const shown=items.slice(0,programDisplayLimit);box.innerHTML=shown.length?shown.map(systemProgramCardHtml).join(''):'<div class="card empty">${esc(tr("residual.rb428b5cd"))}</div>';
+ if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="programMore" style="width:100%">${esc(tr('finalUi.moreRemaining',{count:items.length-shown.length}))}</button>`;
  bindProgramCards(box);const more=$('#programMore');if(more)more.onclick=()=>{programDisplayLimit+=18;renderSystemPrograms()};
 }
 const EQUIPMENT_BRANDS=['Precor','Life Fitness','Hammer Strength','Gymleco','Panatta','gym80'];
@@ -1993,7 +2006,7 @@ function resistanceGlossary(r){return {selectorized:'selectorized',plate_loaded:
 function systemEquipmentCardHtml(e){
  const gi=resistanceGlossary(e.resistance),pi=PATTERN_INFO[e.pattern]||'';
  const brands=supportedBrandsForEquipment(e),mapped=(e.brandModels||[]).length;
- return `<div class="eq-card"><div class="record-head"><div><div class="eq-name">${esc(e.nameZh)}</div><div class="eq-en">${esc(e.nameEn)}</div></div><span class="source-pill">SYSTEM</span></div><div class="tagrow" style="margin-top:7px"><span class="tag">${esc(e.category)}</span><span class="tag">${esc(resistanceLabel(e.resistance))} ${gi?infoButton(gi):''}</span><span class="tag">${esc(e.primary)}</span>${brands.length?`<span class="tag">${brands.length} 品牌支援</span>`:''}${mapped?`<span class="tag">${mapped} 型號對應</span>`:''}</div><div class="eq-desc">${esc(e.descZh)}</div><div class="actions" style="margin-top:9px"><button class="btn small primary" data-eq-detail="${esc(e.id)}">詳細說明</button><button class="btn small ghost" data-eq-yt="${esc(e.id)}">▶ YouTube</button><button class="btn small ghost" data-eq-add="${esc(e.id)}">＋ 我的器材</button></div></div>`;
+ return `<div class="eq-card"><div class="record-head"><div><div class="eq-name">${esc(e.nameZh)}</div><div class="eq-en">${esc(e.nameEn)}</div></div><span class="source-pill">SYSTEM</span></div><div class="tagrow" style="margin-top:7px"><span class="tag">${esc(e.category)}</span><span class="tag">${esc(resistanceLabel(e.resistance))} ${gi?infoButton(gi):''}</span><span class="tag">${esc(e.primary)}</span>${brands.length?`<span class="tag">${brands.length} 品牌支援</span>`:''}${mapped?`<span class="tag">${mapped} 型號對應</span>`:''}</div><div class="eq-desc">${esc(e.descZh)}</div><div class="actions" style="margin-top:9px"><button class="btn small primary" data-eq-detail="${esc(e.id)}">${esc(tr("residual.re08de36e"))}</button><button class="btn small ghost" data-eq-yt="${esc(e.id)}">▶ YouTube</button><button class="btn small ghost" data-eq-add="${esc(e.id)}">${esc(tr("residual.r90bb911b"))}</button></div></div>`;
 }
 function bindEquipmentCards(scope=document){
  const root=typeof scope==='string'?$(scope):scope;if(!root)return;
@@ -2004,8 +2017,8 @@ function bindEquipmentCards(scope=document){
 function showSystemEquipmentDetail(id){
  const e=SYSTEM_EQUIPMENT.find(x=>x.id===id);if(!e)return;const gi=resistanceGlossary(e.resistance),pi=PATTERN_INFO[e.pattern]||'';
  const equipmentMotion=typeof window.TrainLogMotion3DHtml==='function'?window.TrainLogMotion3DHtml(e.id,e.pattern,e.nameZh,e.nameEn,e.nameEn):'';
- const compat=supportedBrandsForEquipment(e),brandHtml=`<div class="hr"></div><b>品牌支援</b><div class="tagrow" style="margin-top:7px">${compat.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>${(e.brandModels||[]).length?`<div class="small" style="margin-top:8px">已收錄的系列／型號：</div><div class="tagrow" style="margin-top:6px">${e.brandModels.map(x=>`<span class="tag">${esc(x.brand)} · ${esc(x.series)} · ${esc(x.model)} · ${esc(x.name)}</span>`).join('')}</div>`:''}<div class="small" style="margin-top:8px;line-height:1.5">沒有列出的舊型號或特殊版本，仍可用此通用器械建立「我的器材」，自行填入品牌與型號。</div>`;
- openModal(e.nameZh,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn)}</div><div class="tagrow" style="margin-top:9px"><span class="tag">${esc(e.category)}</span><span class="tag">${esc(resistanceLabel(e.resistance))} ${gi?infoButton(gi):''}</span><span class="tag">${esc(e.primary)}</span>${pi?`<span class="tag">${esc(GLOSSARY[pi]?.zh||e.pattern)} ${infoButton(pi)}</span>`:''}</div>${equipmentMotion}<div style="margin-top:12px"><b>中文說明</b><div>${esc(e.descZh)}</div>${e.setupZh?`<div style="margin-top:9px"><b>機器設定／操作</b><div>${esc(e.setupZh)}</div></div>`:''}${e.mistakesZh?`<div style="margin-top:9px"><b>常見錯誤</b><div>${esc(e.mistakesZh)}</div></div>`:''}${brandHtml}</div><div class="en-copy"><b>English Description</b><div>${esc(e.descEn)}</div></div></div><div class="actions"><button class="btn primary" id="eqYtZh">▶ YouTube 中文搜尋</button><button class="btn ghost" id="eqYtEn">▶ English Tutorial</button><button class="btn ghost" id="eqAddMine">加入我的器材</button></div>`,()=>{
+ const compat=supportedBrandsForEquipment(e),brandHtml=`<div class="hr"></div><b>${esc(tr("residual.r0551e82b"))}</b><div class="tagrow" style="margin-top:7px">${compat.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</div>${(e.brandModels||[]).length?`<div class="small" style="margin-top:8px">${esc(tr("residual.r383bdbd4"))}</div><div class="tagrow" style="margin-top:6px">${e.brandModels.map(x=>`<span class="tag">${esc(x.brand)} · ${esc(x.series)} · ${esc(x.model)} · ${esc(x.name)}</span>`).join('')}</div>`:''}<div class="small" style="margin-top:8px;line-height:1.5">${esc(tr("residual.r24ceac7d"))}</div>`;
+ openModal(e.nameZh,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn)}</div><div class="tagrow" style="margin-top:9px"><span class="tag">${esc(e.category)}</span><span class="tag">${esc(resistanceLabel(e.resistance))} ${gi?infoButton(gi):''}</span><span class="tag">${esc(e.primary)}</span>${pi?`<span class="tag">${esc(GLOSSARY[pi]?.zh||e.pattern)} ${infoButton(pi)}</span>`:''}</div>${equipmentMotion}<div style="margin-top:12px"><b>${esc(tr("residual.rcdef0b51"))}</b><div>${esc(e.descZh)}</div>${e.setupZh?`<div style="margin-top:9px"><b>${esc(tr("residual.r6c0aadff"))}</b><div>${esc(e.setupZh)}</div></div>`:''}${e.mistakesZh?`<div style="margin-top:9px"><b>${esc(tr("residual.r55abeaaf"))}</b><div>${esc(e.mistakesZh)}</div></div>`:''}${brandHtml}</div><div class="en-copy"><b>English Description</b><div>${esc(e.descEn)}</div></div></div><div class="actions"><button class="btn primary" id="eqYtZh">${esc(tr("residual.r9fe64d55"))}</button><button class="btn ghost" id="eqYtEn">${esc(tr('finalUi.englishTutorial'))}</button><button class="btn ghost" id="eqAddMine">${esc(tr("residual.rf55882eb"))}</button></div>`,()=>{
    $('#eqYtZh').onclick=()=>youtubeSearch(e.youtubeZh);$('#eqYtEn').onclick=()=>youtubeSearch(e.youtubeEn);$('#eqAddMine').onclick=()=>addSystemEquipmentToMine(id);
  });
 }
@@ -2014,10 +2027,10 @@ function addSystemEquipmentToMine(id){
  const brands=supportedBrandsForEquipment(e),models=e.brandModels||[];
  openModal(tr('modal.addMyEquipment'),`<div class="card">
    <div class="record-title">${esc(e.nameZh)}</div><div class="small">${esc(e.nameEn)}</div>
-   <div class="field" style="margin-top:12px"><label>品牌</label><select id="mineEqBrand"><option value="">未指定</option>${brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')}</select></div>
-   <div class="field"><label>系列／型號</label><input id="mineEqModel" list="mineEqModelList" placeholder="例如 SS-CP、1MTH033、3001"><datalist id="mineEqModelList">${models.map(x=>`<option value="${esc(x.model==='—'?x.name:x.model)}">${esc(x.series+' · '+x.name)}</option>`).join('')}</datalist><div class="hint">如果型號不在清單，可以直接輸入機器上的型號或產品名稱。</div></div>
-   <div class="field"><label>自訂顯示名稱（選填）</label><input id="mineEqName" placeholder="${esc(e.nameZh)}"></div>
-   <button class="btn primary" id="mineEqSave">加入我的器材</button>
+   <div class="field" style="margin-top:12px"><label>${esc(tr("residual.r89f4b900"))}</label><select id="mineEqBrand"><option value="">${esc(tr("residual.r6a86e0bc"))}</option>${brands.map(b=>`<option value="${esc(b)}">${esc(b)}</option>`).join('')}</select></div>
+   <div class="field"><label>${esc(tr("residual.r3e8ae372"))}</label><input id="mineEqModel" list="mineEqModelList" placeholder="${esc(tr("residual.rdb963856"))}"><datalist id="mineEqModelList">${models.map(x=>`<option value="${esc(x.model==='—'?x.name:x.model)}">${esc(x.series+' · '+x.name)}</option>`).join('')}</datalist><div class="hint">${esc(tr("residual.re8ecbf5b"))}</div></div>
+   <div class="field"><label>${esc(tr("residual.r8e6698e2"))}</label><input id="mineEqName" placeholder="${esc(e.nameZh)}"></div>
+   <button class="btn primary" id="mineEqSave">${esc(tr("residual.rf55882eb"))}</button>
  </div>`,()=>{
    const brandSel=$('#mineEqBrand'),modelInput=$('#mineEqModel');
    brandSel.onchange=()=>{
@@ -2030,7 +2043,7 @@ function addSystemEquipmentToMine(id){
      if(same){toast(tr('feedback.equipmentExists'));return}
      const mapped=models.find(x=>x.brand===brand&&(x.model===model||x.name===model));
      data.equipment.push({id:uid('eq'),name:custom||e.nameZh,nameEn:e.nameEn,systemEquipmentId:id,category:e.category,brand,model,series:mapped?.series||'',modelName:mapped?.name||'',weightUnit:'kg'});
-     save('加入我的器材',true);closeModal();toast(tr('feedback.equipmentAdded'))
+     save(tr('reasons.addMyEquipment'),true);closeModal();toast(tr('feedback.equipmentAdded'))
    }
  })
 }
@@ -2038,20 +2051,20 @@ let equipmentDisplayLimit=24;
 function renderSystemEquipment(){
  const box=$('#systemEquipmentList');if(!box)return;const q=($('#systemEqSearch')?.value||'').trim().toLowerCase(),cat=$('#systemEqCategory')?.value||'',res=$('#systemEqResistance')?.value||'',brand=$('#systemEqBrand')?.value||'';
  const items=SYSTEM_EQUIPMENT.filter(e=>{const brandText=(e.brandModels||[]).map(x=>`${x.brand} ${x.series} ${x.model} ${x.name}`).join(' '),compat=(e.brandCompat||[]).join(' ');const txt=(e.nameZh+' '+e.nameEn+' '+(e.aliases||[]).join(' ')+' '+e.category+' '+e.primary+' '+e.descZh+' '+brandText+' '+compat).toLowerCase();const brandOk=!brand||supportedBrandsForEquipment(e).includes(brand);return(!q||txt.includes(q))&&(!cat||e.category===cat)&&(!res||e.resistance===res)&&brandOk});
- $('#equipmentCount').textContent=`${items.length} / ${SYSTEM_EQUIPMENT.length} 種`;
- const shown=items.slice(0,equipmentDisplayLimit);box.innerHTML=shown.length?shown.map(systemEquipmentCardHtml).join(''):'<div class="card empty">沒有符合條件的器械。</div>';
- if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="equipmentMore" style="width:100%">顯示更多（剩 ${items.length-shown.length}）</button>`;
+ $('#equipmentCount').textContent=tr('finalUi.equipmentCount',{visible:items.length,total:SYSTEM_EQUIPMENT.length});
+ const shown=items.slice(0,equipmentDisplayLimit);box.innerHTML=shown.length?shown.map(systemEquipmentCardHtml).join(''):'<div class="card empty">${esc(tr("residual.rffa4d0bf"))}</div>';
+ if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="equipmentMore" style="width:100%">${esc(tr('finalUi.moreRemaining',{count:items.length-shown.length}))}</button>`;
  bindEquipmentCards(box);const more=$('#equipmentMore');if(more)more.onclick=()=>{equipmentDisplayLimit+=24;renderSystemEquipment()};
 }
 function showExerciseDetail(id){
  const e=getExercise(id);if(!e)return;const eq=SYSTEM_EQUIPMENT.find(x=>x.id===e.equipmentId),pi=PATTERN_INFO[e.pattern]||'',profile=exerciseStimulusProfile({exerciseId:e.id,muscle:e.muscle,type:e.type,equipmentId:e.equipmentId,sets:[{completed:true,kind:'working'}]});
- openModal(e.name,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn||'')}</div>${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(e.id,e.pattern,e.name,e.nameEn||'',eq?.nameEn||''):''}<div class="tagrow" style="margin-top:8px"><span class="tag">${esc(e.muscle)}</span><span class="tag">${esc(TYPES.find(t=>t[0]===e.type)?.[1]||e.type)}</span>${pi?`<span class="tag">${esc(GLOSSARY[pi]?.zh||e.pattern)} ${infoButton(pi)}</span>`:''}</div>${profile.length?`<div class="tagrow" style="margin-top:8px">${profile.map(x=>`<span class="tag">${esc(x.muscle)} × ${fmtStim(x.weight)}</span>`).join('')} ${infoButton('stimulus_sets')}</div>`:''}<div style="margin-top:10px">${esc(e.descZh||e.notes||'')}</div><div class="en-copy">${esc(e.descEn||'')}</div>${eq?`<div class="hr"></div><b>使用器械</b><div>${esc(eq.nameZh)} <span class="muted">${esc(eq.nameEn)}</span></div>`:''}<div class="hr"></div><div><b>建議：</b>${e.targetSets} 組 × ${e.repMin}${e.repMax!==e.repMin?'–'+e.repMax:''} · RIR ${e.intMin}–${e.intMax} ${infoButton('rir')} · 休息 ${e.rest} 秒</div>${e.notes?`<div style="margin-top:8px"><b>動作提示：</b>${esc(e.notes)}</div>`:''}</div><div class="actions"><button class="btn primary" id="exYtZh">▶ YouTube 中文搜尋</button><button class="btn ghost" id="exYtEn">▶ English Tutorial</button>${e.system?`<button class="btn ghost" id="exCopy">複製為我的動作</button>`:''}</div>`,()=>{
+ openModal(e.name,`<div class="card bilingual"><div class="sys-en">${esc(e.nameEn||'')}</div>${window.TrainLogMotion3DHtml?window.TrainLogMotion3DHtml(e.id,e.pattern,e.name,e.nameEn||'',eq?.nameEn||''):''}<div class="tagrow" style="margin-top:8px"><span class="tag">${esc(displayMuscle(e.muscle))}</span><span class="tag">${esc(displayType(e.type))}</span>${pi?`<span class="tag">${esc(GLOSSARY[pi]?.zh||e.pattern)} ${infoButton(pi)}</span>`:''}</div>${profile.length?`<div class="tagrow" style="margin-top:8px">${profile.map(x=>`<span class="tag">${esc(displayMuscle(x.muscle))} × ${fmtStim(x.weight)}</span>`).join('')} ${infoButton('stimulus_sets')}</div>`:''}<div style="margin-top:10px">${esc(e.descZh||e.notes||'')}</div><div class="en-copy">${esc(e.descEn||'')}</div>${eq?`<div class="hr"></div><b>${esc(tr("residual.r70e81c1a"))}</b><div>${esc(eq.nameZh)} <span class="muted">${esc(eq.nameEn)}</span></div>`:''}<div class="hr"></div><div><b>${esc(tr("residual.r054f2cc7"))}</b>${esc(tr('finalUi.exercisePrescription',{sets:e.targetSets,range:`${e.repMin}${e.repMax!==e.repMin?'–'+e.repMax:''}`,rir:`${e.intMin}–${e.intMax}`,rest:e.rest}))} ${infoButton('rir')}</div>${e.notes?`<div style="margin-top:8px"><b>${esc(tr("residual.r8c678e38"))}</b>${esc(e.notes)}</div>`:''}</div><div class="actions"><button class="btn primary" id="exYtZh">${esc(tr("residual.r9fe64d55"))}</button><button class="btn ghost" id="exYtEn">${esc(tr('finalUi.englishTutorial'))}</button>${e.system?`<button class="btn ghost" id="exCopy">${esc(tr("residual.r6751a035"))}</button>`:''}</div>`,()=>{
    $('#exYtZh').onclick=()=>youtubeSearch(e.youtubeZh||`${e.name} 正確姿勢 教學`);$('#exYtEn').onclick=()=>youtubeSearch(e.youtubeEn||`${e.nameEn||e.name} proper form tutorial`);
    const copy=$('#exCopy');if(copy)copy.onclick=()=>copySystemExercise(id);
  });
 }
 function copySystemExercise(id){
- const e=getExercise(id);if(!e)return;const c=JSON.parse(JSON.stringify(e));c.id=uid('ex');c.system=false;c.name=e.name+'（我的）';data.exerciseLibrary.push(c);save('複製系統動作',true);closeModal();toast(tr('feedback.exerciseCopied'));
+ const e=getExercise(id);if(!e)return;const c=JSON.parse(JSON.stringify(e));c.id=uid('ex');c.system=false;c.name=e.name+tr('finalUi.myCopySuffix');data.exerciseLibrary.push(c);save(tr('reasons.copySystemExercise'),true);closeModal();toast(tr('feedback.exerciseCopied'));
 }
 function renderGlossaryIndex(){
  const box=$('#glossaryIndex');if(!box)return;const q=($('#glossarySearch')?.value||'').trim().toLowerCase();
@@ -2060,10 +2073,10 @@ function renderGlossaryIndex(){
 }
 function initSystemLibraryFilters(){
  const pc=$('#programCategory'),pl=$('#programLevel'),ec=$('#systemEqCategory'),er=$('#systemEqResistance');
- if(pc&&!pc.options.length)pc.innerHTML='<option value="">全部分類</option>'+[...new Set(SYSTEM_PROGRAMS.map(p=>p.category))].map(x=>`<option>${esc(x)}</option>`).join('');
- if(pl&&!pl.options.length)pl.innerHTML='<option value="">不限程度</option>'+[...new Set(SYSTEM_PROGRAMS.map(p=>p.level))].map(x=>`<option>${esc(x)}</option>`).join('');
- if(ec&&!ec.options.length)ec.innerHTML='<option value="">全部分類</option>'+[...new Set(SYSTEM_EQUIPMENT.map(e=>e.category))].map(x=>`<option>${esc(x)}</option>`).join('');
- if(er&&!er.options.length)er.innerHTML='<option value="">全部形式</option>'+[...new Set(SYSTEM_EQUIPMENT.map(e=>e.resistance))].map(x=>`<option value="${esc(x)}">${esc(resistanceLabel(x))}</option>`).join('');
+ if(pc&&!pc.options.length)pc.innerHTML='<option value="">${esc(tr("residual.r932057bd"))}</option>'+[...new Set(SYSTEM_PROGRAMS.map(p=>p.category))].map(x=>`<option>${esc(x)}</option>`).join('');
+ if(pl&&!pl.options.length)pl.innerHTML='<option value="">${esc(tr("residual.r524e385d"))}</option>'+[...new Set(SYSTEM_PROGRAMS.map(p=>p.level))].map(x=>`<option>${esc(x)}</option>`).join('');
+ if(ec&&!ec.options.length)ec.innerHTML='<option value="">${esc(tr("residual.r932057bd"))}</option>'+[...new Set(SYSTEM_EQUIPMENT.map(e=>e.category))].map(x=>`<option>${esc(x)}</option>`).join('');
+ if(er&&!er.options.length)er.innerHTML='<option value="">${esc(tr("residual.r9b735996"))}</option>'+[...new Set(SYSTEM_EQUIPMENT.map(e=>e.resistance))].map(x=>`<option value="${esc(x)}">${esc(resistanceLabel(x))}</option>`).join('');
 }
 
 let currentSettingsView='hub';
@@ -2077,34 +2090,34 @@ function showSettingsView(view='hub'){
 function renderSettings(){
  initSystemLibraryFilters();renderSystemPrograms();renderSystemEquipment();renderGlossaryIndex();const gpr=$('#goalProgramRecommendations');if(gpr){gpr.innerHTML=goalProgramRecommendationsHtml();bindProgramCards(gpr)};
  const hp=$('#hubProgramSummary'),ht=$('#hubTemplateSummary'),he=$('#hubEquipmentSummary'),hx=$('#hubExerciseSummary'),hg=$('#hubGymSummary'),hme=$('#hubMyEquipmentSummary');
- if(hp)hp.textContent=`${SYSTEM_PROGRAMS.length} 套系統課表`;
- if(ht)ht.textContent=`${data.templates.length} 個我的模板`;
- if(he)he.textContent=`${SYSTEM_EQUIPMENT.length} 種系統器械`;
- if(hx)hx.textContent=`${data.exerciseLibrary.length} 個動作`;
- if(hg)hg.textContent=`${data.gyms.length} 間健身房`;
- if(hme)hme.textContent=`${data.equipment.length} 台我的器材`;
- $('#templateList').innerHTML=data.templates.length?data.templates.map(t=>`<div class="template-item"><div class="record-head"><div><b>${esc(t.name)}</b> ${t.sourceProgramId?'<span class="source-pill">FROM SYSTEM</span>':''}<div class="record-meta">${tr('drawer.historyExerciseCount',{count:t.items.length})}${t.nameEn?' · '+esc(t.nameEn):''}</div></div><div class="actions"><button class="btn small ghost" data-edit-tpl="${t.id}">編輯</button><button class="btn small danger" data-del-tpl="${t.id}">${esc(tr('gym.delete'))}</button></div></div>${t.dayMeta?.focusSummary?`<div class="small" style="margin-top:7px"><b>${esc(t.dayMeta.dayTitle||'訓練重點')}</b> · ${esc(t.dayMeta.focusSummary)}</div>`:''}<div class="tagrow" style="margin-top:8px">${t.items.map(i=>`<span class="tag">${esc(getExercise(i.exerciseId)?.name||'已刪除動作')}</span>`).join('')}</div></div>`).join(''):'<div class="card empty">尚無「我的模板」。可從上方系統課表加入，或自己建立。</div>';
- $$('[data-edit-tpl]').forEach(b=>b.onclick=()=>editTemplate(b.dataset.editTpl));$$('[data-del-tpl]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.deleteTemplate'))){data.templates=data.templates.filter(t=>t.id!==b.dataset.delTpl);save('刪除課表',true)}});
+ if(hp)hp.textContent=tr('finalUi.programsTotal',{count:SYSTEM_PROGRAMS.length});
+ if(ht)ht.textContent=tr('finalUi.templatesTotal',{count:data.templates.length});
+ if(he)he.textContent=tr('finalUi.systemEquipmentTotal',{count:SYSTEM_EQUIPMENT.length});
+ if(hx)hx.textContent=tr('finalUi.exerciseTotal',{count:data.exerciseLibrary.length});
+ if(hg)hg.textContent=tr('finalUi.gymsTotal',{count:data.gyms.length});
+ if(hme)hme.textContent=tr('finalUi.myEquipmentTotal',{count:data.equipment.length});
+ $('#templateList').innerHTML=data.templates.length?data.templates.map(t=>`<div class="template-item"><div class="record-head"><div><b>${esc(t.name)}</b> ${t.sourceProgramId?'<span class="source-pill">FROM SYSTEM</span>':''}<div class="record-meta">${tr('drawer.historyExerciseCount',{count:t.items.length})}${t.nameEn?' · '+esc(t.nameEn):''}</div></div><div class="actions"><button class="btn small ghost" data-edit-tpl="${t.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-del-tpl="${t.id}">${esc(tr('gym.delete'))}</button></div></div>${t.dayMeta?.focusSummary?`<div class="small" style="margin-top:7px"><b>${esc(t.dayMeta.dayTitle||tr('finalUi.focusFallback'))}</b> · ${esc(t.dayMeta.focusSummary)}</div>`:''}<div class="tagrow" style="margin-top:8px">${t.items.map(i=>`<span class="tag">${esc(getExercise(i.exerciseId)?.name||tr('finalUi.deletedExercise'))}</span>`).join('')}</div></div>`).join(''):'<div class="card empty">${esc(tr("residual.r1a327ebb"))}</div>';
+ $$('[data-edit-tpl]').forEach(b=>b.onclick=()=>editTemplate(b.dataset.editTpl));$$('[data-del-tpl]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.deleteTemplate'))){data.templates=data.templates.filter(t=>t.id!==b.dataset.delTpl);save(tr('reasons.deleteTemplate'),true)}});
  renderLibrary();
  renderGymSettings();
- $('#equipmentList').innerHTML=data.equipment.length?data.equipment.map(e=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${esc(e.name)}</div><div class="snapshot-reason">${e.brand?esc(e.brand):'未指定品牌'}${e.model?` · ${esc(e.model)}`:''}${e.series?` · ${esc(e.series)}`:''} · 重量標示 ${normalizeWeightUnit(e.weightUnit||'kg')}</div></div><div class="actions"><button class="btn small ghost" data-eq-unit="${e.id}">${normalizeWeightUnit(e.weightUnit||'kg')} ↔</button><button class="btn small danger" data-deleq="${e.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="empty">尚未建立自己的器材。</div>';
- $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save('修改器材重量單位',false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
- $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save('刪除器材',true)});
- $('#setTrainingGoal').value=coachGoal();$('#setSessionMinutes').value=String(n(data.settings.sessionMinutes)||60);$('#setExperienceLevel').value=data.settings.experienceLevel||'beginner';$('#setEquipmentPreference').value=data.settings.equipmentPreference||'machine';$('#setBlockWeeks').value=String(n(data.settings.blockWeeks)||6);$('#setPreferredGym').innerHTML='<option value="">不指定／資料不足時不評分器材</option>'+data.gyms.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');$('#setPreferredGym').value=data.settings.preferredGymId||'';$('#priorityMuscleOptions').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<label><input type="checkbox" data-priority-muscle="${m}" ${priorityMuscles().includes(m)?'checked':''}>${m}</label>`).join('');const wd=['日','一','二','三','四','五','六'],avs=availableWeekdays();$('#availableWeekdayOptions').innerHTML=wd.map((x,i)=>`<label><input type="checkbox" data-available-weekday="${i}" ${avs.includes(i)?'checked':''}>週${x}</label>`).join('');$('#setAllowConsecutiveDays').checked=!!data.settings.allowConsecutiveDays;$('#setUnit').value=data.settings.unit;$('#setIntensity').value=data.settings.intensity;$('#setRest').value=data.settings.defaultRest;$('#setWeeklySessions').value=data.settings.weeklySessions;$('#setCardioGoal').value=data.settings.weeklyCardio;$('#setWeekStart').value=String(data.settings.weekStart);$('#setWarmup').checked=!!data.settings.includeWarmup;$('#set1rm').checked=!!data.settings.show1RM;
+ $('#equipmentList').innerHTML=data.equipment.length?data.equipment.map(e=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${esc(e.name)}</div><div class="snapshot-reason">${e.brand?esc(e.brand):esc(tr('finalUi.unspecifiedBrand'))}${e.model?` · ${esc(e.model)}`:''}${e.series?` · ${esc(e.series)}`:''} · ${esc(tr('finalUi.weightMark'))} ${normalizeWeightUnit(e.weightUnit||'kg')}</div></div><div class="actions"><button class="btn small ghost" data-eq-unit="${e.id}">${normalizeWeightUnit(e.weightUnit||'kg')} ↔</button><button class="btn small danger" data-deleq="${e.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="empty">${esc(tr("residual.raf76980d"))}</div>';
+ $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save(tr('reasons.changeEquipmentUnit'),false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
+ $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save(tr('reasons.deleteEquipment'),true)});
+ $('#setTrainingGoal').value=coachGoal();$('#setSessionMinutes').value=String(n(data.settings.sessionMinutes)||60);$('#setExperienceLevel').value=data.settings.experienceLevel||'beginner';$('#setEquipmentPreference').value=data.settings.equipmentPreference||'machine';$('#setBlockWeeks').value=String(n(data.settings.blockWeeks)||6);$('#setPreferredGym').innerHTML='<option value="">${esc(tr("residual.recc7c9f4"))}</option>'+data.gyms.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');$('#setPreferredGym').value=data.settings.preferredGymId||'';$('#priorityMuscleOptions').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<label><input type="checkbox" data-priority-muscle="${m}" ${priorityMuscles().includes(m)?'checked':''}>${esc(displayMuscle(m))}</label>`).join('');const wd=WEEKDAY_KEYS.map(k=>tr(k)),avs=availableWeekdays();$('#availableWeekdayOptions').innerHTML=wd.map((x,i)=>`<label><input type="checkbox" data-available-weekday="${i}" ${avs.includes(i)?'checked':''}>${esc(tr('finalUi.weekday',{day:x}))}</label>`).join('');$('#setAllowConsecutiveDays').checked=!!data.settings.allowConsecutiveDays;$('#setLocale').value=i18n.normalizeLocale(data.settings.locale);$('#setUnit').value=data.settings.unit;$('#setIntensity').value=data.settings.intensity;$('#setRest').value=data.settings.defaultRest;$('#setWeeklySessions').value=data.settings.weeklySessions;$('#setCardioGoal').value=data.settings.weeklyCardio;$('#setWeekStart').value=String(data.settings.weekStart);$('#setWarmup').checked=!!data.settings.includeWarmup;$('#set1rm').checked=!!data.settings.show1RM;
  $('#setUiLevel').value=uiLevel();const tutBtn=$('#openTutorialFromSettings');if(tutBtn)tutBtn.onclick=openTutorialAgain;$('#setRestTimerPosition').value=data.settings.restTimerPosition||'top';$('#setTrainingNotes').checked=data.settings.trainingNotes!==false;$('#setTrainingAutoLoad').checked=data.settings.trainingAutoLoad!==false;$('#setTrainingIntervalTimer').checked=data.settings.trainingIntervalTimer!==false;$('#setRestTimerSound').checked=data.settings.restTimerSound!==false;
- $('#muscleGoalInputs').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<div class="field"><label>${m}</label><input type="number" min="0" max="50" data-mgoal="${m}" value="${n((data.settings.weeklyMuscleGoals||{})[m])}"></div>`).join('');
- $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||'已刪除動作')}</b><div class="record-meta">目標 ${fmtWeight(g.weight)} × ${g.reps}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="small">尚未設定力量目標</div>';
- $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save('刪除力量目標',true)});
- $('#snapshotList').innerHTML=data.snapshots.length?data.snapshots.map(s=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${new Date(s.at).toLocaleString('zh-TW')}</div><div class="snapshot-reason">${esc(s.reason||'自動備份')}</div></div><button class="btn small ghost" data-restore-snap="${s.id}">恢復</button></div>`).join(''):'<div class="empty">尚無自動備份紀錄</div>';
- $$('[data-restore-snap]').forEach(b=>b.onclick=()=>{const s=data.snapshots.find(x=>x.id===b.dataset.restoreSnap);if(s&&confirm(tr('dialogs.restoreSnapshot'))){snapshot('恢復前');const snaps=data.snapshots;data=migrate(JSON.parse(JSON.stringify(s.payload)));data.snapshots=snaps;save('恢復快照',false);toast(tr('feedback.snapshotRestored'))}})
+ $('#muscleGoalInputs').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<div class="field"><label>${esc(displayMuscle(m))}</label><input type="number" min="0" max="50" data-mgoal="${m}" value="${n((data.settings.weeklyMuscleGoals||{})[m])}"></div>`).join('');
+ $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||tr('finalUi.deletedExercise'))}</b><div class="record-meta">${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="small">${esc(tr("residual.r00862c41"))}</div>';
+ $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save(tr('reasons.deleteStrengthGoal'),true)});
+ $('#snapshotList').innerHTML=data.snapshots.length?data.snapshots.map(s=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${new Date(s.at).toLocaleString('zh-TW')}</div><div class="snapshot-reason">${esc(s.reason||tr('finalUi.autoBackup'))}</div></div><button class="btn small ghost" data-restore-snap="${s.id}">${esc(tr("residual.rf1b5cda4"))}</button></div>`).join(''):'<div class="empty">${esc(tr("residual.r4cdd5477"))}</div>';
+ $$('[data-restore-snap]').forEach(b=>b.onclick=()=>{const s=data.snapshots.find(x=>x.id===b.dataset.restoreSnap);if(s&&confirm(tr('dialogs.restoreSnapshot'))){snapshot(tr('reasons.beforeRestore'));const snaps=data.snapshots;data=migrate(JSON.parse(JSON.stringify(s.payload)));data.snapshots=snaps;save(tr('reasons.restoreSnapshot'),false);toast(tr('feedback.snapshotRestored'))}})
 }
 function renderLibrary(){
  const q=($('#libSearch')?.value||'').toLowerCase();
  const items=data.exerciseLibrary.filter(e=>(e.name+' '+(e.nameEn||'')+' '+(e.aliases||[]).join(' ')).toLowerCase().includes(q)).sort((a,b)=>Number(!!a.system)-Number(!!b.system)||a.name.localeCompare(b.name,'zh-Hant'));
  const shown=items.slice(0,80);
- $('#libraryList').innerHTML=shown.map(e=>`<div class="library-item"><div class="record-head"><div><b>${esc(e.name)}</b> ${e.system?'<span class="source-pill">SYSTEM</span>':'<span class="source-pill">MY</span>'}<div class="eq-en">${esc(e.nameEn||'')}</div><div class="record-meta">${esc((e.aliases||[]).join(' / '))}</div></div><div class="actions">${e.system?`<button class="btn small primary" data-viewlib="${e.id}">詳細</button><button class="btn small ghost" data-copylib="${e.id}">複製</button>`:`<button class="btn small ghost" data-editlib="${e.id}">編輯</button><button class="btn small danger" data-dellib="${e.id}">${esc(tr('gym.delete'))}</button>`}</div></div><div class="tagrow" style="margin-top:8px"><span class="tag">${esc(e.muscle)}</span><span class="tag">${esc(TYPES.find(t=>t[0]===e.type)?.[1]||e.type)}</span><span class="tag">${e.targetSets} 組 · ${e.repMin}–${e.repMax}</span><span class="tag">休 ${e.rest}s</span>${e.pattern&&GLOSSARY[PATTERN_INFO[e.pattern]]?`<span class="tag">${esc(GLOSSARY[PATTERN_INFO[e.pattern]].zh)} ${infoButton(PATTERN_INFO[e.pattern])}</span>`:''}</div></div>`).join('')+(items.length>shown.length?`<div class="card small">目前顯示前 ${shown.length} 個；可用搜尋快速找到其他系統動作。</div>`:'');
+ $('#libraryList').innerHTML=shown.map(e=>`<div class="library-item"><div class="record-head"><div><b>${esc(e.name)}</b> ${e.system?'<span class="source-pill">SYSTEM</span>':'<span class="source-pill">MY</span>'}<div class="eq-en">${esc(e.nameEn||'')}</div><div class="record-meta">${esc((e.aliases||[]).join(' / '))}</div></div><div class="actions">${e.system?`<button class="btn small primary" data-viewlib="${e.id}">${esc(tr("residual.rbb048236"))}</button><button class="btn small ghost" data-copylib="${e.id}">${esc(tr("residual.r80173301"))}</button>`:`<button class="btn small ghost" data-editlib="${e.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-dellib="${e.id}">${esc(tr('gym.delete'))}</button>`}</div></div><div class="tagrow" style="margin-top:8px"><span class="tag">${esc(displayMuscle(e.muscle))}</span><span class="tag">${esc(displayType(e.type))}</span><span class="tag">${esc(tr('finalUi.setRest',{sets:e.targetSets,min:e.repMin,max:e.repMax}))}</span><span class="tag">${esc(tr('finalUi.restSeconds',{seconds:e.rest}))}</span>${e.pattern&&GLOSSARY[PATTERN_INFO[e.pattern]]?`<span class="tag">${esc(GLOSSARY[PATTERN_INFO[e.pattern]].zh)} ${infoButton(PATTERN_INFO[e.pattern])}</span>`:''}</div></div>`).join('')+(items.length>shown.length?`<div class="card small">${esc(tr('finalUi.libraryShown',{count:shown.length}))}</div>`:'');
  $$('[data-viewlib]').forEach(b=>b.onclick=()=>showExerciseDetail(b.dataset.viewlib));$$('[data-copylib]').forEach(b=>b.onclick=()=>copySystemExercise(b.dataset.copylib));
- $$('[data-editlib]').forEach(b=>b.onclick=()=>editExerciseLib(b.dataset.editlib));$$('[data-dellib]').forEach(b=>b.onclick=()=>{if(data.templates.some(t=>t.items.some(i=>i.exerciseId===b.dataset.dellib))){alert('此動作仍被課表使用，請先從課表移除。');return}if(confirm(tr('dialogs.deleteCustomExercise'))){data.exerciseLibrary=data.exerciseLibrary.filter(e=>e.id!==b.dataset.dellib);save('刪除動作',true)}})
+ $$('[data-editlib]').forEach(b=>b.onclick=()=>editExerciseLib(b.dataset.editlib));$$('[data-dellib]').forEach(b=>b.onclick=()=>{if(data.templates.some(t=>t.items.some(i=>i.exerciseId===b.dataset.dellib))){alert(tr('finalUi.exerciseInUse'));return}if(confirm(tr('dialogs.deleteCustomExercise'))){data.exerciseLibrary=data.exerciseLibrary.filter(e=>e.id!==b.dataset.dellib);save(tr('reasons.deleteExercise'),true)}})
 }
 function normalizeMachineLookupText(v){
  return String(v||'').toLowerCase()
@@ -2162,9 +2175,9 @@ function applyLookupExerciseToEditor(exId){
 function renderMachineLookupResults(query){
  const box=$('#machineLookupResults');if(!box)return;
  const q=String(query||'').trim();
- if(q.length<2){box.innerHTML='<div class="machine-lookup-empty">輸入至少 2 個字元，例如 <b>Lat Pulldown</b>、<b>Inner / Outer Thigh</b>、<b>Pullover</b>，也可以輸入品牌型號。</div>';return}
+ if(q.length<2){box.innerHTML='<div class="machine-lookup-empty">${esc(tr("finalUi.machineMinPrefix"))}<b>Lat Pulldown</b>、<b>Inner / Outer Thigh</b>、<b>Pullover</b>${esc(tr("residual.rba70ff76"))}</div>';return}
  const hits=machineLookupCandidates(q);
- if(!hits.length){box.innerHTML='<div class="machine-lookup-empty">目前找不到相符器械。你仍可以建立自訂動作；也可以嘗試只輸入銘牌上的核心英文，例如 <b>Leg Extension</b>，不要輸入警告文字或整段操作說明。</div>';return}
+ if(!hits.length){box.innerHTML='<div class="machine-lookup-empty">${esc(tr("finalUi.machineNoMatchPrefix"))}<b>Leg Extension</b>${esc(tr("residual.r2d32bcaa"))}</div>';return}
  box.innerHTML=hits.map(({eq,match,actions})=>{
    const brands=[...new Set((eq.brandModels||[]).map(x=>x.brand).filter(Boolean))];
    const matched=`${match.kind} · ${match.label}${match.text?`：「${match.text}」`:''}`;
@@ -2173,11 +2186,11 @@ function renderMachineLookupResults(query){
      <div class="machine-match-source">${esc(matched)}</div>
      <div class="tagrow" style="margin-top:6px"><span class="tag">${esc(eq.primary)}</span>${eq.pattern?`<span class="tag">${esc(patternDisplayName(eq.pattern))}</span>`:''}${brands.slice(0,4).map(b=>`<span class="tag">${esc(b)}</span>`).join('')}</div>
      <div class="machine-actions">${actions.length?actions.map(ex=>`<div class="machine-action">
-       <div class="machine-action-head"><div><div class="machine-action-name">${esc(ex.name)}</div><div class="machine-action-en">${esc(ex.nameEn||'')}</div></div><span class="tag">${esc(ex.muscle||'')}</span></div>
+       <div class="machine-action-head"><div><div class="machine-action-name">${esc(ex.name)}</div><div class="machine-action-en">${esc(ex.nameEn||'')}</div></div><span class="tag">${esc(displayMuscle(ex.muscle||''))}</span></div>
        <div class="machine-action-desc">${esc(ex.descZh||ex.notes||'')}</div>
-       <div class="tagrow" style="margin-top:6px">${ex.pattern?`<span class="tag">${esc(patternDisplayName(ex.pattern))}</span>`:''}<span class="tag">${esc(TYPES.find(t=>t[0]===ex.type)?.[1]||ex.type)}</span></div>
-       <div class="actions"><button class="btn small primary" type="button" data-machine-use="${esc(ex.id)}">套用這個動作</button><button class="btn small ghost" type="button" data-machine-yt="${esc(ex.id)}">▶ 查看教學搜尋</button></div>
-     </div>`).join(''):`<div class="machine-lookup-empty">器械已辨識，但目前沒有專屬系統動作；可選擇這台器械後自行建立動作。</div>`}</div>
+       <div class="tagrow" style="margin-top:6px">${ex.pattern?`<span class="tag">${esc(patternDisplayName(ex.pattern))}</span>`:''}<span class="tag">${esc(displayType(ex.type))}</span></div>
+       <div class="actions"><button class="btn small primary" type="button" data-machine-use="${esc(ex.id)}">${esc(tr("residual.r77d6a59f"))}</button><button class="btn small ghost" type="button" data-machine-yt="${esc(ex.id)}">${esc(tr("residual.r8037f993"))}</button></div>
+     </div>`).join(''):`<div class="machine-lookup-empty">${esc(tr("residual.rfb80dd12"))}</div>`}</div>
    </div>`
  }).join('');
  $$('[data-machine-use]').forEach(b=>b.onclick=()=>applyLookupExerciseToEditor(b.dataset.machineUse));
@@ -2194,33 +2207,33 @@ function editExerciseLib(id=''){
  if(id&&getExercise(id)?.system){showExerciseDetail(id);return}
  const e=id?getExercise(id):{id:uid('ex'),name:'',nameEn:'',aliases:[],system:false,muscle:'胸',type:'weight_reps',increment:2.5,targetSets:3,repMin:8,repMax:12,intMin:2,intMax:3,rest:90,notes:'',equipmentId:'',gymId:'',alternatives:[]};
  const lookupHtml=!id?`<div class="machine-lookup">
-   <div class="machine-lookup-head"><div class="machine-lookup-icon">⌕</div><div><div class="machine-lookup-title">先用器械上的英文名稱確認動作</div><div class="machine-lookup-desc">照銘牌輸入英文名稱、品牌產品名或型號。系統會顯示可能的中文器械、對應動作、肌群與動作模式，確認後再套用。</div></div></div>
-   <div class="machine-lookup-row"><input id="machineLabelLookup" autocomplete="off" placeholder="例如 Inner / Outer Thigh、Lat Pulldown、1MTH039"><button class="btn ghost" type="button" id="machineLookupBtn">查找</button></div>
+   <div class="machine-lookup-head"><div class="machine-lookup-icon">⌕</div><div><div class="machine-lookup-title">${esc(tr("residual.r7fc64b2d"))}</div><div class="machine-lookup-desc">${esc(tr("residual.rf3182a51"))}</div></div></div>
+   <div class="machine-lookup-row"><input id="machineLabelLookup" autocomplete="off" placeholder="${esc(tr("residual.rb9b67e56"))}"><button class="btn ghost" type="button" id="machineLookupBtn">${esc(tr("residual.r3626353a"))}</button></div>
    <div id="machineLookupResults" class="machine-lookup-results"></div>
  </div>`:'';
- openModal(id?tr('modal.editExercise'):tr('modal.newExercise'),`${lookupHtml}<div class="grid2"><div class="field"><label>中文名稱</label><input id="elName" value="${esc(e.name)}"></div><div class="field"><label>英文名稱</label><input id="elNameEn" value="${esc(e.nameEn||'')}"></div><div class="field"><label>別名（逗號分隔）</label><input id="elAliases" value="${esc((e.aliases||[]).join(','))}"></div><div class="field"><label>肌群</label><select id="elMuscle">${MUSCLES.map(m=>`<option ${e.muscle===m?'selected':''}>${m}</option>`).join('')}</select></div><div class="field"><label>類型</label><select id="elType">${TYPES.map(([v,l])=>`<option value="${v}" ${e.type===v?'selected':''}>${l}</option>`).join('')}</select></div><div class="field"><label>目標組數</label><input type="number" id="elSets" value="${e.targetSets}"></div><div class="field"><label>次數/秒數下限</label><input type="number" id="elMin" value="${e.repMin}"></div><div class="field"><label>次數/秒數上限</label><input type="number" id="elMax" value="${e.repMax}"></div><div class="field"><label>建議增量</label><input type="number" step=".1" id="elInc" value="${e.increment}"></div><div class="field"><label>休息秒數</label><input type="number" id="elRest" value="${e.rest}"></div><div class="field"><label>器材</label><select id="elEq"><option value="">未指定</option><optgroup label="系統器械">${SYSTEM_EQUIPMENT.map(x=>`<option value="${x.id}" ${e.equipmentId===x.id?'selected':''}>${esc(x.nameZh)} / ${esc(x.nameEn)}</option>`).join('')}</optgroup><optgroup label="我的器材">${data.equipment.map(x=>`<option value="${x.id}" ${e.equipmentId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</optgroup></select></div>
- <div class="field"><label>動作模式 <button class="info-btn" type="button" data-info="movement_balance">i</button></label><select id="elPattern"><option value="">自動判斷 / 未指定</option>${Object.keys(STIMULUS_BY_PATTERN).map(p=>`<option value="${p}" ${e.pattern===p?'selected':''}>${esc(patternDisplayName(p))}</option>`).join('')}</select></div></div>
- <div class="field"><label>永久備註 / 機台設定</label><textarea id="elNotes">${esc(e.notes||'')}</textarea></div><div class="field"><label>替代動作</label><div class="chipselect">${data.exerciseLibrary.filter(x=>x.id!==e.id).map(x=>`<button type="button" data-alt="${x.id}" class="${(e.alternatives||[]).includes(x.id)?'on':''}">${esc(x.name)}</button>`).join('')}</div></div><button class="btn primary" id="elSave">儲存動作</button>`,()=>{
+ openModal(id?tr('modal.editExercise'):tr('modal.newExercise'),`${lookupHtml}<div class="grid2"><div class="field"><label>${esc(tr("residual.r01e08503"))}</label><input id="elName" value="${esc(e.name)}"></div><div class="field"><label>${esc(tr("residual.r4be1c58f"))}</label><input id="elNameEn" value="${esc(e.nameEn||'')}"></div><div class="field"><label>${esc(tr("residual.r45b03e28"))}</label><input id="elAliases" value="${esc((e.aliases||[]).join(','))}"></div><div class="field"><label>${esc(tr("residual.rcf870e5d"))}</label><select id="elMuscle">${MUSCLES.map(m=>`<option value="${esc(m)}" ${e.muscle===m?'selected':''}>${esc(displayMuscle(m))}</option>`).join('')}</select></div><div class="field"><label>${esc(tr("residual.re4e4a53e"))}</label><select id="elType">${TYPES.map(([v,l])=>`<option value="${v}" ${e.type===v?'selected':''}>${esc(tr(l))}</option>`).join('')}</select></div><div class="field"><label>${esc(tr("residual.r147f7ce4"))}</label><input type="number" id="elSets" value="${e.targetSets}"></div><div class="field"><label>${esc(tr("residual.rf2afec20"))}</label><input type="number" id="elMin" value="${e.repMin}"></div><div class="field"><label>${esc(tr("residual.rb8ab8369"))}</label><input type="number" id="elMax" value="${e.repMax}"></div><div class="field"><label>${esc(tr("residual.r4a5eb0dc"))}</label><input type="number" step=".1" id="elInc" value="${e.increment}"></div><div class="field"><label>${esc(tr("residual.rd7d43a1b"))}</label><input type="number" id="elRest" value="${e.rest}"></div><div class="field"><label>${esc(tr("residual.ra373bd05"))}</label><select id="elEq"><option value="">${esc(tr("residual.r6a86e0bc"))}</option><optgroup label="${esc(tr('finalUi.systemEquipmentGroup'))}">${SYSTEM_EQUIPMENT.map(x=>`<option value="${x.id}" ${e.equipmentId===x.id?'selected':''}>${esc(x.nameZh)} / ${esc(x.nameEn)}</option>`).join('')}</optgroup><optgroup label="${esc(tr('finalUi.myEquipmentGroup'))}">${data.equipment.map(x=>`<option value="${x.id}" ${e.equipmentId===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</optgroup></select></div>
+ <div class="field"><label>${esc(tr("finalUi.movementMode"))} <button class="info-btn" type="button" data-info="movement_balance">i</button></label><select id="elPattern"><option value="">${esc(tr("residual.r233b6987"))}</option>${Object.keys(STIMULUS_BY_PATTERN).map(p=>`<option value="${p}" ${e.pattern===p?'selected':''}>${esc(patternDisplayName(p))}</option>`).join('')}</select></div></div>
+ <div class="field"><label>${esc(tr("residual.r6984f9b9"))}</label><textarea id="elNotes">${esc(e.notes||'')}</textarea></div><div class="field"><label>${esc(tr("residual.re49d0e8e"))}</label><div class="chipselect">${data.exerciseLibrary.filter(x=>x.id!==e.id).map(x=>`<button type="button" data-alt="${x.id}" class="${(e.alternatives||[]).includes(x.id)?'on':''}">${esc(x.name)}</button>`).join('')}</div></div><button class="btn primary" id="elSave">${esc(tr("residual.r31f4512e"))}</button>`,()=>{
    if(!id)initMachineLabelLookup();
    $$('[data-alt]').forEach(b=>b.onclick=()=>b.classList.toggle('on'));
-   $('#elSave').onclick=()=>{const name=$('#elName').value.trim();if(!name){toast(tr('feedback.exerciseNameRequired'));return}e.name=name;e.nameEn=$('#elNameEn').value.trim();e.aliases=$('#elAliases').value.split(',').map(x=>x.trim()).filter(Boolean);e.muscle=$('#elMuscle').value;e.type=$('#elType').value;e.targetSets=clamp($('#elSets').value,1,20);e.repMin=clamp($('#elMin').value,0,1000);e.repMax=Math.max(e.repMin,clamp($('#elMax').value,0,2000));e.increment=clamp($('#elInc').value,0,500);e.rest=clamp($('#elRest').value,0,900);e.equipmentId=$('#elEq').value;e.pattern=$('#elPattern').value||SYSTEM_EQUIPMENT.find(x=>x.id===e.equipmentId)?.pattern||'';e.notes=$('#elNotes').value;e.alternatives=$$('[data-alt].on').map(b=>b.dataset.alt);if(!id)data.exerciseLibrary.push(e);save(id?'編輯動作':'新增動作',true);closeModal();toast('已儲存')}
+   $('#elSave').onclick=()=>{const name=$('#elName').value.trim();if(!name){toast(tr('feedback.exerciseNameRequired'));return}e.name=name;e.nameEn=$('#elNameEn').value.trim();e.aliases=$('#elAliases').value.split(',').map(x=>x.trim()).filter(Boolean);e.muscle=$('#elMuscle').value;e.type=$('#elType').value;e.targetSets=clamp($('#elSets').value,1,20);e.repMin=clamp($('#elMin').value,0,1000);e.repMax=Math.max(e.repMin,clamp($('#elMax').value,0,2000));e.increment=clamp($('#elInc').value,0,500);e.rest=clamp($('#elRest').value,0,900);e.equipmentId=$('#elEq').value;e.pattern=$('#elPattern').value||SYSTEM_EQUIPMENT.find(x=>x.id===e.equipmentId)?.pattern||'';e.notes=$('#elNotes').value;e.alternatives=$$('[data-alt].on').map(b=>b.dataset.alt);if(!id)data.exerciseLibrary.push(e);save(id?tr('finalUi.saveEditExercise'):tr('finalUi.saveAddExercise'),true);closeModal();toast(tr('finalUi.saved'))}
  })
 }
 function editTemplate(id=''){
  const original=id?data.templates.find(x=>x.id===id):null;
- let working=JSON.parse(JSON.stringify(original||{id:uid('tpl'),name:'新課表',items:[]}));
+ let working=JSON.parse(JSON.stringify(original||{id:uid('tpl'),name:tr('finalUi.newTemplate'),items:[]}));
  const showEditor=()=>{
-   const itemHtml=()=>working.items.map((it,i)=>`<div class="record"><div class="record-head"><b>${i+1}. ${esc(getExercise(it.exerciseId)?.name||'已刪除')}</b><div class="actions"><button class="btn small ghost" data-tu="${i}">↑</button><button class="btn small ghost" data-td="${i}">↓</button><button class="btn small danger" data-tr="${i}">刪</button></div></div></div>`).join('')||'<div class="empty">尚未加入動作。</div>';
+   const itemHtml=()=>working.items.map((it,i)=>`<div class="record"><div class="record-head"><b>${i+1}. ${esc(getExercise(it.exerciseId)?.name||'已刪除')}</b><div class="actions"><button class="btn small ghost" data-tu="${i}">↑</button><button class="btn small ghost" data-td="${i}">↓</button><button class="btn small danger" data-tr="${i}">${esc(tr("residual.r2f5b553d"))}</button></div></div></div>`).join('')||'<div class="empty">${esc(tr("residual.r745e433f"))}</div>';
    const bindRows=()=>{
      const box=$('#tplItems');if(!box)return;box.innerHTML=itemHtml();
      $$('[data-tr]').forEach(b=>b.onclick=()=>{working.items.splice(n(b.dataset.tr),1);bindRows()});
      $$('[data-tu]').forEach(b=>b.onclick=()=>{const i=n(b.dataset.tu);if(i>0)[working.items[i-1],working.items[i]]=[working.items[i],working.items[i-1]];bindRows()});
      $$('[data-td]').forEach(b=>b.onclick=()=>{const i=n(b.dataset.td);if(i<working.items.length-1)[working.items[i+1],working.items[i]]=[working.items[i],working.items[i+1]];bindRows()})
    };
-   openModal(id?tr('modal.editTemplate'):tr('modal.newTemplate'),`<div class="field"><label>${esc(tr('trainingUi.workoutName'))}</label><input id="tplName" value="${esc(working.name)}"></div><div id="tplItems"></div><div class="actions"><button class="btn ghost" id="tplAdd">${esc(tr('trainingUi.addExercise'))}</button><button class="btn primary" id="tplSave">儲存課表</button></div>`,()=>{
+   openModal(id?tr('modal.editTemplate'):tr('modal.newTemplate'),`<div class="field"><label>${esc(tr('trainingUi.workoutName'))}</label><input id="tplName" value="${esc(working.name)}"></div><div id="tplItems"></div><div class="actions"><button class="btn ghost" id="tplAdd">${esc(tr('trainingUi.addExercise'))}</button><button class="btn primary" id="tplSave">${esc(tr("residual.r2f106cd5"))}</button></div>`,()=>{
      bindRows();
      $('#tplAdd').onclick=()=>{working.name=$('#tplName').value.trim()||working.name||'新課表';openExercisePicker(ex=>{working.items.push({exerciseId:ex.id});showEditor()})};
-     $('#tplSave').onclick=()=>{working.name=$('#tplName').value.trim()||'未命名課表';if(id){const i=data.templates.findIndex(x=>x.id===id);if(i>=0)data.templates[i]=working}else data.templates.push(working);save(id?'編輯課表':'新增課表',true);closeModal();toast(tr('feedback.templateSaved'))}
+     $('#tplSave').onclick=()=>{working.name=$('#tplName').value.trim()||tr('finalUi.unnamedTemplate');if(id){const i=data.templates.findIndex(x=>x.id===id);if(i>=0)data.templates[i]=working}else data.templates.push(working);save(id?tr('finalUi.saveEditTemplate'):tr('finalUi.saveAddTemplate'),true);closeModal();toast(tr('feedback.templateSaved'))}
    })
  };
  showEditor()
@@ -2235,20 +2248,20 @@ function mergeBodyStatus(a,b){const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]
 function importSummaryHtml(migrated,type,newCount,dup,source=null){
  const raw=source&&typeof source==='object'?source:{};
  const hasSettings=type==='json'&&!!raw.settings&&typeof raw.settings==='object',hasPlan=type==='json'&&!!raw.currentPlan,hasActive=type==='json'&&!!raw.activeWorkout;
- return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>${esc(tr('gym.workoutRecords'))}</span></div><div class="stat"><b>${newCount}</b><span>新增紀錄</span></div><div class="stat"><b>${dup}</b><span>相同 ID</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?'<span class="tag good">訓練偏好 ✓</span>':''}${hasPlan?'<span class="tag good">目前計畫 ✓</span>':''}${hasActive?'<span class="tag">未完成訓練 ✓</span>':''}</div>${type==='csv'?'<div class="small" style="margin-top:10px">CSV 只包含訓練表格資料，不會覆蓋訓練偏好、目前計畫或 App 設定。</div>':'<div class="small" style="margin-top:10px">完整 JSON 備份可恢復訓練偏好、目前計畫、器材、課表與其他個人資料。</div>'}</div>`
+ return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>${esc(tr('gym.workoutRecords'))}</span></div><div class="stat"><b>${newCount}</b><span>${esc(tr("residual.r0ad79527"))}</span></div><div class="stat"><b>${dup}</b><span>${esc(tr("residual.r4151912e"))}</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?'<span class="tag good">${esc(tr("residual.re4d4e06b"))}</span>':''}${hasPlan?'<span class="tag good">${esc(tr("residual.reaf857cc"))}</span>':''}${hasActive?'<span class="tag">${esc(tr("residual.r7692195b"))}</span>':''}</div>${type==='csv'?'<div class="small" style="margin-top:10px">${esc(tr("residual.r5e7f5add"))}</div>':'<div class="small" style="margin-top:10px">${esc(tr("residual.rb074f245"))}</div>'}</div>`
 }
 function previewImport(incoming,type,fileName){
  const migrated=migrate(incoming),existing=new Map(data.workouts.map(w=>[w.id,w])),newCount=migrated.workouts.filter(w=>!existing.has(w.id)).length,dup=migrated.workouts.length-newCount;
- const modeOptions=type==='json'?`<option value="restore">完整還原備份（包含偏好、目前計畫與其他設定）</option><option value="merge">只合併訓練資料，不修改目前設定</option><option value="skip">只加入新的訓練資料，略過相同 ID</option>`:`<option value="merge">合併 CSV 訓練資料</option><option value="skip">只加入新的 CSV 訓練資料</option>`;
- openModal(tr('modal.importPreview'),`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">已偵測到可相容的${type==='json'?'完整備份':'表格資料'}</div></div>${importSummaryHtml(migrated,type,newCount,dup,incoming)}<div class="field"><label>匯入方式</label><select id="impMode">${modeOptions}</select><div class="hint">完整還原會先自動保存目前狀態，之後仍可從自動備份紀錄恢復。</div></div><button class="btn primary" id="impConfirm">確認匯入</button>`,()=>$('#impConfirm').onclick=()=>{
-   const mode=$('#impMode').value;snapshot('匯入前');const beforeSnapshots=[...(data.snapshots||[])];
+ const modeOptions=type==='json'?`<option value="restore">${esc(tr("residual.r54649a64"))}</option><option value="merge">${esc(tr("residual.r828f27b9"))}</option><option value="skip">${esc(tr("residual.r65015b25"))}</option>`:`<option value="merge">${esc(tr("residual.r23627781"))}</option><option value="skip">${esc(tr("residual.r383678cd"))}</option>`;
+ openModal(tr('modal.importPreview'),`<div class="card"><b>${esc(fileName)}</b><div class="small" style="margin-top:7px">${esc(tr('finalUi.compatibleBackup',{type:type==='json'?tr('finalUi.backupTypeFull'):tr('finalUi.backupTypeTable')}))}</div></div>${importSummaryHtml(migrated,type,newCount,dup,incoming)}<div class="field"><label>${esc(tr("residual.r355ebb85"))}</label><select id="impMode">${modeOptions}</select><div class="hint">${esc(tr("residual.rf191fe9c"))}</div></div><button class="btn primary" id="impConfirm">${esc(tr("residual.r320fc068"))}</button>`,()=>$('#impConfirm').onclick=()=>{
+   const mode=$('#impMode').value;snapshot(tr('reasons.beforeImport'));const beforeSnapshots=[...(data.snapshots||[])];
    if(mode==='restore'&&type==='json'){
      const importedSnapshots=[...(migrated.snapshots||[])];data=migrated;data.snapshots=mergeSnapshots(beforeSnapshots,importedSnapshots);
    }else{
      const map=new Map(data.workouts.map(w=>[w.id,w]));migrated.workouts.forEach(w=>{if(mode==='merge'||!map.has(w.id))map.set(w.id,w)});data.workouts=[...map.values()];
      data.exerciseLibrary=mergeById(data.exerciseLibrary,migrated.exerciseLibrary);data.templates=mergeById(data.templates,migrated.templates);data.gyms=mergeById(data.gyms,migrated.gyms);data.equipment=mergeById(data.equipment,migrated.equipment);data.bodyStatus=mergeBodyStatus(data.bodyStatus,migrated.bodyStatus);data.strengthGoals=mergeById(data.strengthGoals,migrated.strengthGoals);data.snapshots=beforeSnapshots;
    }
-   syncGymsFromHistory(false);save('匯入資料',false);closeModal();toast(mode==='restore'?tr('feedback.importRestored'):tr('feedback.importMerged'))
+   syncGymsFromHistory(false);save(tr('reasons.importData'),false);closeModal();toast(mode==='restore'?tr('feedback.importRestored'):tr('feedback.importMerged'))
  })
 }
 function csvEscape(v){return'"'+String(v??'').replace(/"/g,'""')+'"'}
@@ -2262,7 +2275,7 @@ function parseCSV(text){
 }
 function csvToData(text){
  const rows=parseCSV(text.replace(/^\ufeff/,''));if(rows.length<2)throw Error('empty');const h=rows[0],ix=k=>h.indexOf(k);const wm=new Map();
- rows.slice(1).forEach(r=>{const id=r[ix('workoutId')]||uid('w');if(!wm.has(id))wm.set(id,{id,date:r[ix('date')]||isoToday(),name:r[ix('workoutName')]||'CSV 匯入',duration:n(r[ix('duration')]),status:'completed',startedAt:'',endedAt:'',notes:r[ix('notes')]||'',gymId:'',gymNameSnapshot:ix('gymName')>=0?(r[ix('gymName')]||''):'',deload:r[ix('deload')]==='true',preStatus:{},pain:'',exercises:[]});const w=wm.get(id),eid=r[ix('exerciseId')]||uid('excsv'),name=r[ix('exerciseName')]||'動作',type=r[ix('type')]||'weight_reps',inputUnit=ix('inputUnit')>=0?normalizeWeightUnit(r[ix('inputUnit')]):'kg';let e=w.exercises.find(x=>x.exerciseId===eid);if(!e){e={exerciseId:eid,nameSnapshot:name,muscle:r[ix('muscle')]||'其他',type,equipmentId:ix('equipmentId')>=0?(r[ix('equipmentId')]||''):'',notes:'',inputUnit,sets:[],cardio:{minutes:0,distanceKm:0,speed:0,incline:0,pace:''}};w.exercises.push(e)}if(type==='cardio'){e.cardio={minutes:n(r[ix('cardioMinutes')]),distanceKm:n(r[ix('distanceKm')]),speed:n(r[ix('speed')]),incline:n(r[ix('incline')]),pace:''}}else{const wIdx=ix('weightKg')>=0?ix('weightKg'):ix('weight'),lwIdx=ix('leftWeightKg')>=0?ix('leftWeightKg'):ix('leftWeight'),rwIdx=ix('rightWeightKg')>=0?ix('rightWeightKg'):ix('rightWeight');e.sets.push({id:uid('s'),kind:r[ix('kind')]||'working',weight:n(r[wIdx]),reps:n(r[ix('reps')]),rir:r[ix('rir')]||'',rpe:r[ix('rpe')]||'',seconds:n(r[ix('seconds')]),leftWeight:n(r[lwIdx]),leftReps:n(r[ix('leftReps')]),rightWeight:n(r[rwIdx]),rightReps:n(r[ix('rightReps')]),completed:true})}});
+ rows.slice(1).forEach(r=>{const id=r[ix('workoutId')]||uid('w');if(!wm.has(id))wm.set(id,{id,date:r[ix('date')]||isoToday(),name:r[ix('workoutName')]||tr('finalUi.csvImport'),duration:n(r[ix('duration')]),status:'completed',startedAt:'',endedAt:'',notes:r[ix('notes')]||'',gymId:'',gymNameSnapshot:ix('gymName')>=0?(r[ix('gymName')]||''):'',deload:r[ix('deload')]==='true',preStatus:{},pain:'',exercises:[]});const w=wm.get(id),eid=r[ix('exerciseId')]||uid('excsv'),name=r[ix('exerciseName')]||tr('analysisDynamic.exerciseFallback'),type=r[ix('type')]||'weight_reps',inputUnit=ix('inputUnit')>=0?normalizeWeightUnit(r[ix('inputUnit')]):'kg';let e=w.exercises.find(x=>x.exerciseId===eid);if(!e){e={exerciseId:eid,nameSnapshot:name,muscle:r[ix('muscle')]||'其他',type,equipmentId:ix('equipmentId')>=0?(r[ix('equipmentId')]||''):'',notes:'',inputUnit,sets:[],cardio:{minutes:0,distanceKm:0,speed:0,incline:0,pace:''}};w.exercises.push(e)}if(type==='cardio'){e.cardio={minutes:n(r[ix('cardioMinutes')]),distanceKm:n(r[ix('distanceKm')]),speed:n(r[ix('speed')]),incline:n(r[ix('incline')]),pace:''}}else{const wIdx=ix('weightKg')>=0?ix('weightKg'):ix('weight'),lwIdx=ix('leftWeightKg')>=0?ix('leftWeightKg'):ix('leftWeight'),rwIdx=ix('rightWeightKg')>=0?ix('rightWeightKg'):ix('rightWeight');e.sets.push({id:uid('s'),kind:r[ix('kind')]||'working',weight:n(r[wIdx]),reps:n(r[ix('reps')]),rir:r[ix('rir')]||'',rpe:r[ix('rpe')]||'',seconds:n(r[ix('seconds')]),leftWeight:n(r[lwIdx]),leftReps:n(r[ix('leftReps')]),rightWeight:n(r[rwIdx]),rightReps:n(r[ix('rightReps')]),completed:true})}});
  return{schemaVersion:CURRENT_SCHEMA,workouts:[...wm.values()],exerciseLibrary:data.exerciseLibrary,templates:[],gyms:[],equipment:[],settings:data.settings,bodyStatus:[],trash:[],snapshots:[],strengthGoals:[]}
 }
 
@@ -2274,30 +2287,31 @@ $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecor
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
 const analysisExerciseCompat=$('#analysisExercise');if(analysisExerciseCompat)analysisExerciseCompat.onchange=e=>renderExerciseAnalysis(e.target.value);
-$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
+$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
+$('#setLocale').onchange=()=>{data.settings.locale=i18n.setLocale($('#setLocale').value);try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAll()};
 $('#addTemplateBtn').onclick=()=>editTemplate();$('#addExerciseLibBtn').onclick=()=>editExerciseLib();$('#libSearch').oninput=renderLibrary;
 $$('[data-settings-view]').forEach(b=>b.onclick=()=>showSettingsView(b.dataset.settingsView));
 $$('.settings-back').forEach(b=>b.onclick=()=>showSettingsView('hub'));
 ['programSearch','programCategory','programDays','programLevel','programDuration','programEquip','programGoal'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener(id==='programSearch'?'input':'change',()=>{programDisplayLimit=18;renderSystemPrograms()})});
 ['systemEqSearch','systemEqCategory','systemEqResistance','systemEqBrand'].forEach(id=>{const el=$('#'+id);if(el)el.addEventListener(id==='systemEqSearch'?'input':'change',()=>{equipmentDisplayLimit=24;renderSystemEquipment()})});
 const gs=$('#glossarySearch');if(gs)gs.oninput=renderGlossaryIndex;
-$('#addGym').onclick=()=>{const name=prompt(tr('prompts.gymName'));if(!name?.trim())return;const existed=gymByName(name);if(existed){toast(tr('feedback.gymExists'));return}ensureGymByName(name);save('新增健身房',true)};
-$('#syncGymsFromHistory').onclick=()=>{const added=syncGymsFromHistory(false);if(added)save('從訓練紀錄帶入健身房',true);else toast('訓練紀錄中沒有新的健身房')};
+$('#addGym').onclick=()=>{const name=prompt(tr('prompts.gymName'));if(!name?.trim())return;const existed=gymByName(name);if(existed){toast(tr('feedback.gymExists'));return}ensureGymByName(name);save(tr('reasons.addGym'),true)};
+$('#syncGymsFromHistory').onclick=()=>{const added=syncGymsFromHistory(false);if(added)save(tr('reasons.syncGyms'),true);else toast(tr('finalUi.noNewGym'))};
 $('#addEquipment').onclick=()=>{openModal(tr('modal.newMyEquipment'),`<div class="card">
- <div class="field"><label>器材名稱</label><input id="manualEqName" placeholder="例如 Chest Press"></div>
- <div class="field"><label>品牌</label><input id="manualEqBrand" list="manualEqBrands" placeholder="Life Fitness、Hammer Strength..."><datalist id="manualEqBrands">${EQUIPMENT_BRANDS.map(b=>`<option value="${esc(b)}"></option>`).join('')}</datalist></div>
- <div class="field"><label>型號（選填）</label><input id="manualEqModel" placeholder="例如 SS-CP、3001"></div>
+ <div class="field"><label>${esc(tr("residual.r5a66610b"))}</label><input id="manualEqName" placeholder="${esc(tr("residual.r0ccc5e3e"))}"></div>
+ <div class="field"><label>${esc(tr("residual.r89f4b900"))}</label><input id="manualEqBrand" list="manualEqBrands" placeholder="Life Fitness、Hammer Strength..."><datalist id="manualEqBrands">${EQUIPMENT_BRANDS.map(b=>`<option value="${esc(b)}"></option>`).join('')}</datalist></div>
+ <div class="field"><label>${esc(tr("residual.r421a2a37"))}</label><input id="manualEqModel" placeholder="${esc(tr("residual.r461d0c6d"))}"></div>
  <button class="btn primary" id="manualEqSave">${esc(tr('trainingUi.save'))}</button></div>`,()=>$('#manualEqSave').onclick=()=>{
    const name=$('#manualEqName').value.trim();if(!name){toast(tr('feedback.equipmentNameRequired'));return}
    data.equipment.push({id:uid('eq'),name,brand:$('#manualEqBrand').value.trim(),model:$('#manualEqModel').value.trim()});
-   save('新增器材',true);closeModal()
+   save(tr('reasons.addEquipment'),true);closeModal()
  })};
-$('#addStrengthGoal').onclick=()=>{const unit=normalizeWeightUnit(data.settings.unit);openModal(tr('modal.newStrengthGoal'),`<div class="field"><label>動作</label><select id="sgEx">${data.exerciseLibrary.filter(e=>['weight_reps','bodyweight','unilateral'].includes(e.type)).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div><div class="grid2"><div class="field"><label>目標重量（${unit}）</label><input id="sgW" type="number" step=".1"><div class="hint">會自動換算成 kg 標準值儲存。</div></div><div class="field"><label>目標次數</label><input id="sgR" type="number" value="10"></div></div><button class="btn primary" id="sgSave">${esc(tr('trainingUi.save'))}</button>`,()=>$('#sgSave').onclick=()=>{data.strengthGoals.push({id:uid('goal'),exerciseId:$('#sgEx').value,weight:toKg(clamp($('#sgW').value,0,5000),unit),reps:clamp($('#sgR').value,1,300)});save('新增力量目標',true);closeModal();toast(tr('feedback.strengthGoalAdded'))})};
-$('#saveSettings').onclick=()=>{const hadPlan=!!data.currentPlan;data.settings.preferencesSetupCompleted=true;data.settings.trainingGoal=$('#setTrainingGoal').value;data.settings.sessionMinutes=n($('#setSessionMinutes').value)||60;data.settings.experienceLevel=$('#setExperienceLevel').value;data.settings.equipmentPreference=$('#setEquipmentPreference').value;data.settings.blockWeeks=n($('#setBlockWeeks').value)||6;data.settings.preferredGymId=$('#setPreferredGym').value||'';data.settings.priorityMuscles=$$('[data-priority-muscle]:checked').map(x=>x.dataset.priorityMuscle);data.settings.availableWeekdays=$$('[data-available-weekday]:checked').map(x=>n(x.dataset.availableWeekday));data.settings.allowConsecutiveDays=$('#setAllowConsecutiveDays').checked;data.settings.unit=$('#setUnit').value;data.settings.intensity=$('#setIntensity').value;data.settings.defaultRest=clamp($('#setRest').value,15,900);data.settings.weeklySessions=clamp($('#setWeeklySessions').value,1,14);data.settings.weeklyCardio=clamp($('#setCardioGoal').value,0,2000);data.settings.weekStart=n($('#setWeekStart').value);data.settings.includeWarmup=$('#setWarmup').checked;data.settings.show1RM=$('#set1rm').checked;data.settings.uiLevel=$('#setUiLevel').value;data.settings.restTimerPosition=$('#setRestTimerPosition').value;data.settings.trainingNotes=$('#setTrainingNotes').checked;data.settings.trainingAutoLoad=$('#setTrainingAutoLoad').checked;data.settings.trainingIntervalTimer=$('#setTrainingIntervalTimer').checked;data.settings.restTimerSound=$('#setRestTimerSound').checked;data.settings.weeklyMuscleGoals=data.settings.weeklyMuscleGoals||{};$$('[data-mgoal]').forEach(i=>data.settings.weeklyMuscleGoals[i.dataset.mgoal]=clamp(i.value,0,50));save('修改設定',true);toast(hadPlan?tr('feedback.settingsSavedPlan'):tr('feedback.settingsSaved'))};
+$('#addStrengthGoal').onclick=()=>{const unit=normalizeWeightUnit(data.settings.unit);openModal(tr('modal.newStrengthGoal'),`<div class="field"><label>${esc(tr("residual.re93ee504"))}</label><select id="sgEx">${data.exerciseLibrary.filter(e=>['weight_reps','bodyweight','unilateral'].includes(e.type)).map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></div><div class="grid2"><div class="field"><label>${esc(tr('finalUi.targetWeight',{unit}))}</label><input id="sgW" type="number" step=".1"><div class="hint">${esc(tr("residual.r19b89a0e"))}</div></div><div class="field"><label>${esc(tr("residual.rdc36d1d9"))}</label><input id="sgR" type="number" value="10"></div></div><button class="btn primary" id="sgSave">${esc(tr('trainingUi.save'))}</button>`,()=>$('#sgSave').onclick=()=>{data.strengthGoals.push({id:uid('goal'),exerciseId:$('#sgEx').value,weight:toKg(clamp($('#sgW').value,0,5000),unit),reps:clamp($('#sgR').value,1,300)});save(tr('reasons.addStrengthGoal'),true);closeModal();toast(tr('feedback.strengthGoalAdded'))})};
+$('#saveSettings').onclick=()=>{const hadPlan=!!data.currentPlan;data.settings.preferencesSetupCompleted=true;data.settings.trainingGoal=$('#setTrainingGoal').value;data.settings.sessionMinutes=n($('#setSessionMinutes').value)||60;data.settings.experienceLevel=$('#setExperienceLevel').value;data.settings.equipmentPreference=$('#setEquipmentPreference').value;data.settings.blockWeeks=n($('#setBlockWeeks').value)||6;data.settings.preferredGymId=$('#setPreferredGym').value||'';data.settings.priorityMuscles=$$('[data-priority-muscle]:checked').map(x=>x.dataset.priorityMuscle);data.settings.availableWeekdays=$$('[data-available-weekday]:checked').map(x=>n(x.dataset.availableWeekday));data.settings.allowConsecutiveDays=$('#setAllowConsecutiveDays').checked;data.settings.locale=i18n.setLocale($('#setLocale').value);data.settings.unit=$('#setUnit').value;data.settings.intensity=$('#setIntensity').value;data.settings.defaultRest=clamp($('#setRest').value,15,900);data.settings.weeklySessions=clamp($('#setWeeklySessions').value,1,14);data.settings.weeklyCardio=clamp($('#setCardioGoal').value,0,2000);data.settings.weekStart=n($('#setWeekStart').value);data.settings.includeWarmup=$('#setWarmup').checked;data.settings.show1RM=$('#set1rm').checked;data.settings.uiLevel=$('#setUiLevel').value;data.settings.restTimerPosition=$('#setRestTimerPosition').value;data.settings.trainingNotes=$('#setTrainingNotes').checked;data.settings.trainingAutoLoad=$('#setTrainingAutoLoad').checked;data.settings.trainingIntervalTimer=$('#setTrainingIntervalTimer').checked;data.settings.restTimerSound=$('#setRestTimerSound').checked;data.settings.weeklyMuscleGoals=data.settings.weeklyMuscleGoals||{};$$('[data-mgoal]').forEach(i=>data.settings.weeklyMuscleGoals[i.dataset.mgoal]=clamp(i.value,0,50));save(tr('reasons.changeSettings'),true);toast(hadPlan?tr('feedback.settingsSavedPlan'):tr('feedback.settingsSaved'))};
 $('#runSelfCheck').onclick=()=>renderSelfCheck(runAppSelfCheck());$('#exportJson').onclick=exportJSON;$('#exportCsv').onclick=exportCSV;
-$('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(JSON.parse(await f.text()),'json',f.name)}catch{alert('JSON 格式不正確')}e.target.value=''};
-$('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert('CSV 格式不正確，請使用本 App 匯出的 CSV 格式。')}e.target.value=''};
-$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save('重新初始化',false);toast(tr('feedback.allCleared'))}};
+$('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(JSON.parse(await f.text()),'json',f.name)}catch{alert(tr('finalUi.invalidJson'))}e.target.value=''};
+$('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert(tr('finalUi.invalidCsv'))}e.target.value=''};
+$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
 
 $('#recordMonth').value=monthKey();
 renderAll();

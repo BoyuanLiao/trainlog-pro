@@ -43,15 +43,15 @@
       <div class="actions"><button class="btn small ghost" id="prevMonth" data-i18n="records.prevMonth">← 上月</button><button class="btn small ghost" id="thisMonth" data-i18n="records.thisMonth">本月</button><button class="btn small ghost" id="nextMonth" data-i18n="records.nextMonth">下月 →</button></div>
     </div>
     <div class="card">
-      <div class="calendar-legend" aria-label="月曆圖例">
-        <span><i class="trained"></i>有訓練</span>
-        <span><i></i>無訓練</span>
-        <span><i class="today-mark"></i>今天</span>
+      <div class="calendar-legend" aria-label="月曆圖例" data-i18n-aria="staticHtml.rd8ba3eac">
+        <span><i class="trained"></i><span data-i18n="records.trained">有訓練</span></span>
+        <span><i></i><span data-i18n="records.untrained">無訓練</span></span>
+        <span><i class="today-mark"></i><span data-i18n="records.today">今天</span></span>
       </div>
       <div class="calendar" id="calendar"></div>
     </div>
     <div id="recordList"></div>
-    <div class="section">回收筒 <span class="small">30 天後可手動清除</span></div>
+    <div class="section"><span data-i18n="records.trash">回收筒</span> <span class="small" data-i18n="records.trashHint">30 天後可手動清除</span></div>
     <div id="trashList"></div>
   </section>
 
@@ -66,7 +66,7 @@
     <div class="analysis-period" id="analysisPeriod"></div>
     <div id="analysisConfidence"></div>
 
-    <div class="analysis-tabs" id="analysisTabs" aria-label="分析分類">
+    <div class="analysis-tabs" id="analysisTabs" aria-label="分析分類" data-i18n-aria="staticHtml.rdf952f4b">
       <button type="button" data-analysis-tab="overview" data-testid="analysis-tab-overview" class="on" data-i18n="analysis.tabs.overview">總覽</button>
       <button type="button" data-analysis-tab="muscle" data-testid="analysis-tab-muscle" data-i18n="analysis.tabs.muscle">肌群與模式</button>
       <button type="button" data-analysis-tab="exercise" data-testid="analysis-tab-exercise" data-i18n="analysis.tabs.exercise">動作進步</button>
@@ -74,10 +74,10 @@
     </div>
 
     <div class="analysis-panel" data-analysis-panel="overview">
-      <div class="section">本期重點 <button class="info-btn" type="button" data-info="analysis_highlights" aria-label="本期重點說明">i</button></div>
+      <div class="section"><span data-i18n="analysis.highlights">本期重點</span> <button class="info-btn" type="button" data-info="analysis_highlights" aria-label="本期重點說明" data-i18n-aria="staticHtml.r3a92c41b">i</button></div>
       <div class="card"><div class="analysis-highlights" id="analysisHighlights"></div></div>
 
-      <div class="section">訓練摘要 <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明">i</button></div>
+      <div class="section"><span data-i18n="analysis.summary">訓練摘要</span> <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明" data-i18n-aria="staticHtml.r0101e280">i</button></div>
       <div class="analysis-kpis" id="analysisKpis"></div>
 
       <div class="section" data-i18n="analysis.next">下一步建議</div>
@@ -91,10 +91,10 @@
       <div class="section" data-i18n="analysis.muscleTarget">肌群目標 vs 實際</div>
       <div class="card" id="analysisMuscleTargets"></div>
 
-      <div class="section">肌群刺激 <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明">i</button></div>
+      <div class="section"><span data-i18n="analysis.muscleStimulus">肌群刺激</span> <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明" data-i18n-aria="staticHtml.ref492546">i</button></div>
       <div class="card" id="muscleAnalysis"></div>
 
-      <div class="section">動作模式 <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明">i</button></div>
+      <div class="section"><span data-i18n="analysis.movement">動作模式</span> <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明" data-i18n-aria="staticHtml.rbe4d916e">i</button></div>
       <div class="card" id="pplAnalysis"></div>
 
       <div class="section" data-i18n="analysis.movementGap">動作模式缺口</div>
@@ -102,28 +102,28 @@
     </div>
 
     <div class="analysis-panel hidden" data-analysis-panel="exercise">
-      <div class="section">動作進步與個人最佳（PR） <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明">i</button></div>
+      <div class="section"><span data-i18n="analysis.exerciseProgress">動作進步與個人最佳（PR）</span> <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明" data-i18n-aria="staticHtml.re27c5f49">i</button></div>
       <div class="card exercise-progress-browser">
         <div class="field">
-          <label for="analysisExerciseSearch">搜尋做過的動作</label>
+          <label for="analysisExerciseSearch" data-i18n="staticHtml.rde5158d5">搜尋做過的動作</label>
           <input id="analysisExerciseSearch" type="search" placeholder="搜尋動作、器械或肌群..." data-i18n-placeholder="analysis.exerciseSearchPlaceholder" autocomplete="off">
-          <div class="hint">不用下拉選單；可以從最近做過、肌群或值得關注的動作直接進入分析。</div>
+          <div class="hint" data-i18n="staticHtml.rdeeab63f">不用下拉選單；可以從最近做過、肌群或值得關注的動作直接進入分析。</div>
         </div>
         <select id="analysisExercise" hidden aria-hidden="true" tabindex="-1"></select>
         <div class="exercise-browser-block">
-          <div class="exercise-browser-title"><span>最近做過</span><span>快速切換</span></div>
+          <div class="exercise-browser-title"><span data-i18n="staticHtml.r3dc27e5a">最近做過</span><span data-i18n="staticHtml.r81fb9e19">快速切換</span></div>
           <div id="analysisExerciseRecent" class="exercise-recent-grid"></div>
         </div>
         <div class="exercise-browser-block">
-          <div class="exercise-browser-title"><span>依肌群</span><span>篩選全部動作</span></div>
+          <div class="exercise-browser-title"><span data-i18n="staticHtml.r850a4838">依肌群</span><span data-i18n="staticHtml.r79087d3d">篩選全部動作</span></div>
           <div id="analysisExerciseMuscles" class="exercise-muscle-filters"></div>
         </div>
         <div class="exercise-browser-block">
-          <div class="exercise-browser-title"><span>值得關注</span><span>依進步建議排序</span></div>
+          <div class="exercise-browser-title"><span data-i18n="staticHtml.ra36320a0">值得關注</span><span data-i18n="staticHtml.rcab896b4">依進步建議排序</span></div>
           <div id="analysisExerciseAttention" class="exercise-attention-grid"></div>
         </div>
         <div class="exercise-browser-block">
-          <div class="exercise-browser-title"><span>全部做過的動作</span><span id="analysisExerciseCount" class="exercise-browser-count"></span></div>
+          <div class="exercise-browser-title"><span data-i18n="staticHtml.r0f880b46">全部做過的動作</span><span id="analysisExerciseCount" class="exercise-browser-count"></span></div>
           <div id="analysisExerciseList" class="exercise-browser-list"></div>
         </div>
       </div>
@@ -135,10 +135,10 @@
       <div class="section" data-i18n="analysis.loadTrend">訓練負荷趨勢</div>
       <div class="card" id="analysisLoadTrend"></div>
 
-      <div class="section ui-standard-only">訓練強度分布 <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明">i</button></div>
+      <div class="section ui-standard-only"><span data-i18n="analysis.effort">訓練強度分布</span> <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明" data-i18n-aria="staticHtml.r619f6664">i</button></div>
       <div class="card ui-standard-only" id="effortAnalysis"></div>
 
-      <div class="section ui-standard-only">訓練一致性 <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明">i</button></div>
+      <div class="section ui-standard-only"><span data-i18n="analysis.consistency">訓練一致性</span> <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明" data-i18n-aria="staticHtml.r4e801cdf">i</button></div>
       <div class="card ui-standard-only" id="consistencyAnalysis"></div>
     </div>
   </section>
@@ -148,68 +148,68 @@
       <div class="section" data-i18n="settings.title">設定</div>
       <div class="settings-hub">
         <button class="settings-menu-card" type="button" data-settings-view="programs">
-          <span class="menu-icon">▦</span><span class="menu-copy"><span class="menu-title">課表與訓練計畫</span><span class="menu-desc">系統課表、體態補強、我的課表與訓練安排</span><span class="settings-summary"><span class="tag" id="hubProgramSummary">系統課表</span><span class="tag" id="hubTemplateSummary">我的模板</span></span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">▦</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.r14e5ada2">課表與訓練計畫</span><span class="menu-desc" data-i18n="staticHtml.rc8251e0f">系統課表、體態補強、我的課表與訓練安排</span><span class="settings-summary"><span class="tag" id="hubProgramSummary" data-i18n="staticHtml.r3557f3c3">系統課表</span><span class="tag" id="hubTemplateSummary" data-i18n="staticHtml.r4a23f93c">我的模板</span></span></span><span class="menu-chevron">›</span>
         </button>
         <button class="settings-menu-card" type="button" data-settings-view="exercises">
-          <span class="menu-icon">🏋</span><span class="menu-copy"><span class="menu-title">動作與器械</span><span class="menu-desc">器械、動作與 YouTube 教學</span><span class="settings-summary"><span class="tag" id="hubEquipmentSummary">系統器械</span><span class="tag" id="hubExerciseSummary">動作</span></span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">🏋</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.r539c13c9">動作與器械</span><span class="menu-desc" data-i18n="staticHtml.rae75e834">器械、動作與 YouTube 教學</span><span class="settings-summary"><span class="tag" id="hubEquipmentSummary" data-i18n="staticHtml.r366cfa71">系統器械</span><span class="tag" id="hubExerciseSummary" data-i18n="staticHtml.re93ee504">動作</span></span></span><span class="menu-chevron">›</span>
         </button>
         <button class="settings-menu-card" type="button" data-settings-view="gym">
-          <span class="menu-icon">⌂</span><span class="menu-copy"><span class="menu-title">健身房與我的器材</span><span class="menu-desc">常用健身房與器材</span><span class="settings-summary"><span class="tag" id="hubGymSummary">0 間健身房</span><span class="tag" id="hubMyEquipmentSummary">0 台器材</span></span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">⌂</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.r1a40124a">健身房與我的器材</span><span class="menu-desc" data-i18n="staticHtml.r711edbef">常用健身房與器材</span><span class="settings-summary"><span class="tag" id="hubGymSummary" data-i18n="staticHtml.rb8c47ea7">0 間健身房</span><span class="tag" id="hubMyEquipmentSummary" data-i18n="staticHtml.rf2b39c87">0 台器材</span></span></span><span class="menu-chevron">›</span>
         </button>
         <button class="settings-menu-card" type="button" data-settings-view="training">
-          <span class="menu-icon">◎</span><span class="menu-copy"><span class="menu-title">訓練偏好與目標</span><span class="menu-desc">強度、休息時間與訓練目標</span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">◎</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.r65c0a802">訓練偏好與目標</span><span class="menu-desc" data-i18n="staticHtml.r8594d56f">強度、休息時間與訓練目標</span></span><span class="menu-chevron">›</span>
         </button>
         <button class="settings-menu-card" type="button" data-settings-view="glossary">
-          <span class="menu-icon">i</span><span class="menu-copy"><span class="menu-title">健身術語與說明</span><span class="menu-desc">健身專業用語與動作模式說明</span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">i</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.rdc623e61">健身術語與說明</span><span class="menu-desc" data-i18n="staticHtml.rb9997a80">健身專業用語與動作模式說明</span></span><span class="menu-chevron">›</span>
         </button>
         <button class="settings-menu-card" type="button" data-settings-view="data">
-          <span class="menu-icon">⇅</span><span class="menu-copy"><span class="menu-title">資料與備份</span><span class="menu-desc">匯入、匯出、自動備份與資料清除</span></span><span class="menu-chevron">›</span>
+          <span class="menu-icon">⇅</span><span class="menu-copy"><span class="menu-title" data-i18n="staticHtml.r1beba568">資料與備份</span><span class="menu-desc" data-i18n="staticHtml.r9ad0af81">匯入、匯出、自動備份與資料清除</span></span><span class="menu-chevron">›</span>
         </button>
       </div>
       <div class="section" data-i18n="settings.tutorial">使用教學</div>
       <div class="card">
         <div class="record-head">
           <div>
-            <div class="record-title">重新查看使用教學</div>
-            <div class="record-meta">重新查看開始訓練、kg／lb、訓練工具與課表推薦等操作說明，不會清除任何資料。</div>
+            <div class="record-title" data-i18n="staticHtml.r78ca24ca">重新查看使用教學</div>
+            <div class="record-meta" data-i18n="staticHtml.r79699913">重新查看開始訓練、kg／lb、訓練工具與課表推薦等操作說明，不會清除任何資料。</div>
           </div>
-          <button class="btn ghost" id="openTutorialFromSettings" type="button">查看教學</button>
+          <button class="btn ghost" id="openTutorialFromSettings" type="button" data-i18n="staticHtml.r3d897080">查看教學</button>
         </div>
       </div>
     </div>
 
     <div id="settingsPrograms" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>課表與訓練計畫</h2></div>
-      <div class="section">依我的訓練目的推薦</div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r14e5ada2">課表與訓練計畫</h2></div>
+      <div class="section" data-i18n="staticHtml.r4c4a6c62">依我的訓練目的推薦</div>
       <div id="goalProgramRecommendations"></div>
-      <div class="section">系統課表 <span class="count-badge" id="programCount"></span></div>
+      <div class="section"><span data-i18n="settingsUi.systemPrograms">系統課表</span> <span class="count-badge" id="programCount"></span></div>
       <div class="card">
         <div class="library-toolbar">
-          <div class="field"><label>搜尋</label><input id="programSearch" placeholder="新手、PPL、圓肩、久坐、後鏈、30 分鐘..."></div>
-          <div class="field"><label>分類</label><select id="programCategory"></select></div>
-          <div class="field"><label>每週天數</label><select id="programDays"><option value="">不限</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.re23ac6b0">搜尋</label><input id="programSearch" placeholder="新手、PPL、圓肩、久坐、後鏈、30 分鐘..." data-i18n-placeholder="staticHtml.r51f6b1e3"></div>
+          <div class="field"><label data-i18n="staticHtml.rf02fbbe5">分類</label><select id="programCategory"></select></div>
+          <div class="field"><label data-i18n="staticHtml.r3e31792c">每週天數</label><select id="programDays"><option value="" data-i18n="staticHtml.rba358518">不限</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
         </div>
         <div class="library-toolbar">
-          <div class="field"><label>程度</label><select id="programLevel"></select></div>
-          <div class="field"><label>單次時間</label><select id="programDuration"><option value="">不限</option><option value="30">≤30 分</option><option value="45">≤45 分</option><option value="60">≤60 分</option><option value="75">≤75 分</option></select></div>
-          <div class="field"><label>器材</label><select id="programEquip"><option value="">不限</option><option>全機械</option><option>機械＋滑輪</option></select></div>
-          <div class="field"><label>訓練目的</label><select id="programGoal"><option value="">不限</option><option value="general">一般健康／建立習慣</option><option value="hypertrophy">增肌</option><option value="strength">增加肌力</option><option value="fat_loss">減脂／體能</option><option value="posture">體態平衡／舒緩</option><option value="recovery">恢復／輕量</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.rc0a18884">程度</label><select id="programLevel"></select></div>
+          <div class="field"><label data-i18n="staticHtml.r189942bf">單次時間</label><select id="programDuration"><option value="" data-i18n="staticHtml.rba358518">不限</option><option value="30" data-i18n="staticHtml.rf2844ce2">≤30 分</option><option value="45" data-i18n="staticHtml.re93ed1e2">≤45 分</option><option value="60" data-i18n="staticHtml.r1a89ddb3">≤60 分</option><option value="75" data-i18n="staticHtml.rf5e8e105">≤75 分</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.ra373bd05">器材</label><select id="programEquip"><option value="" data-i18n="staticHtml.rba358518">不限</option><option data-i18n="staticHtml.rfdef68f8">全機械</option><option data-i18n="staticHtml.r719f7a94">機械＋滑輪</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.rca329960">訓練目的</label><select id="programGoal"><option value="" data-i18n="staticHtml.rba358518">不限</option><option value="general" data-i18n="staticHtml.r67e08566">一般健康／建立習慣</option><option value="hypertrophy" data-i18n="staticHtml.r42c7acb7">增肌</option><option value="strength" data-i18n="staticHtml.r2d2f6902">增加肌力</option><option value="fat_loss" data-i18n="staticHtml.r2256293a">減脂／體能</option><option value="posture" data-i18n="staticHtml.r5529bd8c">體態平衡／舒緩</option><option value="recovery" data-i18n="staticHtml.r133cd2d9">恢復／輕量</option></select></div>
         </div>
       </div>
       <div id="systemProgramList"></div>
-      <div class="section">我的模板 <button class="btn small primary" id="addTemplateBtn">＋ 自己建立</button></div>
+      <div class="section"><span data-i18n="settingsUi.myTemplates">我的模板</span> <button class="btn small primary" id="addTemplateBtn" data-i18n="staticHtml.r37e6ab14">＋ 自己建立</button></div>
       <div id="templateList"></div>
     </div>
 
     <div id="settingsExercises" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>動作與器械</h2></div>
-      <div class="section">器械庫 <span class="count-badge" id="equipmentCount"></span></div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r539c13c9">動作與器械</h2></div>
+      <div class="section"><span data-i18n="settingsUi.equipmentLibrary">器械庫</span> <span class="count-badge" id="equipmentCount"></span></div>
       <div class="card"><div class="library-toolbar">
-        <div class="field"><label>中英文／品牌／型號搜尋</label><input id="systemEqSearch" placeholder="腿推、Life Fitness、HS-CP、1MTH033、3001、L10..."></div>
-        <div class="field"><label>分類</label><select id="systemEqCategory"></select></div>
-        <div class="field"><label>器械形式</label><select id="systemEqResistance"></select></div>
-        <div class="field"><label>品牌對應</label><select id="systemEqBrand">
-          <option value="">全部品牌</option>
+        <div class="field"><label data-i18n="staticHtml.ra9e8b922">中英文／品牌／型號搜尋</label><input id="systemEqSearch" placeholder="腿推、Life Fitness、HS-CP、1MTH033、3001、L10..." data-i18n-placeholder="staticHtml.r194c8563"></div>
+        <div class="field"><label data-i18n="staticHtml.rf02fbbe5">分類</label><select id="systemEqCategory"></select></div>
+        <div class="field"><label data-i18n="staticHtml.r7acfd57e">器械形式</label><select id="systemEqResistance"></select></div>
+        <div class="field"><label data-i18n="staticHtml.r4a4a211a">品牌對應</label><select id="systemEqBrand">
+          <option value="" data-i18n="staticHtml.r44e32558">全部品牌</option>
           <option value="Precor">Precor</option>
           <option value="Life Fitness">Life Fitness</option>
           <option value="Hammer Strength">Hammer Strength</option>
@@ -220,141 +220,142 @@
       </div></div>
       <div id="systemEquipmentList"></div>
 
-      <div class="section">動作庫 <button class="btn small primary" id="addExerciseLibBtn">＋ 自訂動作</button></div>
-      <div class="card"><div class="field"><label>搜尋中英文動作</label><input id="libSearch" placeholder="例如：胸推、Chest Press"></div></div>
+      <div class="section"><span data-i18n="settingsUi.exerciseLibrary">動作庫</span> <button class="btn small primary" id="addExerciseLibBtn" data-i18n="staticHtml.r512766f3">＋ 自訂動作</button></div>
+      <div class="card"><div class="field"><label data-i18n="staticHtml.r713478e6">搜尋中英文動作</label><input id="libSearch" placeholder="例如：胸推、Chest Press" data-i18n-placeholder="staticHtml.r0db49791"></div></div>
       <div id="libraryList"></div>
     </div>
 
     <div id="settingsGym" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>健身房與我的器材</h2></div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r1a40124a">健身房與我的器材</h2></div>
 
-      <div class="section">健身房</div>
+      <div class="section" data-i18n="staticHtml.r4d7f606a">健身房</div>
       <div class="card">
         <div class="gym-toolbar">
-          <button class="btn primary" id="addGym">＋ 新增健身房</button>
-          <button class="btn ghost" id="syncGymsFromHistory">↻ 從訓練紀錄帶入</button>
+          <button class="btn primary" id="addGym" data-i18n="staticHtml.r2b1f449d">＋ 新增健身房</button>
+          <button class="btn ghost" id="syncGymsFromHistory" data-i18n="staticHtml.rb751655e">↻ 從訓練紀錄帶入</button>
         </div>
         <div id="gymList"></div>
-        <div class="gym-auto-note">訓練時直接輸入新的健身房名稱，也會自動建立到這裡。指定健身房後，系統會依訓練紀錄整理曾使用過的器械。</div>
+        <div class="gym-auto-note" data-i18n="staticHtml.r99c1605b">訓練時直接輸入新的健身房名稱，也會自動建立到這裡。指定健身房後，系統會依訓練紀錄整理曾使用過的器械。</div>
       </div>
 
-      <div class="section">我的器材</div>
+      <div class="section" data-i18n="staticHtml.r4d9a61b0">我的器材</div>
       <div class="card">
-        <div class="small" style="line-height:1.55;margin-bottom:9px">這裡適合記錄你自己擁有或特別想管理的器材；健身房內曾使用的系統器械會由訓練紀錄自動整理，不必重複新增。</div>
+        <div class="small" style="line-height:1.55;margin-bottom:9px" data-i18n="staticHtml.r75add0e9">這裡適合記錄你自己擁有或特別想管理的器材；健身房內曾使用的系統器械會由訓練紀錄自動整理，不必重複新增。</div>
         <div id="equipmentList" class="small" style="margin-bottom:9px"></div>
-        <button class="btn ghost" id="addEquipment">＋ 新增我的器材</button>
+        <button class="btn ghost" id="addEquipment" data-i18n="staticHtml.rb900bc19">＋ 新增我的器材</button>
       </div>
     </div>
 
     <div id="settingsTraining" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>訓練偏好與目標</h2></div>
-      <div class="section">訓練目的與推薦</div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r65c0a802">訓練偏好與目標</h2></div>
+      <div class="section" data-i18n="staticHtml.re86e4783">訓練目的與推薦</div>
       <div class="card">
         <div class="grid2">
-          <div class="field"><label>主要訓練目的</label><select id="setTrainingGoal"><option value="general">一般健康／建立習慣</option><option value="hypertrophy">增肌</option><option value="strength">增加肌力</option><option value="fat_loss">減脂／體能</option><option value="posture">體態平衡／舒緩</option><option value="recovery">恢復／輕量</option></select></div>
-          <div class="field"><label>每次可用時間</label><select id="setSessionMinutes"><option value="30">約 30 分鐘</option><option value="45">約 45 分鐘</option><option value="60">約 60 分鐘</option><option value="75">約 75 分鐘</option></select></div>
-          <div class="field"><label>訓練經驗</label><select id="setExperienceLevel"><option value="beginner">完全新手／剛開始</option><option value="regular">已有一些訓練經驗</option><option value="experienced">已規律訓練一段時間</option></select></div>
-          <div class="field"><label>器材偏好</label><select id="setEquipmentPreference"><option value="machine">器械為主</option><option value="machine_cable">器械＋滑輪都可以</option></select></div>
-          <div class="field"><label>建議訓練週期</label><select id="setBlockWeeks"><option value="4">4 週</option><option value="6">6 週</option><option value="8">8 週</option></select></div>
-          <div class="field"><label>主要訓練健身房</label><select id="setPreferredGym"><option value="">不指定／資料不足時不評分器材</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.r70803034">主要訓練目的</label><select id="setTrainingGoal"><option value="general" data-i18n="staticHtml.r67e08566">一般健康／建立習慣</option><option value="hypertrophy" data-i18n="staticHtml.r42c7acb7">增肌</option><option value="strength" data-i18n="staticHtml.r2d2f6902">增加肌力</option><option value="fat_loss" data-i18n="staticHtml.r2256293a">減脂／體能</option><option value="posture" data-i18n="staticHtml.r5529bd8c">體態平衡／舒緩</option><option value="recovery" data-i18n="staticHtml.r133cd2d9">恢復／輕量</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.r3eaf2471">每次可用時間</label><select id="setSessionMinutes"><option value="30" data-i18n="staticHtml.r38e98700">約 30 分鐘</option><option value="45" data-i18n="staticHtml.r2e5f01dc">約 45 分鐘</option><option value="60" data-i18n="staticHtml.r7764e473">約 60 分鐘</option><option value="75" data-i18n="staticHtml.r339c45b1">約 75 分鐘</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.r912a5e9c">訓練經驗</label><select id="setExperienceLevel"><option value="beginner" data-i18n="staticHtml.r2e862b70">完全新手／剛開始</option><option value="regular" data-i18n="staticHtml.rc215eb3c">已有一些訓練經驗</option><option value="experienced" data-i18n="staticHtml.re4b7769c">已規律訓練一段時間</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.ra5a49ab9">器材偏好</label><select id="setEquipmentPreference"><option value="machine" data-i18n="staticHtml.rf5c2a742">器械為主</option><option value="machine_cable" data-i18n="staticHtml.rd8fb4f7c">器械＋滑輪都可以</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.refc3705c">建議訓練週期</label><select id="setBlockWeeks"><option value="4" data-i18n="staticHtml.r29eade58">4 週</option><option value="6" data-i18n="staticHtml.r86c4764e">6 週</option><option value="8" data-i18n="staticHtml.rbb94b27c">8 週</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.r0907e6ab">主要訓練健身房</label><select id="setPreferredGym"><option value="" data-i18n="staticHtml.recc7c9f4">不指定／資料不足時不評分器材</option></select></div>
         </div>
-        <div class="field"><label>優先加強部位（可複選）</label><div id="priorityMuscleOptions" class="recommend-check-grid"></div><div class="hint">沒有特別弱項可以全部不選；系統會以全身平均為主。</div></div>
-        <div class="field"><label>通常可以訓練的星期（選填）</label><div id="availableWeekdayOptions" class="recommend-check-grid weekdays"></div><div class="hint">不選代表星期不限；選擇後會先排除無法塞進你時間表的課表。</div></div>
-        <div class="inline-check"><input type="checkbox" id="setAllowConsecutiveDays"><label for="setAllowConsecutiveDays">可以接受連續兩天重訓</label></div>
-        <div class="coach-settings-note">這些是長期設定，用來選擇接下來 4–8 週的主計畫。首頁的「今天需要調整嗎？」只改今天，不會回寫這裡。推薦還會參考近 28 天肌群刺激、動作模式、近期進步、健身房器材紀錄與目前課表延續性。</div>
+        <div class="field"><label data-i18n="staticHtml.rbfaa38ea">優先加強部位（可複選）</label><div id="priorityMuscleOptions" class="recommend-check-grid"></div><div class="hint" data-i18n="staticHtml.rac04bee8">沒有特別弱項可以全部不選；系統會以全身平均為主。</div></div>
+        <div class="field"><label data-i18n="staticHtml.rb84277a6">通常可以訓練的星期（選填）</label><div id="availableWeekdayOptions" class="recommend-check-grid weekdays"></div><div class="hint" data-i18n="staticHtml.rcec75066">不選代表星期不限；選擇後會先排除無法塞進你時間表的課表。</div></div>
+        <div class="inline-check"><input type="checkbox" id="setAllowConsecutiveDays"><label for="setAllowConsecutiveDays" data-i18n="staticHtml.rdd50f5d8">可以接受連續兩天重訓</label></div>
+        <div class="coach-settings-note" data-i18n="staticHtml.r9e41a1e7">這些是長期設定，用來選擇接下來 4–8 週的主計畫。首頁的「今天需要調整嗎？」只改今天，不會回寫這裡。推薦還會參考近 28 天肌群刺激、動作模式、近期進步、健身房器材紀錄與目前課表延續性。</div>
       </div>
-      <div class="section">基本偏好</div>
+      <div class="section" data-i18n="staticHtml.r2f215e8b">基本偏好</div>
       <div class="card" id="settingsForm">
         <div class="grid2">
-          <div class="field"><label>報表／分析顯示單位</label><select id="setUnit"><option value="kg">kg</option><option value="lb">lb</option></select><div class="hint">訓練時每個動作都能另外選 kg 或 lb；這裡只決定歷史紀錄與分析最後顯示的單位。</div></div>
-          <div class="field"><label>強度紀錄</label><select id="setIntensity"><option value="RIR">RIR</option><option value="RPE">RPE</option></select></div>
-          <div class="field"><label>預設休息秒數</label><input type="number" id="setRest" min="15" max="900"></div>
-          <div class="field"><label>每週訓練目標</label><input type="number" id="setWeeklySessions" min="1" max="14"></div>
-          <div class="field"><label>每週有氧目標（分鐘）</label><input type="number" id="setCardioGoal" min="0" max="2000"></div>
-          <div class="field"><label>週起始日</label><select id="setWeekStart"><option value="1">星期一</option><option value="0">星期日</option></select></div>
+          <div class="field"><label data-i18n="language.label">介面語言</label><select id="setLocale"><option value="zh-TW" data-i18n="language.zhTW">繁體中文</option><option value="en-US" data-i18n="language.enUS">English</option><option value="ja-JP" data-i18n="language.jaJP">日本語</option></select><div class="hint" data-i18n="language.hint">切換後立即套用；尚未翻譯的文字會暫時顯示繁體中文。</div></div>
+          <div class="field"><label data-i18n="staticHtml.r966fc4bf">報表／分析顯示單位</label><select id="setUnit"><option value="kg">kg</option><option value="lb">lb</option></select><div class="hint" data-i18n="staticHtml.r0e232e7a">訓練時每個動作都能另外選 kg 或 lb；這裡只決定歷史紀錄與分析最後顯示的單位。</div></div>
+          <div class="field"><label data-i18n="staticHtml.rcaab97bc">強度紀錄</label><select id="setIntensity"><option value="RIR">RIR</option><option value="RPE">RPE</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.rb17ef464">預設休息秒數</label><input type="number" id="setRest" min="15" max="900"></div>
+          <div class="field"><label data-i18n="staticHtml.r5171071f">每週訓練目標</label><input type="number" id="setWeeklySessions" min="1" max="14"></div>
+          <div class="field"><label data-i18n="staticHtml.r5c40b961">每週有氧目標（分鐘）</label><input type="number" id="setCardioGoal" min="0" max="2000"></div>
+          <div class="field"><label data-i18n="staticHtml.ra4448fb1">週起始日</label><select id="setWeekStart"><option value="1" data-i18n="staticHtml.rbf477319">星期一</option><option value="0" data-i18n="staticHtml.r628c24b2">星期日</option></select></div>
         </div>
-        <div class="inline-check"><input type="checkbox" id="setWarmup"><label for="setWarmup">訓練量統計包含暖身組</label></div>
-        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="set1rm"><label for="set1rm">顯示估算 1RM</label></div>
+        <div class="inline-check"><input type="checkbox" id="setWarmup"><label for="setWarmup" data-i18n="staticHtml.r20d90447">訓練量統計包含暖身組</label></div>
+        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="set1rm"><label for="set1rm" data-i18n="staticHtml.rcf3fee8b">顯示估算 1RM</label></div>
       </div>
-      <div class="section">顯示層次</div>
+      <div class="section" data-i18n="staticHtml.r6cfd557b">顯示層次</div>
       <div class="card">
-        <div class="small">三種模式使用同一份訓練資料，只改變畫面顯示深度。訓練中也可以直接從右側工具切換。</div>
-        <div class="field" style="margin-top:9px"><label>預設模式</label><select id="setUiLevel"><option value="simple">簡易模式</option><option value="standard">一般模式</option><option value="advanced">進階模式</option></select></div>
-        <div class="small">進階模式仍以中文顯示，例如「剩餘次數（RIR）」、「主觀用力程度（RPE）」、「估算一次最大重量（e1RM）」。</div>
+        <div class="small" data-i18n="staticHtml.r4cf124c2">三種模式使用同一份訓練資料，只改變畫面顯示深度。訓練中也可以直接從右側工具切換。</div>
+        <div class="field" style="margin-top:9px"><label data-i18n="staticHtml.rb547fd1e">預設模式</label><select id="setUiLevel"><option value="simple" data-i18n="staticHtml.r71d05131">簡易模式</option><option value="standard" data-i18n="staticHtml.r0f16ef15">一般模式</option><option value="advanced" data-i18n="staticHtml.r2714b5fd">進階模式</option></select></div>
+        <div class="small" data-i18n="staticHtml.r75df1940">進階模式仍以中文顯示，例如「剩餘次數（RIR）」、「主觀用力程度（RPE）」、「估算一次最大重量（e1RM）」。</div>
         
       </div>
-      <div class="section">訓練中便利功能</div>
+      <div class="section" data-i18n="staticHtml.rd011e061">訓練中便利功能</div>
       <div class="card">
         <div class="grid2">
-          <div class="field"><label>休息計時器預設位置</label><select id="setRestTimerPosition"><option value="top">頂部浮窗</option><option value="floating">右上小浮窗</option></select></div>
+          <div class="field"><label data-i18n="staticHtml.re6c54f81">休息計時器預設位置</label><select id="setRestTimerPosition"><option value="top" data-i18n="staticHtml.r667eeb44">頂部浮窗</option><option value="floating" data-i18n="staticHtml.r605f4062">右上小浮窗</option></select></div>
         </div>
-        <div class="inline-check"><input type="checkbox" id="setTrainingNotes"><label for="setTrainingNotes">顯示動作與本次訓練備註</label></div>
-        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setTrainingAutoLoad"><label for="setTrainingAutoLoad">新增動作時自動載入上次組數／重量／次數</label></div>
-        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setTrainingIntervalTimer"><label for="setTrainingIntervalTimer">完成一組後自動開始休息計時器</label></div>
-        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setRestTimerSound"><label for="setRestTimerSound">休息時間到播放提示音／震動</label></div>
+        <div class="inline-check"><input type="checkbox" id="setTrainingNotes"><label for="setTrainingNotes" data-i18n="staticHtml.r26d6fb36">顯示動作與本次訓練備註</label></div>
+        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setTrainingAutoLoad"><label for="setTrainingAutoLoad" data-i18n="staticHtml.r397e9569">新增動作時自動載入上次組數／重量／次數</label></div>
+        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setTrainingIntervalTimer"><label for="setTrainingIntervalTimer" data-i18n="staticHtml.re4ac6d2e">完成一組後自動開始休息計時器</label></div>
+        <div class="inline-check" style="margin-top:8px"><input type="checkbox" id="setRestTimerSound"><label for="setRestTimerSound" data-i18n="staticHtml.r63435591">休息時間到播放提示音／震動</label></div>
       </div>
-      <div class="section">每週肌群正式組目標</div>
+      <div class="section" data-i18n="staticHtml.rb6020044">每週肌群正式組目標</div>
       <div class="card"><div class="grid3" id="muscleGoalInputs"></div></div>
-      <div class="section">力量目標</div>
-      <div class="card"><div id="strengthGoalList"></div><button class="btn small ghost" id="addStrengthGoal">＋ 力量目標</button></div>
-      <div class="sticky-actions"><button class="btn primary" id="saveSettings">儲存訓練設定</button></div>
+      <div class="section" data-i18n="staticHtml.rc61972be">力量目標</div>
+      <div class="card"><div id="strengthGoalList"></div><button class="btn small ghost" id="addStrengthGoal" data-i18n="staticHtml.r0e0cc219">＋ 力量目標</button></div>
+      <div class="sticky-actions"><button class="btn primary" id="saveSettings" data-i18n="staticHtml.r6415217f">儲存訓練設定</button></div>
     </div>
 
     <div id="settingsGlossary" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>健身術語與說明</h2></div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.rdc623e61">健身術語與說明</h2></div>
       <div class="card">
-        <div class="field"><label>搜尋術語</label><input id="glossarySearch" placeholder="RIR、正式組、刺激組、Deload、水平推..."></div>
+        <div class="field"><label data-i18n="staticHtml.r5202f845">搜尋術語</label><input id="glossarySearch" placeholder="RIR、正式組、刺激組、Deload、水平推..." data-i18n-placeholder="staticHtml.rd12f644a"></div>
         <div class="glossary-grid" id="glossaryIndex"></div>
       </div>
     </div>
 
     <div id="settingsData" class="settings-subpage hidden">
-      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button">‹ 返回</button><h2>資料與備份</h2></div>
+      <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r1beba568">資料與備份</h2></div>
 
       <div class="card">
-        <p class="small backup-intro">資料保存在目前瀏覽器，可離線使用。建議偶爾下載完整備份，換手機或瀏覽器時也比較方便恢復。</p>
+        <p class="small backup-intro" data-i18n="staticHtml.ra338555f">資料保存在目前瀏覽器，可離線使用。建議偶爾下載完整備份，換手機或瀏覽器時也比較方便恢復。</p>
       </div>
 
-      <div class="section">備份與恢復</div>
+      <div class="section" data-i18n="staticHtml.rbe3f1bc1">備份與恢復</div>
       <div class="card">
         <div class="backup-group">
           <div class="backup-group-head">
             <div class="backup-group-icon">⬇</div>
-            <div><div class="backup-group-title">完整備份</div><div class="backup-group-desc">包含訓練紀錄、目前訓練計畫、訓練偏好、課表、器材、身體狀態、力量目標與自訂資料。</div></div>
+            <div><div class="backup-group-title" data-i18n="staticHtml.r1b123453">完整備份</div><div class="backup-group-desc" data-i18n="staticHtml.rf816fc90">包含訓練紀錄、目前訓練計畫、訓練偏好、課表、器材、身體狀態、力量目標與自訂資料。</div></div>
           </div>
           <div class="backup-actions">
-            <button class="btn primary btn-primary-action" id="exportJson"><span class="backup-action-copy"><span class="backup-action-title">下載完整備份</span><span class="backup-filetype">JSON</span></span></button>
-            <label class="btn ghost filelabel"><span class="backup-action-copy"><span class="backup-action-title">匯入完整備份</span><span class="backup-filetype">JSON</span></span><input type="file" id="importJson" accept=".json,application/json"></label>
+            <button class="btn primary btn-primary-action" id="exportJson"><span class="backup-action-copy"><span class="backup-action-title" data-i18n="staticHtml.r7938d42f">下載完整備份</span><span class="backup-filetype">JSON</span></span></button>
+            <label class="btn ghost filelabel"><span class="backup-action-copy"><span class="backup-action-title" data-i18n="staticHtml.r49601a87">匯入完整備份</span><span class="backup-filetype">JSON</span></span><input type="file" id="importJson" accept=".json,application/json"></label>
           </div>
         </div>
 
         <div class="backup-group">
           <div class="backup-group-head">
             <div class="backup-group-icon">▦</div>
-            <div><div class="backup-group-title">表格資料</div><div class="backup-group-desc">適合用 Excel 或試算表查看訓練紀錄。</div></div>
+            <div><div class="backup-group-title" data-i18n="staticHtml.rfaeb9681">表格資料</div><div class="backup-group-desc" data-i18n="staticHtml.r61ed9591">適合用 Excel 或試算表查看訓練紀錄。</div></div>
           </div>
           <div class="backup-actions">
-            <button class="btn ghost" id="exportCsv"><span class="backup-action-copy"><span class="backup-action-title">下載表格</span><span class="backup-filetype">CSV</span></span></button>
-            <label class="btn ghost filelabel"><span class="backup-action-copy"><span class="backup-action-title">匯入表格</span><span class="backup-filetype">CSV</span></span><input type="file" id="importCsv" accept=".csv,text/csv"></label>
+            <button class="btn ghost" id="exportCsv"><span class="backup-action-copy"><span class="backup-action-title" data-i18n="staticHtml.r1dd0466d">下載表格</span><span class="backup-filetype">CSV</span></span></button>
+            <label class="btn ghost filelabel"><span class="backup-action-copy"><span class="backup-action-title" data-i18n="staticHtml.recd0a7b5">匯入表格</span><span class="backup-filetype">CSV</span></span><input type="file" id="importCsv" accept=".csv,text/csv"></label>
           </div>
         </div>
       </div>
 
-      <div class="section">自動備份紀錄</div>
+      <div class="section" data-i18n="staticHtml.r8ebdf98e">自動備份紀錄</div>
       <div class="card"><div id="snapshotList" class="small"></div></div>
 
-      <div class="section">系統自我檢查</div>
+      <div class="section" data-i18n="staticHtml.r803b91c9">系統自我檢查</div>
       <div class="card">
-        <div class="small">檢查課表／動作／器械資料關聯、重複 ID、訓練紀錄引用，以及重要介面元件是否存在。</div>
-        <button class="btn ghost" id="runSelfCheck" style="margin-top:9px">執行自我檢查</button>
+        <div class="small" data-i18n="staticHtml.r4d203879">檢查課表／動作／器械資料關聯、重複 ID、訓練紀錄引用，以及重要介面元件是否存在。</div>
+        <button class="btn ghost" id="runSelfCheck" style="margin-top:9px" data-i18n="staticHtml.re7df7cee">執行自我檢查</button>
         <div id="selfCheckResult"></div>
       </div>
 
-      <div class="section">清除資料</div>
+      <div class="section" data-i18n="staticHtml.r8dd8a538">清除資料</div>
       <div class="card danger-card">
-        <div class="record-title">清除這台裝置上的資料</div>
-        <div class="small" style="margin-top:5px;line-height:1.55">訓練紀錄、課表與設定都會被刪除。建議先下載完整備份。</div>
-        <button class="btn danger" id="clearAll">清除全部資料</button>
+        <div class="record-title" data-i18n="staticHtml.rfde5d5a8">清除這台裝置上的資料</div>
+        <div class="small" style="margin-top:5px;line-height:1.55" data-i18n="staticHtml.rd370f97a">訓練紀錄、課表與設定都會被刪除。建議先下載完整備份。</div>
+        <button class="btn danger" id="clearAll" data-i18n="staticHtml.rfdf21578">清除全部資料</button>
       </div>
     </div>
   </section>
@@ -367,7 +368,7 @@
       <div class="rest-overlay-time" id="restOverlayTime">00:00</div>
       <div class="rest-overlay-sub" id="restOverlaySub" data-i18n="timer.defaultLabel">準備下一組</div>
     </div>
-    <button class="rest-overlay-mini" id="restHideBtn" type="button" aria-label="隱藏休息計時器">—</button>
+    <button class="rest-overlay-mini" id="restHideBtn" type="button" aria-label="隱藏休息計時器" data-i18n-aria="staticHtml.r615a2fc5">—</button>
   </div>
   <div class="rest-progress"><i id="restOverlayFill"></i></div>
   <div class="rest-overlay-actions">
@@ -376,16 +377,16 @@
     <button class="btn danger rest-skip" id="restSkipBtn" type="button" data-i18n="timer.skip">跳過</button>
   </div>
 </div>
-<button id="restFab" class="rest-fab" type="button" aria-label="開啟休息計時器">
+<button id="restFab" class="rest-fab" type="button" aria-label="開啟休息計時器" data-i18n-aria="staticHtml.r55378b17">
   <span>⏱</span><span id="restFabTime">00:00</span>
 </button>
 
-<button id="trainingDrawerTab" class="training-drawer-tab" type="button" aria-label="開啟訓練工具">訓練工具</button>
+<button id="trainingDrawerTab" class="training-drawer-tab" type="button" aria-label="開啟訓練工具" data-i18n="staticHtml.r20dd0736" data-i18n-aria="staticHtml.r3843f9b8">訓練工具</button>
 <div id="trainingDrawerScrim" class="training-drawer-scrim"></div>
-<aside id="trainingDrawer" class="training-drawer" aria-label="訓練工具與設定">
+<aside id="trainingDrawer" class="training-drawer" aria-label="訓練工具與設定" data-i18n-aria="staticHtml.r2873abb0">
   <div class="training-drawer-head">
-    <div><h2>訓練工具</h2><div class="training-drawer-date" id="trainingDrawerDate"></div></div>
-    <button id="trainingDrawerClose" class="training-drawer-close" type="button" aria-label="關閉">×</button>
+    <div><h2 data-i18n="staticHtml.r20dd0736">訓練工具</h2><div class="training-drawer-date" id="trainingDrawerDate"></div></div>
+    <button id="trainingDrawerClose" class="training-drawer-close" type="button" aria-label="關閉" data-i18n-aria="staticHtml.r8ca36896">×</button>
   </div>
   <div id="trainingDrawerBody"></div>
 </aside>
@@ -399,13 +400,13 @@
         <div class="coach-step-label" id="coachStepLabel"></div>
         <div class="coach-title" id="coachTitle"></div>
       </div>
-      <button class="btn ghost coach-skip" id="coachSkip" type="button">跳過</button>
+      <button class="btn ghost coach-skip" id="coachSkip" type="button" data-i18n="staticHtml.rc1f886a4">跳過</button>
     </div>
     <div class="coach-copy" id="coachCopy"></div>
     <div class="coach-progress" id="coachProgress"></div>
     <div class="coach-actions">
-      <button class="btn ghost" id="coachPrev" type="button">上一步</button>
-      <button class="btn primary" id="coachNext" type="button">下一步</button>
+      <button class="btn ghost" id="coachPrev" type="button" data-i18n="staticHtml.r435a3ca6">上一步</button>
+      <button class="btn primary" id="coachNext" type="button" data-i18n="staticHtml.r10c83c81">下一步</button>
     </div>
   </div>
 </div>
@@ -414,52 +415,52 @@
   <div class="first-setup-card">
     <div class="first-setup-kicker" data-i18n="firstSetup.kicker">第一次使用設定</div>
     <div class="first-setup-title" id="firstSetupTitle" data-i18n="firstSetup.title">先設定你的訓練偏好與目標</div>
-    <div class="first-setup-copy">這些資料會用來挑選適合的長期課表與安排今天的訓練。完成後仍可在「設定 → 訓練偏好與目標」修改。</div>
+    <div class="first-setup-copy" data-i18n="staticHtml.rf12493d0">這些資料會用來挑選適合的長期課表與安排今天的訓練。完成後仍可在「設定 → 訓練偏好與目標」修改。</div>
     <div class="first-setup-grid">
-      <div class="field first-setup-wide"><label>主要訓練目的 *</label>
+      <div class="field first-setup-wide"><label data-i18n="staticHtml.r6da50462">主要訓練目的 *</label>
         <select id="firstTrainingGoal">
-          <option value="">請選擇</option>
-          <option value="general">一般健康／建立習慣</option>
-          <option value="hypertrophy">增肌</option>
-          <option value="strength">增加肌力</option>
-          <option value="fatloss">減脂／體能</option>
-          <option value="posture">體態平衡／舒緩</option>
-          <option value="recovery">恢復／輕量</option>
+          <option value="" data-i18n="staticHtml.ra22d46a3">請選擇</option>
+          <option value="general" data-i18n="staticHtml.r67e08566">一般健康／建立習慣</option>
+          <option value="hypertrophy" data-i18n="staticHtml.r42c7acb7">增肌</option>
+          <option value="strength" data-i18n="staticHtml.r2d2f6902">增加肌力</option>
+          <option value="fatloss" data-i18n="staticHtml.r2256293a">減脂／體能</option>
+          <option value="posture" data-i18n="staticHtml.r5529bd8c">體態平衡／舒緩</option>
+          <option value="recovery" data-i18n="staticHtml.r133cd2d9">恢復／輕量</option>
         </select>
       </div>
-      <div class="field"><label>每週訓練幾天 *</label>
+      <div class="field"><label data-i18n="staticHtml.r760aa2c5">每週訓練幾天 *</label>
         <select id="firstWeeklySessions">
-          <option value="">請選擇</option><option value="1">1 天</option><option value="2">2 天</option><option value="3">3 天</option><option value="4">4 天</option><option value="5">5 天</option><option value="6">6 天</option>
+          <option value="" data-i18n="staticHtml.ra22d46a3">請選擇</option><option value="1" data-i18n="staticHtml.r801a8067">1 天</option><option value="2" data-i18n="staticHtml.r2b68c3f2">2 天</option><option value="3" data-i18n="staticHtml.r3e6961bd">3 天</option><option value="4" data-i18n="staticHtml.r30ae7ff0">4 天</option><option value="5" data-i18n="staticHtml.rc43487fb">5 天</option><option value="6" data-i18n="staticHtml.r6f1ae586">6 天</option>
         </select>
       </div>
-      <div class="field"><label>每次可用時間 *</label>
+      <div class="field"><label data-i18n="staticHtml.ra1c6bb0b">每次可用時間 *</label>
         <select id="firstSessionMinutes">
-          <option value="">請選擇</option><option value="30">30 分鐘</option><option value="45">45 分鐘</option><option value="60">60 分鐘</option><option value="75">75 分鐘</option><option value="90">90 分鐘以上</option>
+          <option value="" data-i18n="staticHtml.ra22d46a3">請選擇</option><option value="30" data-i18n="staticHtml.rd9b8599c">30 分鐘</option><option value="45" data-i18n="staticHtml.rb15391a8">45 分鐘</option><option value="60" data-i18n="staticHtml.r297bc127">60 分鐘</option><option value="75" data-i18n="staticHtml.r90a4a82d">75 分鐘</option><option value="90" data-i18n="staticHtml.r4d0c5525">90 分鐘以上</option>
         </select>
       </div>
-      <div class="field"><label>訓練經驗 *</label>
+      <div class="field"><label data-i18n="staticHtml.r4afe507a">訓練經驗 *</label>
         <select id="firstExperience">
-          <option value="">請選擇</option>
-          <option value="new">完全新手</option>
-          <option value="beginner">新手</option>
-          <option value="intermediate">一般</option>
-          <option value="advanced">進階</option>
+          <option value="" data-i18n="staticHtml.ra22d46a3">請選擇</option>
+          <option value="new" data-i18n="staticHtml.r195227a0">完全新手</option>
+          <option value="beginner" data-i18n="staticHtml.r4769836c">新手</option>
+          <option value="intermediate" data-i18n="staticHtml.rac0f3749">一般</option>
+          <option value="advanced" data-i18n="staticHtml.r9e372641">進階</option>
         </select>
       </div>
-      <div class="field"><label>器材偏好 *</label>
+      <div class="field"><label data-i18n="staticHtml.r63627563">器材偏好 *</label>
         <select id="firstEquipmentPreference">
-          <option value="">請選擇</option>
-          <option value="machine">器械為主</option>
-          <option value="mixed">器械＋自由重量都可以</option>
-          <option value="freeweight">自由重量為主</option>
-          <option value="none">沒有特別偏好</option>
+          <option value="" data-i18n="staticHtml.ra22d46a3">請選擇</option>
+          <option value="machine" data-i18n="staticHtml.rf5c2a742">器械為主</option>
+          <option value="mixed" data-i18n="staticHtml.r4218d28a">器械＋自由重量都可以</option>
+          <option value="freeweight" data-i18n="staticHtml.r1db5cc7b">自由重量為主</option>
+          <option value="none" data-i18n="staticHtml.r9b823552">沒有特別偏好</option>
         </select>
       </div>
-      <div class="field first-setup-wide"><label>優先加強部位（選填，最多 2 個）</label>
+      <div class="field first-setup-wide"><label data-i18n="staticHtml.r658b3492">優先加強部位（選填，最多 2 個）</label>
         <div class="first-setup-muscles" id="firstPriorityMuscles"></div>
       </div>
     </div>
-    <div class="first-setup-required">* 為必填。沒有把握時，選最接近目前狀況的即可。</div>
+    <div class="first-setup-required" data-i18n="staticHtml.r53cba4b1">* 為必填。沒有把握時，選最接近目前狀況的即可。</div>
     <button class="btn primary" id="firstSetupSave" type="button" style="width:100%;margin-top:14px;min-height:48px" data-i18n="firstSetup.save">完成設定並開始使用</button>
   </div>
 </div>
@@ -476,6 +477,8 @@
 <div class="toast" id="toast" aria-live="polite"></div>
 
 <script src="js/i18n/locales/zh-TW.js?v=2.11.0"></script>
+<script src="js/i18n/locales/en-US.js?v=2.11.0"></script>
+<script src="js/i18n/locales/ja-JP.js?v=2.11.0"></script>
 <script src="js/i18n/i18n.js?v=2.11.0"></script>
 <script src="js/motion-gifs.js?v=2.11.0"></script>
 <script src="js/data/glossary.js?v=2.11.0"></script>

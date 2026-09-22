@@ -1,16 +1,17 @@
-/** TrainLog Pro progression presentation helpers. */
+/** TrainLog Pro progression presentation helpers. Pure and locale-agnostic. */
 (()=>{
   'use strict';
 
   const ACTIONS=Object.freeze({
-    new:{label:'建立基準',tone:'neutral',priority:5,reason:'先建立可比較的工作重量與次數'},
-    increase_load:{label:'↑ 建議加重',tone:'good',priority:0,reason:'已達目標上限且強度可控'},
-    increase_time:{label:'↑ 增加時間',tone:'good',priority:0,reason:'已達目前時間目標上限'},
-    add_reps:{label:'＋ 增加次數',tone:'good',priority:1,reason:'重量先維持，優先累積次數'},
-    plateau:{label:'↔ 可能平台期',tone:'warn',priority:2,reason:'近期進步幅度偏低'},
-    reduce_load:{label:'↓ 調整負重',tone:'warn',priority:3,reason:'有組數低於目標範圍'},
-    maintain:{label:'＝ 維持',tone:'neutral',priority:4,reason:'維持目前安排並持續累積紀錄'}
+    new:{labelKey:'progression.action.newLabel',tone:'neutral',priority:5,reasonKey:'progression.action.newReason'},
+    increase_load:{labelKey:'progression.action.increaseLoadLabel',tone:'good',priority:0,reasonKey:'progression.action.increaseLoadReason'},
+    increase_time:{labelKey:'progression.action.increaseTimeLabel',tone:'good',priority:0,reasonKey:'progression.action.increaseTimeReason'},
+    add_reps:{labelKey:'progression.action.addRepsLabel',tone:'good',priority:1,reasonKey:'progression.action.addRepsReason'},
+    plateau:{labelKey:'progression.action.plateauLabel',tone:'warn',priority:2,reasonKey:'progression.action.plateauReason'},
+    reduce_load:{labelKey:'progression.action.reduceLoadLabel',tone:'warn',priority:3,reasonKey:'progression.action.reduceLoadReason'},
+    maintain:{labelKey:'progression.action.maintainLabel',tone:'neutral',priority:4,reasonKey:'progression.action.maintainReason'}
   });
+  const identity=(key)=>key;
 
   function normalizeAction(advice={}){
     if(advice.action&&ACTIONS[advice.action])return advice.action;
@@ -20,45 +21,37 @@
     return 'maintain';
   }
 
-  function evidenceLabel(sessionsUsed){
+  function evidenceLabel(sessionsUsed,translate=identity){
     const count=Math.max(0,Math.floor(Number(sessionsUsed)||0));
-    if(count<=0)return '尚無歷史紀錄';
-    if(count===1)return '依上次紀錄';
-    return `參考最近 ${Math.min(count,5)} 次紀錄`;
+    if(count<=0)return translate('progression.evidenceNone',{});
+    if(count===1)return translate('progression.evidenceOne',{});
+    return translate('progression.evidenceRecent',{count:Math.min(count,5)});
   }
 
-  function reasonLabel(advice={}){
+  function reasonLabel(advice={},translate=identity){
     const action=normalizeAction(advice);
-    if(action==='plateau'&&advice.hardTrend)return '平台期訊號 + 強度偏高';
-    return ACTIONS[action].reason;
+    if(action==='plateau'&&advice.hardTrend)return translate('progression.action.plateauHardReason',{});
+    return translate(ACTIONS[action].reasonKey,{});
   }
 
-  function formatAdvice(advice={}){
+  function formatAdvice(advice={},translate=identity){
     const action=normalizeAction(advice);
     const meta=ACTIONS[action];
     return {
       action,
-      label:meta.label,
+      label:translate(meta.labelKey,{}),
       tone:meta.tone,
       priority:meta.priority,
-      evidence:evidenceLabel(advice.sessionsUsed),
-      reason:reasonLabel(advice),
-      text:String(advice.text||''),
+      evidence:evidenceLabel(advice.sessionsUsed,translate),
+      reason:reasonLabel(advice,translate),
+      text:advice.messageKey?translate(advice.messageKey,advice.messageParams||{}):String(advice.text||''),
       sessionsUsed:Math.max(0,Math.floor(Number(advice.sessionsUsed)||0)),
       plateau:!!advice.plateau,
       hardTrend:!!advice.hardTrend
     };
   }
 
-  function priority(advice={}){
-    return formatAdvice(advice).priority;
-  }
+  function priority(advice={}){return ACTIONS[normalizeAction(advice)].priority}
 
-  window.TrainLogProgressionView=Object.freeze({
-    normalizeAction,
-    evidenceLabel,
-    reasonLabel,
-    formatAdvice,
-    priority
-  });
+  window.TrainLogProgressionView=Object.freeze({normalizeAction,evidenceLabel,reasonLabel,formatAdvice,priority});
 })();

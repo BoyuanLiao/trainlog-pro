@@ -4,9 +4,30 @@
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['zh-TW'] = Object.freeze({
     common:{save:'儲存',cancel:'取消',delete:'刪除',close:'關閉',back:'返回',search:'搜尋',all:'全部',more:'顯示更多',edit:'編輯',done:'完成'},
+    language:{label:'介面語言',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'切換後立即套用；尚未翻譯的文字會暫時顯示繁體中文。'},
+    domain:{
+      muscle:{chest:'胸',back:'背',legs:'腿',shoulders:'肩膀',biceps:'二頭',triceps:'三頭',core:'腹部',cardio:'有氧',other:'其他'},
+      type:{weightReps:'重量 × 次數',duration:'計時',cardio:'有氧',bodyweight:'體重型',unilateral:'單側'},
+      kind:{warmup:'暖身',working:'正式',drop:'Drop',failure:'Failure',backoff:'Back-off'},
+      uiLevel:{
+        simpleName:'簡易',simpleShort:'隱藏 RIR',simpleDesc:'訓練操作與一般模式相同，只隱藏剩餘次數（RIR／RPE）欄位。',
+        standardName:'一般',standardShort:'顯示 RIR',standardDesc:'保留完整的一般訓練操作，並顯示剩餘次數（RIR／RPE）。',
+        advancedName:'進階',advancedShort:'完整控制',advancedDesc:'顯示完整組別、RIR／RPE 與進階分析；中文為主，英文縮寫只作輔助。'
+      },
+      bodyArea:{
+        neck:'頸部',shoulderL:'左肩',shoulderR:'右肩',chest:'胸部',upperBack:'上背',lowerBack:'下背',
+        elbowL:'左手肘',elbowR:'右手肘',wristL:'左手腕',wristR:'右手腕',core:'腹部／核心',hipL:'左髖',hipR:'右髖',
+        thighFront:'大腿前側',thighBack:'大腿後側',kneeL:'左膝',kneeR:'右膝',calf:'小腿',ankleL:'左腳踝',ankleR:'右腳踝'
+      },
+      bodyType:{soreness:'肌肉痠痛',sorenessShort:'痠',tight:'緊繃／卡卡',tightShort:'緊',pain:'疼痛／不舒服',painShort:'痛／不適'},
+      bodyLevel:{mild:'輕微',medium:'中等',strong:'明顯'},
+      weekday:{sun:'日',mon:'一',tue:'二',wed:'三',thu:'四',fri:'五',sat:'六'}
+    },
+    staticHtml:{r754d9e05:"30 天後可手動清除",rde5158d5:"搜尋做過的動作",rdeeab63f:"不用下拉選單；可以從最近做過、肌群或值得關注的動作直接進入分析。",r3dc27e5a:"最近做過",r81fb9e19:"快速切換",r850a4838:"依肌群",r79087d3d:"篩選全部動作",ra36320a0:"值得關注",rcab896b4:"依進步建議排序",r0f880b46:"全部做過的動作",r14e5ada2:"課表與訓練計畫",rc8251e0f:"系統課表、體態補強、我的課表與訓練安排",r3557f3c3:"系統課表",r4a23f93c:"我的模板",r539c13c9:"動作與器械",rae75e834:"器械、動作與 YouTube 教學",r366cfa71:"系統器械",re93ee504:"動作",r1a40124a:"健身房與我的器材",r711edbef:"常用健身房與器材",rb8c47ea7:"0 間健身房",rf2b39c87:"0 台器材",r65c0a802:"訓練偏好與目標",r8594d56f:"強度、休息時間與訓練目標",rdc623e61:"健身術語與說明",rb9997a80:"健身專業用語與動作模式說明",r1beba568:"資料與備份",r9ad0af81:"匯入、匯出、自動備份與資料清除",r78ca24ca:"重新查看使用教學",r79699913:"重新查看開始訓練、kg／lb、訓練工具與課表推薦等操作說明，不會清除任何資料。",r3d897080:"查看教學",rc76c65d2:"‹ 返回",r4c4a6c62:"依我的訓練目的推薦",re23ac6b0:"搜尋",rf02fbbe5:"分類",r3e31792c:"每週天數",rba358518:"不限",rc0a18884:"程度",r189942bf:"單次時間",rf2844ce2:"≤30 分",re93ed1e2:"≤45 分",r1a89ddb3:"≤60 分",rf5e8e105:"≤75 分",ra373bd05:"器材",rfdef68f8:"全機械",r719f7a94:"機械＋滑輪",rca329960:"訓練目的",r67e08566:"一般健康／建立習慣",r42c7acb7:"增肌",r2d2f6902:"增加肌力",r2256293a:"減脂／體能",r5529bd8c:"體態平衡／舒緩",r133cd2d9:"恢復／輕量",r37e6ab14:"＋ 自己建立",ra9e8b922:"中英文／品牌／型號搜尋",r7acfd57e:"器械形式",r4a4a211a:"品牌對應",r44e32558:"全部品牌",r512766f3:"＋ 自訂動作",r713478e6:"搜尋中英文動作",r4d7f606a:"健身房",r2b1f449d:"＋ 新增健身房",rb751655e:"↻ 從訓練紀錄帶入",r99c1605b:"訓練時直接輸入新的健身房名稱，也會自動建立到這裡。指定健身房後，系統會依訓練紀錄整理曾使用過的器械。",r4d9a61b0:"我的器材",r75add0e9:"這裡適合記錄你自己擁有或特別想管理的器材；健身房內曾使用的系統器械會由訓練紀錄自動整理，不必重複新增。",rb900bc19:"＋ 新增我的器材",re86e4783:"訓練目的與推薦",r70803034:"主要訓練目的",r3eaf2471:"每次可用時間",r38e98700:"約 30 分鐘",r2e5f01dc:"約 45 分鐘",r7764e473:"約 60 分鐘",r339c45b1:"約 75 分鐘",r912a5e9c:"訓練經驗",r2e862b70:"完全新手／剛開始",rc215eb3c:"已有一些訓練經驗",re4b7769c:"已規律訓練一段時間",ra5a49ab9:"器材偏好",rf5c2a742:"器械為主",rd8fb4f7c:"器械＋滑輪都可以",refc3705c:"建議訓練週期",r29eade58:"4 週",r86c4764e:"6 週",rbb94b27c:"8 週",r0907e6ab:"主要訓練健身房",recc7c9f4:"不指定／資料不足時不評分器材",rbfaa38ea:"優先加強部位（可複選）",rac04bee8:"沒有特別弱項可以全部不選；系統會以全身平均為主。",rb84277a6:"通常可以訓練的星期（選填）",rcec75066:"不選代表星期不限；選擇後會先排除無法塞進你時間表的課表。",rdd50f5d8:"可以接受連續兩天重訓",r9e41a1e7:"這些是長期設定，用來選擇接下來 4–8 週的主計畫。首頁的「今天需要調整嗎？」只改今天，不會回寫這裡。推薦還會參考近 28 天肌群刺激、動作模式、近期進步、健身房器材紀錄與目前課表延續性。",r2f215e8b:"基本偏好",r966fc4bf:"報表／分析顯示單位",r0e232e7a:"訓練時每個動作都能另外選 kg 或 lb；這裡只決定歷史紀錄與分析最後顯示的單位。",rcaab97bc:"強度紀錄",rb17ef464:"預設休息秒數",r5171071f:"每週訓練目標",r5c40b961:"每週有氧目標（分鐘）",ra4448fb1:"週起始日",rbf477319:"星期一",r628c24b2:"星期日",r20d90447:"訓練量統計包含暖身組",rcf3fee8b:"顯示估算 1RM",r6cfd557b:"顯示層次",r4cf124c2:"三種模式使用同一份訓練資料，只改變畫面顯示深度。訓練中也可以直接從右側工具切換。",rb547fd1e:"預設模式",r71d05131:"簡易模式",r0f16ef15:"一般模式",r2714b5fd:"進階模式",r75df1940:"進階模式仍以中文顯示，例如「剩餘次數（RIR）」、「主觀用力程度（RPE）」、「估算一次最大重量（e1RM）」。",rd011e061:"訓練中便利功能",re6c54f81:"休息計時器預設位置",r667eeb44:"頂部浮窗",r605f4062:"右上小浮窗",r26d6fb36:"顯示動作與本次訓練備註",r397e9569:"新增動作時自動載入上次組數／重量／次數",re4ac6d2e:"完成一組後自動開始休息計時器",r63435591:"休息時間到播放提示音／震動",rb6020044:"每週肌群正式組目標",rc61972be:"力量目標",r0e0cc219:"＋ 力量目標",r6415217f:"儲存訓練設定",r5202f845:"搜尋術語",ra338555f:"資料保存在目前瀏覽器，可離線使用。建議偶爾下載完整備份，換手機或瀏覽器時也比較方便恢復。",rbe3f1bc1:"備份與恢復",r1b123453:"完整備份",rf816fc90:"包含訓練紀錄、目前訓練計畫、訓練偏好、課表、器材、身體狀態、力量目標與自訂資料。",r7938d42f:"下載完整備份",r49601a87:"匯入完整備份",rfaeb9681:"表格資料",r61ed9591:"適合用 Excel 或試算表查看訓練紀錄。",r1dd0466d:"下載表格",recd0a7b5:"匯入表格",r8ebdf98e:"自動備份紀錄",r803b91c9:"系統自我檢查",r4d203879:"檢查課表／動作／器械資料關聯、重複 ID、訓練紀錄引用，以及重要介面元件是否存在。",re7df7cee:"執行自我檢查",r8dd8a538:"清除資料",rfde5d5a8:"清除這台裝置上的資料",rd370f97a:"訓練紀錄、課表與設定都會被刪除。建議先下載完整備份。",rfdf21578:"清除全部資料",r20dd0736:"訓練工具",rc1f886a4:"跳過",r435a3ca6:"上一步",r10c83c81:"下一步",rf12493d0:"這些資料會用來挑選適合的長期課表與安排今天的訓練。完成後仍可在「設定 → 訓練偏好與目標」修改。",r6da50462:"主要訓練目的 *",ra22d46a3:"請選擇",r760aa2c5:"每週訓練幾天 *",r801a8067:"1 天",r2b68c3f2:"2 天",r3e6961bd:"3 天",r30ae7ff0:"4 天",rc43487fb:"5 天",r6f1ae586:"6 天",ra1c6bb0b:"每次可用時間 *",rd9b8599c:"30 分鐘",rb15391a8:"45 分鐘",r297bc127:"60 分鐘",r90a4a82d:"75 分鐘",r4d0c5525:"90 分鐘以上",r4afe507a:"訓練經驗 *",r195227a0:"完全新手",r4769836c:"新手",rac0f3749:"一般",r9e372641:"進階",r63627563:"器材偏好 *",r4218d28a:"器械＋自由重量都可以",r1db5cc7b:"自由重量為主",r9b823552:"沒有特別偏好",r658b3492:"優先加強部位（選填，最多 2 個）",r53cba4b1:"* 為必填。沒有把握時，選最接近目前狀況的即可。",rd8ba3eac:"月曆圖例",rdf952f4b:"分析分類",r3a92c41b:"本期重點說明",r0101e280:"前一期比較說明",ref492546:"估算肌群刺激組數說明",rbe4d916e:"動作模式分析說明",re27c5f49:"PR 說明",r619f6664:"訓練強度分布說明",r4e801cdf:"訓練一致性說明",r51f6b1e3:"新手、PPL、圓肩、久坐、後鏈、30 分鐘...",r194c8563:"腿推、Life Fitness、HS-CP、1MTH033、3001、L10...",r0db49791:"例如：胸推、Chest Press",rd12f644a:"RIR、正式組、刺激組、Deload、水平推...",r615a2fc5:"隱藏休息計時器",r55378b17:"開啟休息計時器",r3843f9b8:"開啟訓練工具",r2873abb0:"訓練工具與設定",r8ca36896:"關閉"},
     actions:{manualEntry:'手動補登'},
     nav:{home:'首頁',training:'訓練',records:'紀錄',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'本週肌群目標',recentProgress:'最近進步',recentWorkouts:'最近訓練'},
+    homeUi:{freeTraining:'自由訓練',noSystemProgram:'目前沒有可用的系統課表。'},
     records:{title:'訓練紀錄',month:'月份',muscle:'肌群',prevMonth:'← 上月',thisMonth:'本月',nextMonth:'下月 →',trained:'有訓練',untrained:'無訓練',today:'今天',trash:'回收筒',trashHint:'30 天後可手動清除'},
     recordsUi:{
       trashEmpty:'回收筒是空的。',weekdaySun:'日',weekdayMon:'一',weekdayTue:'二',weekdayWed:'三',weekdayThu:'四',weekdayFri:'五',weekdaySat:'六',
@@ -26,7 +47,7 @@
       noTraining:'這個期間沒有訓練紀錄。',recentPrefix:'最近 ',showMore:'顯示更多（還有 {count} 個）',noFilteredExercise:'找不到符合搜尋或肌群條件的動作。',
       showing:'顯示 {visible} / {total}',bestDuration:'最長時間',bestDistance:'最長距離',bestSetTime:'最佳單組',bestTotalTime:'單次最高總時間',
       historyBestSet:'歷史最佳組',estimated1rm:'估算一次最大重量（e1RM）趨勢',maxWeight:'最高重量',maxReps:'單組最多次數',maxVolume:'單次最高完成量',
-      recentAverage:'最近平均 {kind}',progressSlow:'進步趨勢可能趨緩',progressing:'近期仍有進步訊號'
+      recentAverage:'最近平均 {kind}',progressSlow:'進步趨勢可能趨緩',progressing:'近期仍有進步訊號',confidenceLow:'低',confidenceInsufficient:'資料不足',confidenceHigh:'高',confidenceMedium:'中'
     },
     analysis:{
       title:'分析',days7:'7 天',days30:'30 天',days90:'90 天',all:'全部',
@@ -40,6 +61,7 @@
       effort:'訓練強度分布',consistency:'訓練一致性'
     },
     settings:{title:'設定',tutorial:'使用教學'},
+    settingsUi:{systemPrograms:'系統課表',myTemplates:'我的模板',equipmentLibrary:'器械庫',exerciseLibrary:'動作庫'},
     drawer:{
       displayLevel:'顯示層次',editList:'編輯運動清單',editListDesc:'調整動作順序',addExercise:'新增動作',addExerciseDesc:'加入器械或其他訓練動作',
       bodyStatus:'今日身體狀況',addPlan:'新增訓練計畫',addPlanDesc:'將目前動作清單存成我的課表',loadHistory:'載入紀錄',loadHistoryDesc:'從過去訓練加入或取代目前清單',
@@ -52,7 +74,7 @@
       historyEmpty:'目前沒有歷史訓練紀錄。',templateName:'課表名稱',defaultTemplateName:'我的訓練計畫',templateHint:'會把目前 {count} 個動作與組數存成「我的模板」，不會把已完成狀態存進去。',saveTemplate:'儲存為我的課表'
     },
     bodyStatus:{
-      noneToday:'今天還沒有標記任何部位。',intro:'記錄今天哪裡有肌肉痠痛、緊繃或不舒服。這是訓練調整提示，不是受傷診斷。',
+      noneToday:'今天還沒有標記任何部位。',noneSummary:'今天沒有標記痠痛或不舒服',intro:'記錄今天哪裡有肌肉痠痛、緊繃或不舒服。這是訓練調整提示，不是受傷診斷。',
       areaStep:'1. 哪個部位？',feelingStep:'2. 感覺是？',levelStep:'3. 程度',
       soreness:'肌肉痠痛',tight:'緊繃／卡卡',pain:'疼痛／不舒服',mild:'輕微',medium:'中等',strong:'明顯',
       addArea:'＋ 加入這個部位',markedToday:'今天已標記',note:'備註（選填）',notePlaceholder:'例如：昨天練腿後大腿痠；右肩抬高手時不舒服',
@@ -71,6 +93,7 @@
       deleteWithHistory:'刪除「{name}」？歷史訓練仍會保留健身房名稱。',deleteSimple:'刪除「{name}」？'
     },
     training:{start:'開始訓練',finish:'完成本次訓練',addExercise:'加入動作'},
+    coachUi:{aboutMinutes:'約 {minutes} 分'},
     trainingUi:{
       startToday:'開始今天的訓練',landingHint:'有目前計畫時建議依 A／B／C 順序訓練；也可以從「我的模板」或 {count} 套系統課表開始。',
       myTemplates:'我的模板',systemPrograms:'系統課表庫',longTermPlan:'長期課表與目前計畫',bodyMarked:'今天有身體狀況標記',bodyMarkedHint:'{summary}。相關動作會另外顯示提醒。',viewEdit:'查看／修改',
@@ -179,8 +202,129 @@
       noExerciseHistory:'還沒有已完成的動作紀錄。',noAttention:'目前沒有特別需要處理的進步訊號，照原計畫持續記錄即可。',
       selectExercise:'選擇一個動作查看歷史、進步訊號與 PR。',noAnalyzable:'目前沒有可分析的紀錄。',
       recentRecords:'最近紀錄',recentVsPrevious:'最近一次 vs 上一次',noProgressSignal:'目前沒有明顯進步訊號',
-      onlyOneRecord:'只有一次紀錄，暫時無法比較。'
+      onlyOneRecord:'只有一次紀錄，暫時無法比較。',performedExerciseFallback:'已做過的動作'
     },
+    reasons:{deleteGym:"刪除健身房",discardWorkout:"放棄訓練",setCurrentPlan:"設定目前訓練計畫",endCurrentPlan:"結束目前訓練計畫",startCurrentPlanDay:"開始目前計畫今日訓練",createPlanFromWorkout:"從訓練建立課表",startWorkout:"開始訓練",editWorkoutContent:"編輯訓練內容",finishWorkout:"完成訓練",restoreRecord:"復原紀錄",purgeRecord:"永久刪除",editRecord:"編輯紀錄",copyWorkout:"複製訓練",deleteRecord:"刪除紀錄",startManual:"開始手動補登",importSystemProgram:"加入系統 Program",startSystemProgram:"開始系統課表",addMyEquipment:"加入我的器材",copySystemExercise:"複製系統動作",deleteTemplate:"刪除課表",changeEquipmentUnit:"修改器材重量單位",deleteEquipment:"刪除器材",deleteStrengthGoal:"刪除力量目標",restoreSnapshot:"恢復快照",deleteExercise:"刪除動作",importData:"匯入資料",addGym:"新增健身房",syncGyms:"從訓練紀錄帶入健身房",addEquipment:"新增器材",addStrengthGoal:"新增力量目標",changeSettings:"修改設定",reinitialize:"重新初始化",beforeHistoryEdit:"歷史訓練編輯前",beforeBasicHistoryEdit:"歷史訓練基本資料編輯前",beforeRestore:"恢復前",beforeImport:"匯入前",autoSnapshot:"自動快照"},
+    analysisDynamic:{
+      noTrainingData:'尚無訓練資料',exerciseFallback:'動作',
+      cardioSession:'{minutes} 分{distance}',durationBest:'最佳 {seconds} 秒',setsCount:'{count} 組',
+      groupHorizontal:'上半身｜水平',groupVertical:'上半身｜垂直',groupKnee:'下半身｜膝部',groupHip:'下半身｜髖部',groupArms:'手臂',groupCore:'核心',
+      horizontalPush:'水平推',horizontalPull:'水平拉',verticalPush:'垂直推',verticalPull:'垂直拉',kneeDominant:'膝主導',kneeFlexion:'膝屈曲',
+      biasTitle:'{a}持續多於{b}',biasDesc:'最近 4 個七天區間中，有 {wins} 個區間的{a}正式組明顯較多。這代表近期訓練分布偏向{a}，不是姿勢或肌力失衡診斷。',
+      insufficientTitle:'目前資料還不夠多',insufficientDesc:'這個期間只有 {workouts} 次訓練、{sets} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。',
+      progressTitle:'{name} 出現進步訊號',progressDesc:'和上一次相比：{signals}。',
+      consistencyTitle:'近期訓練保持連續',consistencyDesc:'統計期間涵蓋的 {weeks} 個週區間都有訓練紀錄，平均約 {average} 次／週。',
+      increase:'增加',decrease:'減少',volumeChangeTitle:'訓練量較前一期{direction}',volumeChangeDesc:'目前期間為 {current}，前一期為 {previous}，變化約 {percent}%。這只是量的變化，不自動代表好或壞。',
+      effortSparseTitle:'RIR / RPE 紀錄較少',effortSparseDesc:'目前只有約 {percent}% 的正式組有強度紀錄，補上 RIR / RPE 後，進步與疲勞分析會更可靠。',
+      collectMoreTitle:'先累積更多可比較紀錄',collectMoreDesc:'目前沒有明顯需要優先提醒的變化。持續記錄重量、次數與 RIR / RPE，之後會更容易看出趨勢。',
+      applyReps:'套用：未完成正式組每組 +1 下',applyTime:'套用：未完成正式組每組 +{seconds} 秒',applyWeight:'套用：未完成正式組 {sign}{increment} {unit}',
+      highWeight:'{name} 有非常高的重量',highReps:'{name} 有異常高的次數',longSet:'{name} 單組時間超過 2 小時',
+      longCardio:'{name} 有氧時間超過 10 小時',largeDistance:'{name} 距離看起來異常',largeIncline:'{name} 坡度看起來異常'
+    },
+    coachReasons:{
+      equipmentUnknown:'健身房器材資料不足，暫不因器材扣分',
+      equipmentNone:'此課表幾乎不依賴固定器械',
+      equipmentSubstitute:'，另有 {count} 個可替代',
+      equipmentCoverage:'{gym}：直接可用 {direct}/{total}{substitute}',
+      priorityNone:'未指定優先部位，以全身平衡為主',
+      priorityCoverage:'優先部位 {muscles}：課表每週估算刺激 {values}',
+      volumeNeutral:'近 28 天資料較少，訓練量需求採中性評分',
+      volumeOkay:'近期各主要肌群沒有明顯低於目前週目標',
+      volumeNeed:'近期較需要補足：{items}',
+      volumeNeedItem:'{muscle} 約差 {sets} 組/週',
+      movementNeutral:'動作模式資料較少，採中性評分',
+      movementOkay:'近期動作模式沒有明顯單向偏多',
+      movementNeed:'近期可補強：{patterns}',
+      continuityNone:'目前沒有足夠的近期進步序列可比較',
+      continuityKept:'保留 {count} 個近期仍在進步的動作',
+      continuityLow:'近期進步中的動作與此課表重疊較少',
+      schedule:'{days}；設定為 {targetDays} · {targetMinutes}',
+      preferenceMatch:'符合器械為主偏好',
+      preferenceMode:'課表形式：{mode}',
+      bodyReplace:'因今日身體狀況，由「{name}」替換',
+      cardio:'有氧',sets:'{count} 組'
+    },
+    coachMeta:{
+      bodyStatusExtra:' 今日身體狀況也會另外套用到動作替換與提醒。',
+      workoutNotes:'目前計畫： {program}｜長期目的：{goal}｜今日調整：{adjustment}',
+      coachNote:'目前為 {weeks} 週計畫；今日使用「{adjustment}」。這次調整不會改寫長期設定。',
+      goal:{general:'一般健康／建立習慣',hypertrophy:'增肌',strength:'增加肌力',fatLoss:'減脂／體能',posture:'體態平衡／舒緩',recovery:'恢復／輕量'},
+      adjustment:{
+        normalLabel:'照原計畫',normalDesc:'依目前 4–8 週計畫照常訓練。',
+        shortLabel:'只有 30 分鐘',shortDesc:'只保留今天最重要的動作，長期計畫不變。',
+        easyLabel:'今天比較累',easyDesc:'減少部分組數與輔助動作，不把單日疲勞當成永久課表變更。',
+        freshLabel:'今天狀態很好',freshDesc:'維持原計畫；是否加重仍依實際完成次數與 RIR／RPE 判斷。',
+        focusLabel:'想多練一個部位',focusDesc:'時間允許時加一個指定部位的輔助動作，只影響今天。'
+      }
+    },
+    tutorialCopy:{s01Title:"開始訓練",s01Copy:"要開始今天的訓練，直接點右上角「開始訓練」。",s02Title:"訓練頁",s02Copy:"選課表、開始空白訓練，以及進行中的重量與次數記錄都在這裡。",s03Title:"訓練紀錄",s03Copy:"完成訓練後，到「紀錄」查看過去每次實際完成的內容。",s04Title:"分析",s04Copy:"累積一些訓練後，可以在「分析」查看進步、PR 與長期趨勢。",s05Title:"設定",s05Copy:"課表、器械、健身房、訓練偏好與備份都集中在設定裡。",s06Title:"今天建議",s06Copy:"這裡會顯示今天最適合進行的訓練安排，以及目前計畫的下一個訓練日。",s07Title:"直接開始",s07Copy:"確認今天的安排後，從這裡直接進入訓練。",s08Title:"最近進步",s08Copy:"有新的重量、次數或 PR 時，可以從這裡快速看到近期變化。",s09Title:"最近訓練",s09Copy:"想確認上次做了什麼，可以從這裡快速回顧最近紀錄。",s10Title:"開始今天的訓練",s10Copy:"還沒有進行中的訓練時，這裡是訓練頁的主要入口。",s11Title:"我的模板",s11Copy:"使用你已經儲存的訓練模板快速開始。",s12Title:"系統課表庫",s12Copy:"想換課表時，可以從這裡瀏覽系統提供的訓練計畫。",s13Title:"目前計畫與推薦",s13Copy:"長期課表與適合你的推薦會集中顯示在這裡。",s14Title:"動作卡",s14Copy:"每張卡片代表一個動作；動作名稱、上次紀錄、重量、次數與組數都集中在這裡。",s15Title:"動作說明",s15Copy:"不熟悉動作時，從「說明」查看操作提示與 YouTube 示範。",s16Title:"kg / lb",s16Copy:"器械標示 kg 就用 kg，標示 lb 就切換成 lb；App 會自動換算保存。",s17Title:"輸入重量",s17Copy:"把這一組實際使用的重量填在這裡。",s18Title:"輸入次數",s18Copy:"做完後，把這組實際完成的次數填在這裡。",s19Title:"快速調整",s19Copy:"可以快速加減重量、增減次數，或直接複製上一組。",s20Title:"完成這組",s20Copy:"確認重量與次數後按「完成這組」；只有完成的組數才會進入主要紀錄。",s21Title:"休息計時器",s21Copy:"完成一組後可以使用休息倒數，也能快速選 60、90、120 或 180 秒。",s22Title:"訓練工具",s22Copy:"從這裡新增動作、調整順序、收起動作卡，或切換顯示層次。",s23Title:"完成訓練",s23Copy:"全部做完後，點這裡儲存本次訓練，之後就能在紀錄與分析查看結果。",s24Title:"訓練紀錄",s24Copy:"這一頁集中保存每一次已完成或手動補登的訓練。",s25Title:"日期與月份",s25Copy:"有訓練的日期會特別標示，可以用日期快速找到過去紀錄。",s26Title:"紀錄清單",s26Copy:"點開一筆紀錄，可以查看當天所有動作、重量、次數與組數。",s27Title:"分析期間",s27Copy:"先選 7 天、30 天、90 天或全部，再看你想比較的時間範圍。",s28Title:"本期重點",s28Copy:"先看上方重點摘要；App 會整理目前最值得注意的進步與變化。",s29Title:"分析內容",s29Copy:"往下可以查看肌群刺激、動作模式、進步與 PR 等長期趨勢。",s30Title:"課表與訓練計畫",s30Copy:"管理系統課表、自己的課表與目前訓練計畫。",s31Title:"動作與器械",s31Copy:"查找系統動作、器械，以及建立自己的動作。",s32Title:"健身房與我的器材",s32Copy:"建立不同健身房，並記住你常用的器械。",s33Title:"訓練偏好與目標",s33Copy:"調整訓練目標、每週天數、時間與器材偏好。",s34Title:"健身術語與說明",s34Copy:"看不懂 RIR、RPE、e1RM 等術語時，可以從這裡查詢。",s35Title:"資料與備份",s35Copy:"匯入、匯出與建立本機備份都放在這裡。",s36Title:"重新查看教學",s36Copy:"之後忘記某個功能時，可以從設定最下面重新啟動操作教學。"},
+    analysisProgress:{
+      previousZero:'前期 0',
+      signal:{
+        cardioTime:'有氧時間增加',distance:'距離增加',speed:'速度增加',duration:'持續時間增加',
+        weight:'重量增加',reps:'同重量次數增加',e1rm:'估算力量提高',volume:'完成量增加',
+        rir:'相近表現更有餘裕',rpe:'相近表現更輕鬆'
+      },
+      plateauInsufficient:'至少需要 4 次可比較的訓練才能判斷進步是否趨緩。',
+      plateauProgress:'最近幾次仍有重量、次數、估算力量、完成量或主觀餘裕的進步訊號。',
+      plateauSlow:'最近 {count} 次在重量、次數、估算力量與完成量上都沒有明顯改善，近期進步趨勢可能趨緩。'
+    },
+    progression:{
+      firstRecord:'第一次紀錄，先以保留 2–3 下餘裕找到工作重量。',
+      durationIncrease:'上次平均 {avg} 秒，已達目標上限，可嘗試每組增加約 {increment} 秒。',
+      durationMaintain:'上次平均 {avg} 秒，先維持並逐步接近 {target} 秒。',
+      cardioMaintain:'有氧建議優先穩定時間與感受，再逐步增加時間、距離或坡度。',
+      increaseLoad:'上次所有正式組達 {repMax} 下且強度可控，建議下次嘗試增加約 {increment} {unit}。',
+      reduceLoad:'上次有組數低於目標範圍，建議維持或小幅降重，優先完成 {repMin}–{repMax} 下。',
+      plateauHard:'最近 3 次在相近重量與次數停滯，而且主觀強度偏高；先檢查恢復狀況，必要時小幅降重或安排較輕的一次。',
+      plateau:'最近 3 次在相近重量與次數沒有明顯提升，可能進入平台期；先維持重量，嘗試增加 1 下、改善動作品質或調整組間休息。',
+      addReps:'上次仍在 {repMin}–{repMax} 下範圍內，建議維持重量並增加完成次數。',
+      action:{
+        newLabel:'建立基準',newReason:'先建立可比較的工作重量與次數',
+        increaseLoadLabel:'↑ 建議加重',increaseLoadReason:'已達目標上限且強度可控',
+        increaseTimeLabel:'↑ 增加時間',increaseTimeReason:'已達目前時間目標上限',
+        addRepsLabel:'＋ 增加次數',addRepsReason:'重量先維持，優先累積次數',
+        plateauLabel:'↔ 可能平台期',plateauReason:'近期進步幅度偏低',
+        reduceLoadLabel:'↓ 調整負重',reduceLoadReason:'有組數低於目標範圍',
+        maintainLabel:'＝ 維持',maintainReason:'維持目前安排並持續累積紀錄',
+        plateauHardReason:'平台期訊號 + 強度偏高'
+      },
+      evidenceNone:'尚無歷史紀錄',evidenceOne:'依上次紀錄',evidenceRecent:'參考最近 {count} 次紀錄'
+    },
+    motion:{
+      title:'動作動畫',matchPrefix:'對應：',
+      sourceNote:'第三方動畫來源：Exercise Library（GitHub）。實際器械設定、握距與活動範圍仍以現場器材及舒適動作為準。',
+      noMatch:'Exercise Library 目前找不到足夠吻合的動畫，避免顯示錯誤動作。',
+      imageAlt:'{name} 動作動畫',loadFailed:'動畫檔載入失敗，請確認目前網路連線後再試一次。',
+      networkFailed:'無法連線到 Exercise Library。這個動畫需要網路才能載入。',
+      searching:'正在尋找「{name}」的對應動畫…',fallbackName:'此動作'
+    },
+    finalUi:{
+      machineMinPrefix:'輸入至少 2 個字元，例如 ',machineNoMatchPrefix:'目前找不到相符器械。你仍可以建立自訂動作；也可以嘗試只輸入銘牌上的核心英文，例如 ',
+      movementMode:'動作模式',leftWeightPlaceholder:'左{unit}',rightWeightPlaceholder:'右{unit}',dragAria:'拖曳 {name}',infoAria:'{name}說明',
+      exerciseInUse:'此動作仍被課表使用，請先從課表移除。',saved:'已儲存',noNewGym:'訓練紀錄中沒有新的健身房',
+      invalidJson:'JSON 格式不正確',invalidCsv:'CSV 格式不正確，請使用本 App 匯出的 CSV 格式。',
+      coachStep:'操作教學 {current} / {total}',coachStartSetup:'開始設定',coachFinish:'完成教學',coachNext:'下一步',
+      uiLevelMode:'{level}模式',programCount:'{visible} / {total} 套',equipmentCount:'{visible} / {total} 種',
+      programsTotal:'{count} 套系統課表',templatesTotal:'{count} 個我的模板',systemEquipmentTotal:'{count} 種系統器械',
+      exerciseTotal:'{count} 個動作',gymsTotal:'{count} 間健身房',myEquipmentTotal:'{count} 台我的器材',
+      trainingPlan:'訓練計畫',weekCount:'{count} 週',selfCheckOk:'✓ 自我檢查通過',selfCheckWarn:'⚠ 發現需要處理的項目',
+      groupsValue:'{value} 組',recentEvidence:'最近：{date} · {evidence}',judgement:'判斷：{reason}',
+      muscleStimulusDetail:'{muscle}｜肌群刺激明細',setsPerWeek:'{count} 組/週',moreRemaining:'顯示更多（剩 {count}）',
+      supportUse:'使用說明',supportFallback:'此課表為健身補強，不是醫療診斷或治療。',setPlanWeeks:'設為目前 {weeks} 週計畫',
+      myCopySuffix:'（我的）',focusFallback:'訓練重點',deletedExercise:'已刪除動作',unspecifiedBrand:'未指定品牌',
+      weightMark:'重量標示',weekday:'週{day}',autoBackup:'自動備份',target:'目標 {weight} × {reps}',
+      setRest:'{sets} 組 · {min}–{max}',restSeconds:'休 {seconds}s',libraryShown:'目前顯示前 {count} 個；可用搜尋快速找到其他系統動作。',
+      compatibleBackup:'已偵測到可相容的{type}',backupTypeFull:'完整備份',backupTypeTable:'表格資料',targetWeight:'目標重量（{unit}）',
+      lbStorageDetail:'App 會自動換算成 kg 標準值儲存；例如 100 lb ≈ 45.4 kg。',kgStorageDetail:'內部直接以 kg 標準值儲存。',
+      saveCancelEdit:'取消歷史編輯',saveEditExercise:'編輯動作',saveAddExercise:'新增動作',saveEditTemplate:'編輯課表',saveAddTemplate:'新增課表',
+      daysPerWeek:'{count} 日/週',minutes:'{count} 分',priorityInline:' · 優先 {muscles}',
+      exercisePrescription:'{sets} 組 × {range} · RIR {rir} · 休息 {rest} 秒',englishTutorial:'▶ English Tutorial',
+      systemEquipmentGroup:'系統器械',myEquipmentGroup:'我的器材',unnamedTemplate:'未命名課表',
+      startProgramDay:'開始 {name}',systemProgramNote:'系統課表： {name}',newTemplate:'新課表',csvImport:'CSV 匯入',durationSeconds:'{seconds} 秒',currentGym:'目前健身房{gym}'
+    
+    },
+    residual:{r7f5c3e15:"計算優先順序：實際動作 → 動作模式 → 所使用器械。主要肌群一般計 1.0；協同肌群依動作估算 0.25 或 0.5。這不是精確的生理刺激測量。",r8e8d434c:"「實際」為本期估算肌群刺激換算成每週平均；「目標」來自你的訓練偏好設定。這是依目前計畫比較，不代表生理上的最佳訓練量。",rf3182a51:"照銘牌輸入英文名稱、品牌產品名或型號。系統會顯示可能的中文器械、對應動作、肌群與動作模式，確認後再套用。",r8b7fede0:"這裡呈現近期訓練分布與覆蓋情況，不假設 Push / Pull 或不同腿部模式必須符合固定比例。",rd484f477:"這裡呈現紀錄中的訓練負荷趨勢，不把它換算成假的「恢復百分比」。不同器械的重量也不應直接互相比較。",rb9b67e56:"例如 Inner / Outer Thigh、Lat Pulldown、1MTH039",r0c231e77:"先選定目前訓練計畫，之後首頁會固定依 A／B／C 順序安排，不會每天重新抽一套課表。",r008ded82:"這裡只改今天，不會修改「設定 → 訓練偏好與目標」的長期目標或目前 4–8 週計畫。",r24ceac7d:"沒有列出的舊型號或特殊版本，仍可用此通用器械建立「我的器材」，自行填入品牌與型號。",rd2b26b9d:"缺口只依「本期是否有紀錄」與相對分布提示，不表示每種動作模式都需要相同組數。",r76745630:"這個期間還沒有新的可辨識 PR；第一次紀錄會作為基準，不會直接算成 PR。",r9f34cb04:"直接拖曳左側 ☷ 把手調整順序。放開後會立即儲存，訓練畫面也會同步更新。",r5e7f5add:"CSV 只包含訓練表格資料，不會覆蓋訓練偏好、目前計畫或 App 設定。",rb074f245:"完整 JSON 備份可恢復訓練偏好、目前計畫、器材、課表與其他個人資料。",r2cce1f14:"e1RM 為公式估算，只適合同一動作、相似器械下觀察自己的長期趨勢。",rfb80dd12:"器械已辨識，但目前沒有專屬系統動作；可選擇這台器械後自行建立動作。",r32169939:"較長期趨勢的進步幅度偏低；這是趨勢提示，不代表已確定停滯。",rf191fe9c:"完整還原會先自動保存目前狀態，之後仍可從自動備份紀錄恢復。",re8ecbf5b:"如果型號不在清單，可以直接輸入機器上的型號或產品名稱。",r1a327ebb:"尚無「我的模板」。可從上方系統課表加入，或自己建立。",rabb3a213:"Lat Pulldown、腿推、RSL0314...",r2803e06c:"主要動作模式都有出現，沒有明顯的「未記錄」缺口。",r54649a64:"完整還原備份（包含偏好、目前計畫與其他設定）",r871527c1:"今日疲勞或單日不舒服不會改變這份長期排名。",rdb963856:"例如 SS-CP、1MTH033、3001",r24c32392:"不使用今天的疲勞／不舒服來永久改變排名",r24cff772:"累積幾次訓練後，這裡會顯示進步建議。",r2d32bcaa:"，不要輸入警告文字或整段操作說明。",r65015b25:"只加入新的訓練資料，略過相同 ID",r63314331:"整個 Program 組數概覽：",r19b89a0e:"會自動換算成 kg 標準值儲存。",r6723d7f4:"找不到符合目前篩選條件的動作。",r8d120204:"可以清除篩選或改用其他搜尋字。",r828f27b9:"只合併訓練資料，不修改目前設定",r8dcf0f9a:"目前沒有可用的長期課表推薦。",ra086a676:"▶ YouTube 中文示範",r9fe64d55:"▶ YouTube 中文搜尋",recc7c9f4:"不指定／資料不足時不評分器材",r7fc64b2d:"先用器械上的英文名稱確認動作",r383678cd:"只加入新的 CSV 訓練資料",r0ccc5e3e:"例如 Chest Press",r795da869:"尚未選定 4–8 週主計畫",r461d0c6d:"例如 SS-CP、3001",r361a5fb3:"依可用時間補入的輔助動作",r5ac84af9:"Example / 範例",rb428b5cd:"沒有符合條件的系統課表。",rc23e28d1:"這個期間沒有相關訓練。",rba70ff76:"，也可以輸入品牌型號。",r6984f9b9:"永久備註 / 機台設定",r23627781:"合併 CSV 訓練資料",r20ebbb88:"按住左側把手上下拖曳",r383bdbd4:"已收錄的系列／型號：",r8e6698e2:"自訂顯示名稱（選填）",rffa4d0bf:"沒有符合條件的器械。",raf76980d:"尚未建立自己的器材。",r233b6987:"自動判斷 / 未指定",r352c4fe3:"主觀用力程度 RPE",ra0a7cbfe:"ⓘ 為什麼這樣安排",r68a96e5e:"只開始 Day A",r1a342c1b:"今天需要調整嗎？",rd91a8af4:"＋ 加入這個動作",r00862c41:"尚未設定力量目標",r4cdd5477:"尚無自動備份紀錄",r8037f993:"▶ 查看教學搜尋",r45b03e28:"別名（逗號分隔）",rcfbc5e68:"剩餘次數 RIR",r01ec088f:"某個部位不舒服",rda966763:"依長期條件推薦",r97a2dbc7:"還沒有歷史資料",rc1960c98:"建議 RIR：",r6c0aadff:"機器設定／操作",r6751a035:"複製為我的動作",rf2afec20:"次數/秒數下限",rb8ab8369:"次數/秒數上限",r745e433f:"尚未加入動作。",r7692195b:"未完成訓練 ✓",r6521b0be:"今天額外加強",r0ae2028e:"目前訓練計畫",rac0fcbd0:"比較推薦課表",rabcd84e7:"重新評估課表",r73d10828:"查看完整計畫",rd692f32a:"設為目前計畫",r4bc21e71:"ⓘ 完整說明",r9ad046b6:"全部器材類型",rb78e2039:"無器材／其他",re7cda89f:"沒有替代動作",r08c92473:"加入我的模板",r90bb911b:"＋ 我的器材",rf55882eb:"加入我的器材",r77d6a59f:"套用這個動作",re4d4e06b:"訓練偏好 ✓",reaf857cc:"目前計畫 ✓",r421a2a37:"型號（選填）",r715b1c13:"今天的安排",r765d952b:"對應器械：",r73fcb017:"操作重點：",rc8493e92:"估算刺激組",r06749c0c:"教練提示：",r28102a2d:"進階方式：",r3e8ae372:"系列／型號",r8c678e38:"動作提示：",r4151912e:"相同 ID",r615f61be:"今天減量",rf68c4539:"結束計畫",r734e7187:"今天要做",r4191493c:"長期條件",r255f1025:"重新評估",rdd566a34:"120秒",r4d35ed32:"180秒",r36f23581:"用力程度",rd15abcf5:"剩餘次數",re08de36e:"詳細說明",r0551e82b:"品牌支援",rcdef0b51:"中文說明",r55abeaaf:"常見錯誤",r70e81c1a:"使用器械",r932057bd:"全部分類",r524e385d:"不限程度",r9b735996:"全部形式",r01e08503:"中文名稱",r4be1c58f:"英文名稱",r147f7ce4:"目標組數",r4a5eb0dc:"建議增量",rd7d43a1b:"休息秒數",re49d0e8e:"替代動作",r31f4512e:"儲存動作",r2f106cd5:"儲存課表",r0ad79527:"新增紀錄",r355ebb85:"匯入方式",r320fc068:"確認匯入",r5a66610b:"器材名稱",rdc36d1d9:"目標次數",re9d8257e:"進步趨勢",r26b86665:"小浮窗",r662d6fcb:"60秒",r003c623a:"90秒",r6a86e0bc:"未指定",r054f2cc7:"建議：",r9caf61f6:"預覽",r4642d168:"編輯",r3c8539f2:"直接",r8ab76d45:"間接",r89f4b900:"品牌",rf1b5cda4:"恢復",rbb048236:"詳細",r80173301:"複製",r3626353a:"查找",rcf870e5d:"肌群",re4e4a53e:"類型",ra373bd05:"器材",re93ee504:"動作",r79126c28:"左次",r308b9ffc:"次數",r2f5b553d:"刪",r577b1035:"秒"},
     messages:{priorityMax:'優先加強部位最多選 2 個',setupRequired:'請先完成所有必填項目',recordsEmpty:'這個月份沒有符合條件的紀錄。',insufficient:'資料不足'}
   });
 })();
