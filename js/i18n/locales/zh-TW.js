@@ -59,6 +59,7 @@
       effort:'訓練強度分布',consistency:'訓練一致性'
     },
     settings:{title:'設定',tutorial:'使用教學'},
+    settingsUi:{systemPrograms:'系統課表',myTemplates:'我的模板',equipmentLibrary:'器械庫',exerciseLibrary:'動作庫'},
     drawer:{
       displayLevel:'顯示層次',editList:'編輯運動清單',editListDesc:'調整動作順序',addExercise:'新增動作',addExerciseDesc:'加入器械或其他訓練動作',
       bodyStatus:'今日身體狀況',addPlan:'新增訓練計畫',addPlanDesc:'將目前動作清單存成我的課表',loadHistory:'載入紀錄',loadHistoryDesc:'從過去訓練加入或取代目前清單',
