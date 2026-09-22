@@ -4,6 +4,24 @@
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['zh-TW'] = Object.freeze({
     common:{save:'儲存',cancel:'取消',delete:'刪除',close:'關閉',back:'返回',search:'搜尋',all:'全部',more:'顯示更多',edit:'編輯',done:'完成'},
+    domain:{
+      muscle:{chest:'胸',back:'背',legs:'腿',shoulders:'肩膀',biceps:'二頭',triceps:'三頭',core:'腹部',cardio:'有氧',other:'其他'},
+      type:{weightReps:'重量 × 次數',duration:'計時',cardio:'有氧',bodyweight:'體重型',unilateral:'單側'},
+      kind:{warmup:'暖身',working:'正式',drop:'Drop',failure:'Failure',backoff:'Back-off'},
+      uiLevel:{
+        simpleName:'簡易',simpleShort:'隱藏 RIR',simpleDesc:'訓練操作與一般模式相同，只隱藏剩餘次數（RIR／RPE）欄位。',
+        standardName:'一般',standardShort:'顯示 RIR',standardDesc:'保留完整的一般訓練操作，並顯示剩餘次數（RIR／RPE）。',
+        advancedName:'進階',advancedShort:'完整控制',advancedDesc:'顯示完整組別、RIR／RPE 與進階分析；中文為主，英文縮寫只作輔助。'
+      },
+      bodyArea:{
+        neck:'頸部',shoulderL:'左肩',shoulderR:'右肩',chest:'胸部',upperBack:'上背',lowerBack:'下背',
+        elbowL:'左手肘',elbowR:'右手肘',wristL:'左手腕',wristR:'右手腕',core:'腹部／核心',hipL:'左髖',hipR:'右髖',
+        thighFront:'大腿前側',thighBack:'大腿後側',kneeL:'左膝',kneeR:'右膝',calf:'小腿',ankleL:'左腳踝',ankleR:'右腳踝'
+      },
+      bodyType:{soreness:'肌肉痠痛',sorenessShort:'痠',tight:'緊繃／卡卡',tightShort:'緊',pain:'疼痛／不舒服',painShort:'痛／不適'},
+      bodyLevel:{mild:'輕微',medium:'中等',strong:'明顯'},
+      weekday:{sun:'日',mon:'一',tue:'二',wed:'三',thu:'四',fri:'五',sat:'六'}
+    },
     actions:{manualEntry:'手動補登'},
     nav:{home:'首頁',training:'訓練',records:'紀錄',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'本週肌群目標',recentProgress:'最近進步',recentWorkouts:'最近訓練'},
