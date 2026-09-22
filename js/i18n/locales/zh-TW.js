@@ -251,6 +251,14 @@
       },
       evidenceNone:'尚無歷史紀錄',evidenceOne:'依上次紀錄',evidenceRecent:'參考最近 {count} 次紀錄'
     },
+    motion:{
+      title:'動作動畫',matchPrefix:'對應：',
+      sourceNote:'第三方動畫來源：Exercise Library（GitHub）。實際器械設定、握距與活動範圍仍以現場器材及舒適動作為準。',
+      noMatch:'Exercise Library 目前找不到足夠吻合的動畫，避免顯示錯誤動作。',
+      imageAlt:'{name} 動作動畫',loadFailed:'動畫檔載入失敗，請確認目前網路連線後再試一次。',
+      networkFailed:'無法連線到 Exercise Library。這個動畫需要網路才能載入。',
+      searching:'正在尋找「{name}」的對應動畫…',fallbackName:'此動作'
+    },
     finalUi:{
       machineMinPrefix:'輸入至少 2 個字元，例如 ',machineNoMatchPrefix:'目前找不到相符器械。你仍可以建立自訂動作；也可以嘗試只輸入銘牌上的核心英文，例如 ',
       movementMode:'動作模式',leftWeightPlaceholder:'左{unit}',rightWeightPlaceholder:'右{unit}',dragAria:'拖曳 {name}',infoAria:'{name}說明',
