@@ -44,14 +44,14 @@
     </div>
     <div class="card">
       <div class="calendar-legend" aria-label="月曆圖例" data-i18n-aria="staticHtml.rd8ba3eac">
-        <span><i class="trained"></i>有訓練</span>
-        <span><i></i>無訓練</span>
-        <span><i class="today-mark"></i>今天</span>
+        <span><i class="trained"></i><span data-i18n="records.trained">有訓練</span></span>
+        <span><i></i><span data-i18n="records.untrained">無訓練</span></span>
+        <span><i class="today-mark"></i><span data-i18n="records.today">今天</span></span>
       </div>
       <div class="calendar" id="calendar"></div>
     </div>
     <div id="recordList"></div>
-    <div class="section">回收筒 <span class="small" data-i18n="staticHtml.r754d9e05">30 天後可手動清除</span></div>
+    <div class="section"><span data-i18n="records.trash">回收筒</span> <span class="small" data-i18n="records.trashHint">30 天後可手動清除</span></div>
     <div id="trashList"></div>
   </section>
 
@@ -74,10 +74,10 @@
     </div>
 
     <div class="analysis-panel" data-analysis-panel="overview">
-      <div class="section">本期重點 <button class="info-btn" type="button" data-info="analysis_highlights" aria-label="本期重點說明" data-i18n-aria="staticHtml.r3a92c41b">i</button></div>
+      <div class="section"><span data-i18n="analysis.highlights">本期重點</span> <button class="info-btn" type="button" data-info="analysis_highlights" aria-label="本期重點說明" data-i18n-aria="staticHtml.r3a92c41b">i</button></div>
       <div class="card"><div class="analysis-highlights" id="analysisHighlights"></div></div>
 
-      <div class="section">訓練摘要 <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明" data-i18n-aria="staticHtml.r0101e280">i</button></div>
+      <div class="section"><span data-i18n="analysis.summary">訓練摘要</span> <button class="info-btn" type="button" data-info="period_comparison" aria-label="前一期比較說明" data-i18n-aria="staticHtml.r0101e280">i</button></div>
       <div class="analysis-kpis" id="analysisKpis"></div>
 
       <div class="section" data-i18n="analysis.next">下一步建議</div>
@@ -91,10 +91,10 @@
       <div class="section" data-i18n="analysis.muscleTarget">肌群目標 vs 實際</div>
       <div class="card" id="analysisMuscleTargets"></div>
 
-      <div class="section">肌群刺激 <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明" data-i18n-aria="staticHtml.ref492546">i</button></div>
+      <div class="section"><span data-i18n="analysis.muscleStimulus">肌群刺激</span> <button class="info-btn" type="button" data-info="stimulus_sets" aria-label="估算肌群刺激組數說明" data-i18n-aria="staticHtml.ref492546">i</button></div>
       <div class="card" id="muscleAnalysis"></div>
 
-      <div class="section">動作模式 <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明" data-i18n-aria="staticHtml.rbe4d916e">i</button></div>
+      <div class="section"><span data-i18n="analysis.movement">動作模式</span> <button class="info-btn" type="button" data-info="movement_balance" aria-label="動作模式分析說明" data-i18n-aria="staticHtml.rbe4d916e">i</button></div>
       <div class="card" id="pplAnalysis"></div>
 
       <div class="section" data-i18n="analysis.movementGap">動作模式缺口</div>
@@ -102,7 +102,7 @@
     </div>
 
     <div class="analysis-panel hidden" data-analysis-panel="exercise">
-      <div class="section">動作進步與個人最佳（PR） <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明" data-i18n-aria="staticHtml.re27c5f49">i</button></div>
+      <div class="section"><span data-i18n="analysis.exerciseProgress">動作進步與個人最佳（PR）</span> <button class="info-btn" type="button" data-info="pr" aria-label="PR 說明" data-i18n-aria="staticHtml.re27c5f49">i</button></div>
       <div class="card exercise-progress-browser">
         <div class="field">
           <label for="analysisExerciseSearch" data-i18n="staticHtml.rde5158d5">搜尋做過的動作</label>
@@ -135,10 +135,10 @@
       <div class="section" data-i18n="analysis.loadTrend">訓練負荷趨勢</div>
       <div class="card" id="analysisLoadTrend"></div>
 
-      <div class="section ui-standard-only">訓練強度分布 <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明" data-i18n-aria="staticHtml.r619f6664">i</button></div>
+      <div class="section ui-standard-only"><span data-i18n="analysis.effort">訓練強度分布</span> <button class="info-btn" type="button" data-info="effort_distribution" aria-label="訓練強度分布說明" data-i18n-aria="staticHtml.r619f6664">i</button></div>
       <div class="card ui-standard-only" id="effortAnalysis"></div>
 
-      <div class="section ui-standard-only">訓練一致性 <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明" data-i18n-aria="staticHtml.r4e801cdf">i</button></div>
+      <div class="section ui-standard-only"><span data-i18n="analysis.consistency">訓練一致性</span> <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明" data-i18n-aria="staticHtml.r4e801cdf">i</button></div>
       <div class="card ui-standard-only" id="consistencyAnalysis"></div>
     </div>
   </section>
@@ -182,7 +182,7 @@
       <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r14e5ada2">課表與訓練計畫</h2></div>
       <div class="section" data-i18n="staticHtml.r4c4a6c62">依我的訓練目的推薦</div>
       <div id="goalProgramRecommendations"></div>
-      <div class="section">系統課表 <span class="count-badge" id="programCount"></span></div>
+      <div class="section"><span data-i18n="settingsUi.systemPrograms">系統課表</span> <span class="count-badge" id="programCount"></span></div>
       <div class="card">
         <div class="library-toolbar">
           <div class="field"><label data-i18n="staticHtml.re23ac6b0">搜尋</label><input id="programSearch" placeholder="新手、PPL、圓肩、久坐、後鏈、30 分鐘..." data-i18n-placeholder="staticHtml.r51f6b1e3"></div>
@@ -197,13 +197,13 @@
         </div>
       </div>
       <div id="systemProgramList"></div>
-      <div class="section">我的模板 <button class="btn small primary" id="addTemplateBtn" data-i18n="staticHtml.r37e6ab14">＋ 自己建立</button></div>
+      <div class="section"><span data-i18n="settingsUi.myTemplates">我的模板</span> <button class="btn small primary" id="addTemplateBtn" data-i18n="staticHtml.r37e6ab14">＋ 自己建立</button></div>
       <div id="templateList"></div>
     </div>
 
     <div id="settingsExercises" class="settings-subpage hidden">
       <div class="settings-subhead"><button class="btn small ghost settings-back" type="button" data-i18n="staticHtml.rc76c65d2">‹ 返回</button><h2 data-i18n="staticHtml.r539c13c9">動作與器械</h2></div>
-      <div class="section">器械庫 <span class="count-badge" id="equipmentCount"></span></div>
+      <div class="section"><span data-i18n="settingsUi.equipmentLibrary">器械庫</span> <span class="count-badge" id="equipmentCount"></span></div>
       <div class="card"><div class="library-toolbar">
         <div class="field"><label data-i18n="staticHtml.ra9e8b922">中英文／品牌／型號搜尋</label><input id="systemEqSearch" placeholder="腿推、Life Fitness、HS-CP、1MTH033、3001、L10..." data-i18n-placeholder="staticHtml.r194c8563"></div>
         <div class="field"><label data-i18n="staticHtml.rf02fbbe5">分類</label><select id="systemEqCategory"></select></div>
@@ -220,7 +220,7 @@
       </div></div>
       <div id="systemEquipmentList"></div>
 
-      <div class="section">動作庫 <button class="btn small primary" id="addExerciseLibBtn" data-i18n="staticHtml.r512766f3">＋ 自訂動作</button></div>
+      <div class="section"><span data-i18n="settingsUi.exerciseLibrary">動作庫</span> <button class="btn small primary" id="addExerciseLibBtn" data-i18n="staticHtml.r512766f3">＋ 自訂動作</button></div>
       <div class="card"><div class="field"><label data-i18n="staticHtml.r713478e6">搜尋中英文動作</label><input id="libSearch" placeholder="例如：胸推、Chest Press" data-i18n-placeholder="staticHtml.r0db49791"></div></div>
       <div id="libraryList"></div>
     </div>
