@@ -26,7 +26,7 @@
       noTraining:'這個期間沒有訓練紀錄。',recentPrefix:'最近 ',showMore:'顯示更多（還有 {count} 個）',noFilteredExercise:'找不到符合搜尋或肌群條件的動作。',
       showing:'顯示 {visible} / {total}',bestDuration:'最長時間',bestDistance:'最長距離',bestSetTime:'最佳單組',bestTotalTime:'單次最高總時間',
       historyBestSet:'歷史最佳組',estimated1rm:'估算一次最大重量（e1RM）趨勢',maxWeight:'最高重量',maxReps:'單組最多次數',maxVolume:'單次最高完成量',
-      recentAverage:'最近平均 {kind}',progressSlow:'進步趨勢可能趨緩',progressing:'近期仍有進步訊號'
+      recentAverage:'最近平均 {kind}',progressSlow:'進步趨勢可能趨緩',progressing:'近期仍有進步訊號',confidenceLow:'低',confidenceInsufficient:'資料不足',confidenceHigh:'高',confidenceMedium:'中'
     },
     analysis:{
       title:'分析',days7:'7 天',days30:'30 天',days90:'90 天',all:'全部',
