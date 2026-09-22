@@ -26,6 +26,7 @@
     actions:{manualEntry:'手動補登'},
     nav:{home:'首頁',training:'訓練',records:'紀錄',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'本週肌群目標',recentProgress:'最近進步',recentWorkouts:'最近訓練'},
+    homeUi:{freeTraining:'自由訓練',noSystemProgram:'目前沒有可用的系統課表。'},
     records:{title:'訓練紀錄',month:'月份',muscle:'肌群',prevMonth:'← 上月',thisMonth:'本月',nextMonth:'下月 →',trained:'有訓練',untrained:'無訓練',today:'今天',trash:'回收筒',trashHint:'30 天後可手動清除'},
     recordsUi:{
       trashEmpty:'回收筒是空的。',weekdaySun:'日',weekdayMon:'一',weekdayTue:'二',weekdayWed:'三',weekdayThu:'四',weekdayFri:'五',weekdaySat:'六',
@@ -91,6 +92,7 @@
       deleteWithHistory:'刪除「{name}」？歷史訓練仍會保留健身房名稱。',deleteSimple:'刪除「{name}」？'
     },
     training:{start:'開始訓練',finish:'完成本次訓練',addExercise:'加入動作'},
+    coachUi:{aboutMinutes:'約 {minutes} 分'},
     trainingUi:{
       startToday:'開始今天的訓練',landingHint:'有目前計畫時建議依 A／B／C 順序訓練；也可以從「我的模板」或 {count} 套系統課表開始。',
       myTemplates:'我的模板',systemPrograms:'系統課表庫',longTermPlan:'長期課表與目前計畫',bodyMarked:'今天有身體狀況標記',bodyMarkedHint:'{summary}。相關動作會另外顯示提醒。',viewEdit:'查看／修改',
@@ -218,6 +220,43 @@
       highWeight:'{name} 有非常高的重量',highReps:'{name} 有異常高的次數',longSet:'{name} 單組時間超過 2 小時',
       longCardio:'{name} 有氧時間超過 10 小時',largeDistance:'{name} 距離看起來異常',largeIncline:'{name} 坡度看起來異常'
     },
+    coachReasons:{
+      equipmentUnknown:'健身房器材資料不足，暫不因器材扣分',
+      equipmentNone:'此課表幾乎不依賴固定器械',
+      equipmentSubstitute:'，另有 {count} 個可替代',
+      equipmentCoverage:'{gym}：直接可用 {direct}/{total}{substitute}',
+      priorityNone:'未指定優先部位，以全身平衡為主',
+      priorityCoverage:'優先部位 {muscles}：課表每週估算刺激 {values}',
+      volumeNeutral:'近 28 天資料較少，訓練量需求採中性評分',
+      volumeOkay:'近期各主要肌群沒有明顯低於目前週目標',
+      volumeNeed:'近期較需要補足：{items}',
+      volumeNeedItem:'{muscle} 約差 {sets} 組/週',
+      movementNeutral:'動作模式資料較少，採中性評分',
+      movementOkay:'近期動作模式沒有明顯單向偏多',
+      movementNeed:'近期可補強：{patterns}',
+      continuityNone:'目前沒有足夠的近期進步序列可比較',
+      continuityKept:'保留 {count} 個近期仍在進步的動作',
+      continuityLow:'近期進步中的動作與此課表重疊較少',
+      schedule:'{days}；設定為 {targetDays} · {targetMinutes}',
+      preferenceMatch:'符合器械為主偏好',
+      preferenceMode:'課表形式：{mode}',
+      bodyReplace:'因今日身體狀況，由「{name}」替換',
+      cardio:'有氧',sets:'{count} 組'
+    },
+    coachMeta:{
+      bodyStatusExtra:' 今日身體狀況也會另外套用到動作替換與提醒。',
+      workoutNotes:'目前計畫： {program}｜長期目的：{goal}｜今日調整：{adjustment}',
+      coachNote:'目前為 {weeks} 週計畫；今日使用「{adjustment}」。這次調整不會改寫長期設定。',
+      goal:{general:'一般健康／建立習慣',hypertrophy:'增肌',strength:'增加肌力',fatLoss:'減脂／體能',posture:'體態平衡／舒緩',recovery:'恢復／輕量'},
+      adjustment:{
+        normalLabel:'照原計畫',normalDesc:'依目前 4–8 週計畫照常訓練。',
+        shortLabel:'只有 30 分鐘',shortDesc:'只保留今天最重要的動作，長期計畫不變。',
+        easyLabel:'今天比較累',easyDesc:'減少部分組數與輔助動作，不把單日疲勞當成永久課表變更。',
+        freshLabel:'今天狀態很好',freshDesc:'維持原計畫；是否加重仍依實際完成次數與 RIR／RPE 判斷。',
+        focusLabel:'想多練一個部位',focusDesc:'時間允許時加一個指定部位的輔助動作，只影響今天。'
+      }
+    },
+    tutorialCopy:{s01Title:"開始訓練",s01Copy:"要開始今天的訓練，直接點右上角「開始訓練」。",s02Title:"訓練頁",s02Copy:"選課表、開始空白訓練，以及進行中的重量與次數記錄都在這裡。",s03Title:"訓練紀錄",s03Copy:"完成訓練後，到「紀錄」查看過去每次實際完成的內容。",s04Title:"分析",s04Copy:"累積一些訓練後，可以在「分析」查看進步、PR 與長期趨勢。",s05Title:"設定",s05Copy:"課表、器械、健身房、訓練偏好與備份都集中在設定裡。",s06Title:"今天建議",s06Copy:"這裡會顯示今天最適合進行的訓練安排，以及目前計畫的下一個訓練日。",s07Title:"直接開始",s07Copy:"確認今天的安排後，從這裡直接進入訓練。",s08Title:"最近進步",s08Copy:"有新的重量、次數或 PR 時，可以從這裡快速看到近期變化。",s09Title:"最近訓練",s09Copy:"想確認上次做了什麼，可以從這裡快速回顧最近紀錄。",s10Title:"開始今天的訓練",s10Copy:"還沒有進行中的訓練時，這裡是訓練頁的主要入口。",s11Title:"我的模板",s11Copy:"使用你已經儲存的訓練模板快速開始。",s12Title:"系統課表庫",s12Copy:"想換課表時，可以從這裡瀏覽系統提供的訓練計畫。",s13Title:"目前計畫與推薦",s13Copy:"長期課表與適合你的推薦會集中顯示在這裡。",s14Title:"動作卡",s14Copy:"每張卡片代表一個動作；動作名稱、上次紀錄、重量、次數與組數都集中在這裡。",s15Title:"動作說明",s15Copy:"不熟悉動作時，從「說明」查看操作提示與 YouTube 示範。",s16Title:"kg / lb",s16Copy:"器械標示 kg 就用 kg，標示 lb 就切換成 lb；App 會自動換算保存。",s17Title:"輸入重量",s17Copy:"把這一組實際使用的重量填在這裡。",s18Title:"輸入次數",s18Copy:"做完後，把這組實際完成的次數填在這裡。",s19Title:"快速調整",s19Copy:"可以快速加減重量、增減次數，或直接複製上一組。",s20Title:"完成這組",s20Copy:"確認重量與次數後按「完成這組」；只有完成的組數才會進入主要紀錄。",s21Title:"休息計時器",s21Copy:"完成一組後可以使用休息倒數，也能快速選 60、90、120 或 180 秒。",s22Title:"訓練工具",s22Copy:"從這裡新增動作、調整順序、收起動作卡，或切換顯示層次。",s23Title:"完成訓練",s23Copy:"全部做完後，點這裡儲存本次訓練，之後就能在紀錄與分析查看結果。",s24Title:"訓練紀錄",s24Copy:"這一頁集中保存每一次已完成或手動補登的訓練。",s25Title:"日期與月份",s25Copy:"有訓練的日期會特別標示，可以用日期快速找到過去紀錄。",s26Title:"紀錄清單",s26Copy:"點開一筆紀錄，可以查看當天所有動作、重量、次數與組數。",s27Title:"分析期間",s27Copy:"先選 7 天、30 天、90 天或全部，再看你想比較的時間範圍。",s28Title:"本期重點",s28Copy:"先看上方重點摘要；App 會整理目前最值得注意的進步與變化。",s29Title:"分析內容",s29Copy:"往下可以查看肌群刺激、動作模式、進步與 PR 等長期趨勢。",s30Title:"課表與訓練計畫",s30Copy:"管理系統課表、自己的課表與目前訓練計畫。",s31Title:"動作與器械",s31Copy:"查找系統動作、器械，以及建立自己的動作。",s32Title:"健身房與我的器材",s32Copy:"建立不同健身房，並記住你常用的器械。",s33Title:"訓練偏好與目標",s33Copy:"調整訓練目標、每週天數、時間與器材偏好。",s34Title:"健身術語與說明",s34Copy:"看不懂 RIR、RPE、e1RM 等術語時，可以從這裡查詢。",s35Title:"資料與備份",s35Copy:"匯入、匯出與建立本機備份都放在這裡。",s36Title:"重新查看教學",s36Copy:"之後忘記某個功能時，可以從設定最下面重新啟動操作教學。"},
     analysisProgress:{
       previousZero:'前期 0',
       signal:{
