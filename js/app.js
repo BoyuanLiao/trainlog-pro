@@ -3,10 +3,11 @@ const APP_KEY='trainlogProData';
 const APP_VERSION='2.11.0';
 const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
+const MUSCLE_I18N={'胸':'domain.muscle.chest','背':'domain.muscle.back','腿':'domain.muscle.legs','肩膀':'domain.muscle.shoulders','二頭':'domain.muscle.biceps','三頭':'domain.muscle.triceps','腹部':'domain.muscle.core','有氧':'domain.muscle.cardio','其他':'domain.muscle.other'};
 const TYPES=[
-  ['weight_reps','重量 × 次數'],['duration','計時'],['cardio','有氧'],['bodyweight','體重型'],['unilateral','單側']
+  ['weight_reps','domain.type.weightReps'],['duration','domain.type.duration'],['cardio','domain.type.cardio'],['bodyweight','domain.type.bodyweight'],['unilateral','domain.type.unilateral']
 ];
-const KINDS=[['warmup','暖身'],['working','正式'],['drop','Drop'],['failure','Failure'],['backoff','Back-off']];
+const KINDS=[['warmup','domain.kind.warmup'],['working','domain.kind.working'],['drop','domain.kind.drop'],['failure','domain.kind.failure'],['backoff','domain.kind.backoff']];
 const PPL={胸:'Push',肩膀:'Push',三頭:'Push',背:'Pull',二頭:'Pull',腿:'Legs',腹部:'Core',有氧:'Cardio',其他:'Other'};
 const PATTERN_INFO={horizontal_push:'horizontal_push',horizontal_pull:'horizontal_pull',vertical_push:'vertical_push',vertical_pull:'vertical_pull',knee_dominant:'knee_dominant',hip_extension:'hip_extension',knee_flexion:'knee_flexion',knee_extension:'knee_extension',shoulder_abduction:'shoulder_abduction',elbow_flexion:'elbow_flexion',elbow_extension:'elbow_extension',core_flexion:'core_flexion',rotation:'rotation'};
 
@@ -14,6 +15,9 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const i18n=window.TrainLogI18n;
 const tr=(key,vars)=>i18n.t(key,vars);
 const uid=(p='id')=>p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function displayMuscle(value){const key=MUSCLE_I18N[value];return key?tr(key):String(value??'')}
+function displayType(value){const row=TYPES.find(x=>x[0]===value);return row?tr(row[1]):String(value??'')}
+function displayKind(value){const row=KINDS.find(x=>x[0]===value);return row?tr(row[1]):String(value??'')}
 const {n,clamp,isoToday,parseDate,isoDate,daysBetween,monthKey,fmtDate,LB_PER_KG,normalizeWeightUnit,toKg,fromKg,cleanWeightNumber,est1rm}=window.TrainLogUtils;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function fmtWeightNumber(weightKg,unit=(data?.settings?.unit||'kg')){return cleanWeightNumber(fromKg(weightKg,unit))}
