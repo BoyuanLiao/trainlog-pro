@@ -161,7 +161,7 @@ function rollingStart(days){
 function workoutsLastDays(days){const s=rollingStart(days);return data.workouts.filter(w=>w.date>=s&&w.date<=isoToday())}
 function rangeDateLabel(days){
  if(days==='all'){
-   if(!data.workouts.length)return'尚無訓練資料';
+   if(!data.workouts.length)return tr('analysisDynamic.noTrainingData');
    const first=[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date))[0]?.date||isoToday();
    return `${fmtDate(first)} – ${fmtDate(isoToday())}`;
  }
@@ -179,7 +179,7 @@ function stimulusMap(workouts){
   profileForExercise:exerciseStimulusProfile,
   sourceForExercise:e=>{
    const basis=exerciseAnalysisBasis(e);
-   return{key:e.exerciseId||e.nameSnapshot||'unknown',name:e.nameSnapshot||basis.lib.name||'動作',pattern:basis.pattern,equipment:basis.eq?.nameZh||''}
+   return{key:e.exerciseId||e.nameSnapshot||'unknown',name:e.nameSnapshot||basis.lib.name||tr('analysisDynamic.exerciseFallback'),pattern:basis.pattern,equipment:basis.eq?.nameZh||''}
   }
  })
 }
@@ -213,14 +213,14 @@ function exerciseSessionMetrics(exId){
    const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;
    if(e.type==='cardio'){
      const c=e.cardio||{};
-     sessions.push({date:w.date,type:'cardio',minutes:n(c.minutes),distance:n(c.distanceKm),speed:n(c.speed),volume:0,rir:null,rpe:null,label:`${n(c.minutes)} 分${n(c.distanceKm)?` · ${n(c.distanceKm)} km`:''}`});
+     sessions.push({date:w.date,type:'cardio',minutes:n(c.minutes),distance:n(c.distanceKm),speed:n(c.speed),volume:0,rir:null,rpe:null,label:tr('analysisDynamic.cardioSession',{minutes:n(c.minutes),distance:n(c.distanceKm)?` · ${n(c.distanceKm)} km`:''})});
      return
    }
    const sets=(e.sets||[]).filter(s=>s.completed&&s.kind!=='warmup');
    if(!sets.length)return;
    if(e.type==='duration'){
      const bestSeconds=Math.max(0,...sets.map(s=>n(s.seconds))),totalSeconds=sets.reduce((a,s)=>a+n(s.seconds),0);
-     sessions.push({date:w.date,type:'duration',bestSeconds,totalSeconds,volume:totalSeconds,rir:null,rpe:null,label:`最佳 ${bestSeconds} 秒`});return
+     sessions.push({date:w.date,type:'duration',bestSeconds,totalSeconds,volume:totalSeconds,rir:null,rpe:null,label:tr('analysisDynamic.durationBest',{seconds:bestSeconds})});return
    }
    let maxWeight=0,maxReps=0,bestE1rm=0,bestSet=null,volume=0;
    const repByWeight={};const rirs=[],rpes=[];
@@ -237,7 +237,7 @@ function exerciseSessionMetrics(exId){
      if(s.rpe!==''&&s.rpe!=null)rpes.push(n(s.rpe))
    });
    const avg=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
-   sessions.push({date:w.date,type:e.type,maxWeight,maxReps,bestE1rm,bestSet,volume,repByWeight,rir:avg(rirs),rpe:avg(rpes),sets:sets.length,label:bestSet?`${fmtWeightNumber(bestSet.weight)}${data.settings.unit}×${bestSet.reps}`:`${sets.length} 組`})
+   sessions.push({date:w.date,type:e.type,maxWeight,maxReps,bestE1rm,bestSet,volume,repByWeight,rir:avg(rirs),rpe:avg(rpes),sets:sets.length,label:bestSet?`${fmtWeightNumber(bestSet.weight)}${data.settings.unit}×${bestSet.reps}`:tr('analysisDynamic.setsCount',{count:sets.length})})
  });
  return sessions
 }
@@ -247,23 +247,23 @@ function plateauDetail(exId){return window.TrainLogProgress.plateauFromSessions(
 function movementMatrixHtml(moves){
  const cell=p=>`<div class="pattern-cell"><b>${n(moves[p]||0)}</b><span>${esc(patternDisplayName(p))}</span></div>`;
  const groups=[
-  ['上半身｜水平', ['horizontal_push','horizontal_pull']],
-  ['上半身｜垂直', ['vertical_push','vertical_pull']],
-  ['下半身｜膝部', ['knee_dominant','knee_flexion']],
-  ['下半身｜髖部', ['hip_extension','hip_abduction']],
-  ['手臂', ['elbow_flexion','elbow_extension']],
-  ['核心', ['core_stability','rotation']]
+  ['analysisDynamic.groupHorizontal', ['horizontal_push','horizontal_pull']],
+  ['analysisDynamic.groupVertical', ['vertical_push','vertical_pull']],
+  ['analysisDynamic.groupKnee', ['knee_dominant','knee_flexion']],
+  ['analysisDynamic.groupHip', ['hip_extension','hip_abduction']],
+  ['analysisDynamic.groupArms', ['elbow_flexion','elbow_extension']],
+  ['analysisDynamic.groupCore', ['core_stability','rotation']]
  ];
  const coverage=['horizontal_push','horizontal_pull','vertical_push','vertical_pull','knee_dominant','knee_flexion','hip_extension','core_stability'];
- return `<div class="pattern-matrix">${groups.map(([name,ps])=>`<div class="pattern-group"><div class="pattern-group-title">${name}</div><div class="pattern-pair">${ps.map(cell).join('')}</div></div>`).join('')}</div>
+ return `<div class="pattern-matrix">${groups.map(([name,ps])=>`<div class="pattern-group"><div class="pattern-group-title">${esc(tr(name))}</div><div class="pattern-pair">${ps.map(cell).join('')}</div></div>`).join('')}</div>
  <div class="coverage-tags">${coverage.map(p=>`<span class="coverage-tag ${n(moves[p])>0?'hit':''}">${n(moves[p])>0?'✓':'—'} ${esc(patternDisplayName(p))}</span>`).join('')}</div>
  <div class="analysis-note">${esc(tr("residual.r8b7fede0"))}</div>`
 }
 function persistentMovementBias(){
  const days=28,end=isoToday(),pairs=[
-  {a:'horizontal_push',b:'horizontal_pull',aName:'水平推',bName:'水平拉'},
-  {a:'vertical_push',b:'vertical_pull',aName:'垂直推',bName:'垂直拉'},
-  {a:'knee_dominant',b:'knee_flexion',aName:'膝主導',bName:'膝屈曲'}
+  {a:'horizontal_push',b:'horizontal_pull',aNameKey:'analysisDynamic.horizontalPush',bNameKey:'analysisDynamic.horizontalPull'},
+  {a:'vertical_push',b:'vertical_pull',aNameKey:'analysisDynamic.verticalPush',bNameKey:'analysisDynamic.verticalPull'},
+  {a:'knee_dominant',b:'knee_flexion',aNameKey:'analysisDynamic.kneeDominant',bNameKey:'analysisDynamic.kneeFlexion'}
  ];
  for(const pair of pairs){
    let aWins=0,bWins=0,usable=0,totalA=0,totalB=0;
@@ -273,8 +273,8 @@ function persistentMovementBias(){
      totalA+=a;totalB+=b;if(a+b<4)continue;usable++;
      if(a>b*1.4&&a-b>=2)aWins++;else if(b>a*1.4&&b-a>=2)bWins++
    }
-   if(usable>=3&&aWins>=3){const programId=pair.a==='horizontal_push'?'p_posture_pushpull_2':pair.a==='vertical_push'?'p_posture_verticalpull_2':pair.a==='knee_dominant'?'p_posture_posteriorchain_2':'';return{title:`${pair.aName}持續多於${pair.bName}`,desc:`最近 4 個七天區間中，有 ${aWins} 個區間的${pair.aName}正式組明顯較多。這代表近期訓練分布偏向${pair.aName}，不是姿勢或肌力失衡診斷。`,kind:'watch',programId}};
-   if(usable>=3&&bWins>=3)return{title:`${pair.bName}持續多於${pair.aName}`,desc:`最近 4 個七天區間中，有 ${bWins} 個區間的${pair.bName}正式組明顯較多。這代表近期訓練分布偏向${pair.bName}，不是姿勢或肌力失衡診斷。`,kind:'watch'}
+   if(usable>=3&&aWins>=3){const programId=pair.a==='horizontal_push'?'p_posture_pushpull_2':pair.a==='vertical_push'?'p_posture_verticalpull_2':pair.a==='knee_dominant'?'p_posture_posteriorchain_2':'';const a=tr(pair.aNameKey),b=tr(pair.bNameKey);return{title:tr('analysisDynamic.biasTitle',{a,b}),desc:tr('analysisDynamic.biasDesc',{wins:aWins,a,b}),kind:'watch',programId}};
+   if(usable>=3&&bWins>=3){const a=tr(pair.bNameKey),b=tr(pair.aNameKey);return{title:tr('analysisDynamic.biasTitle',{a,b}),desc:tr('analysisDynamic.biasDesc',{wins:bWins,a,b}),kind:'watch'}}
  }
  return null
 }
@@ -285,7 +285,7 @@ function strongestRecentExerciseProgress(workouts){
    const ss=exerciseSessionMetrics(id);if(ss.length<2)return;
    const cur=ss.at(-1),prev=ss.at(-2);if(!workouts.some(w=>w.date===cur.date))return;
    const signals=progressSignals(prev,cur);if(!signals.length)return;
-   const lib=getExercise(id),name=lib?.name||(data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id)?.nameSnapshot)||'動作';
+   const lib=getExercise(id),name=lib?.name||(data.workouts.flatMap(w=>w.exercises||[]).find(e=>e.exerciseId===id)?.nameSnapshot)||tr('analysisDynamic.exerciseFallback');
    const score=signals.length+(prev.bestE1rm&&cur.bestE1rm?Math.max(0,(cur.bestE1rm-prev.bestE1rm)/prev.bestE1rm)*10:0);
    if(!best||score>best.score)best={id,name,signals,score,cur,prev}
  });
@@ -294,19 +294,19 @@ function strongestRecentExerciseProgress(workouts){
 function buildAnalysisHighlights(ws,prevWs,days,confidence,cons){
  const out=[];
  if(confidence.level==='insufficient'){
-   out.push({kind:'info',title:'目前資料還不夠多',desc:`這個期間只有 ${confidence.workouts} 次訓練、${confidence.formal} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。`})
+   out.push({kind:'info',title:tr('analysisDynamic.insufficientTitle'),desc:tr('analysisDynamic.insufficientDesc',{workouts:confidence.workouts,sets:confidence.formal})})
  }
  const prog=strongestRecentExerciseProgress(ws);
- if(prog)out.push({kind:'good',title:`${prog.name} 出現進步訊號`,desc:`和上一次相比：${prog.signals.slice(0,3).map(localizedMessage).join('、')}。`});
+ if(prog)out.push({kind:'good',title:tr('analysisDynamic.progressTitle',{name:prog.name}),desc:tr('analysisDynamic.progressDesc',{signals:prog.signals.slice(0,3).map(localizedMessage).join('、')})});
  const bias=persistentMovementBias();if(bias&&confidence.level!=='insufficient')out.push(bias);
- if(cons.totalWeeks>=2&&cons.weeks===cons.totalWeeks&&ws.length>=2)out.push({kind:'good',title:'近期訓練保持連續',desc:`統計期間涵蓋的 ${cons.totalWeeks} 個週區間都有訓練紀錄，平均約 ${cons.avgPerWeek.toFixed(1)} 次／週。`});
+ if(cons.totalWeeks>=2&&cons.weeks===cons.totalWeeks&&ws.length>=2)out.push({kind:'good',title:tr('analysisDynamic.consistencyTitle'),desc:tr('analysisDynamic.consistencyDesc',{weeks:cons.totalWeeks,average:cons.avgPerWeek.toFixed(1)})});
  if(days!=='all'&&prevWs.length){
    const curVol=ws.reduce((a,w)=>a+workoutVolume(w),0),prevVol=prevWs.reduce((a,w)=>a+workoutVolume(w),0),c=comparePct(curVol,prevVol);
-   if(c&&c.pct!=null&&Math.abs(c.pct)>=20)out.push({kind:'info',title:`訓練量較前一期${c.pct>0?'增加':'減少'}`,desc:`目前期間為 ${fmtKg(curVol)}，前一期為 ${fmtKg(prevVol)}，變化約 ${Math.abs(Math.round(c.pct))}%。這只是量的變化，不自動代表好或壞。`})
+   if(c&&c.pct!=null&&Math.abs(c.pct)>=20){const direction=tr(c.pct>0?'analysisDynamic.increase':'analysisDynamic.decrease');out.push({kind:'info',title:tr('analysisDynamic.volumeChangeTitle',{direction}),desc:tr('analysisDynamic.volumeChangeDesc',{current:fmtKg(curVol),previous:fmtKg(prevVol),percent:Math.abs(Math.round(c.pct))})})}
  }
  const effort=effortStats(ws),rate=effort.total?(effort.high+effort.mid+effort.low)/effort.total:0;
- if(effort.total>=8&&rate<.5)out.push({kind:'info',title:'RIR / RPE 紀錄較少',desc:`目前只有約 ${Math.round(rate*100)}% 的正式組有強度紀錄，補上 RIR / RPE 後，進步與疲勞分析會更可靠。`});
- if(!out.length)out.push({kind:'info',title:'先累積更多可比較紀錄',desc:'目前沒有明顯需要優先提醒的變化。持續記錄重量、次數與 RIR / RPE，之後會更容易看出趨勢。'});
+ if(effort.total>=8&&rate<.5)out.push({kind:'info',title:tr('analysisDynamic.effortSparseTitle'),desc:tr('analysisDynamic.effortSparseDesc',{percent:Math.round(rate*100)})});
+ if(!out.length)out.push({kind:'info',title:tr('analysisDynamic.collectMoreTitle'),desc:tr('analysisDynamic.collectMoreDesc')});
  return out.slice(0,3)
 }
 function recentMuscleLoad(days=7){
@@ -331,10 +331,10 @@ function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice
 function progressionToneClass(view){return view?.tone==='good'?'good':view?.tone==='warn'?'warn':''}
 function progressionApplyLabel(adv,ex,e){
  if(!adv||!trainingProgressionActions.canApply(adv))return'';
- if(adv.action==='add_reps')return'套用：未完成正式組每組 +1 下';
- if(adv.action==='increase_time')return`套用：未完成正式組每組 +${n(ex?.increment)||5} 秒`;
+ if(adv.action==='add_reps')return tr('analysisDynamic.applyReps');
+ if(adv.action==='increase_time')return tr('analysisDynamic.applyTime',{seconds:n(ex?.increment)||5});
  const unit=exerciseInputUnit(e),inc=machineIncrementForUnit(ex,unit),sign=adv.action==='reduce_load'?'−':'+';
- return`套用：未完成正式組 ${sign}${cleanWeightNumber(inc)} ${unit}`
+ return tr('analysisDynamic.applyWeight',{sign,increment:cleanWeightNumber(inc),unit})
 }
 function plateau(exId){
  const pts=[];[...data.workouts].sort((a,b)=>a.date.localeCompare(b.date)).forEach(w=>{const e=(w.exercises||[]).find(x=>x.exerciseId===exId);if(!e)return;let best=0;(e.sets||[]).forEach(s=>{if(!s.completed)return;best=Math.max(best,est1rm(n(s.weight),n(s.reps)))});if(best)pts.push({date:w.date,v:best})});
@@ -344,13 +344,13 @@ function validateWorkout(w){
  const issues=[];(w.exercises||[]).forEach(e=>{
    (e.sets||[]).forEach(s=>{
     const maxW=1000;
-    if(n(s.weight)>maxW||n(s.leftWeight)>maxW||n(s.rightWeight)>maxW)issues.push(`${e.nameSnapshot} 有非常高的重量`);
-    if(n(s.reps)>300||n(s.leftReps)>300||n(s.rightReps)>300)issues.push(`${e.nameSnapshot} 有異常高的次數`);
-    if(n(s.seconds)>7200)issues.push(`${e.nameSnapshot} 單組時間超過 2 小時`);
+    if(n(s.weight)>maxW||n(s.leftWeight)>maxW||n(s.rightWeight)>maxW)issues.push(tr('analysisDynamic.highWeight',{name:e.nameSnapshot}));
+    if(n(s.reps)>300||n(s.leftReps)>300||n(s.rightReps)>300)issues.push(tr('analysisDynamic.highReps',{name:e.nameSnapshot}));
+    if(n(s.seconds)>7200)issues.push(tr('analysisDynamic.longSet',{name:e.nameSnapshot}));
    });
-   if(n(e.cardio?.minutes)>600)issues.push(`${e.nameSnapshot} 有氧時間超過 10 小時`);
-   if(n(e.cardio?.distanceKm)>500)issues.push(`${e.nameSnapshot} 距離看起來異常`);
-   if(n(e.cardio?.incline)>40)issues.push(`${e.nameSnapshot} 坡度看起來異常`);
+   if(n(e.cardio?.minutes)>600)issues.push(tr('analysisDynamic.longCardio',{name:e.nameSnapshot}));
+   if(n(e.cardio?.distanceKm)>500)issues.push(tr('analysisDynamic.largeDistance',{name:e.nameSnapshot}));
+   if(n(e.cardio?.incline)>40)issues.push(tr('analysisDynamic.largeIncline',{name:e.nameSnapshot}));
  });return issues
 }
 
@@ -748,7 +748,7 @@ function renderHome(){
  $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${esc(displayMuscle(m))}</b><span>${esc(tr('finalUi.groupsValue',{value:`${val} / ${goal||'—'}`}))}</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
  const prog=[];data.exerciseLibrary.filter(ex=>['weight_reps','bodyweight','unilateral','duration'].includes(ex.type)).forEach(ex=>{const adv=progressionAdvice(ex.id);const best=bestSetForExercise(ex.id);if(best&&adv)prog.push({ex,adv,best})});prog.sort((a,b)=>b.best.date.localeCompare(a.best.date));
  $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">${esc(tr('finalUi.recentEvidence',{date:p.best.date,evidence:view.evidence}))}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">${esc(tr('finalUi.judgement',{reason:view.reason}))}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">${esc(tr("residual.r24cff772"))}</div>';
- const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||'動作')}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · ${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
+ const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||tr('analysisDynamic.exerciseFallback'))}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · ${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
  $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):`<div class="card empty">${esc(tr('dynamic.noCompletedWorkout'))}</div>`;$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
 }
 function suggestTemplate(){const r=coachRecommendations(coachGoal(),1)[0];if(r)return{title:r.p.nameZh,reason:r.reasons.join(' · '),templateId:'',systemProgramId:r.p.id};return{title:'自由訓練',reason:'目前沒有可用的系統課表。',templateId:'',systemProgramId:''}}
@@ -2275,7 +2275,7 @@ function parseCSV(text){
 }
 function csvToData(text){
  const rows=parseCSV(text.replace(/^\ufeff/,''));if(rows.length<2)throw Error('empty');const h=rows[0],ix=k=>h.indexOf(k);const wm=new Map();
- rows.slice(1).forEach(r=>{const id=r[ix('workoutId')]||uid('w');if(!wm.has(id))wm.set(id,{id,date:r[ix('date')]||isoToday(),name:r[ix('workoutName')]||'CSV 匯入',duration:n(r[ix('duration')]),status:'completed',startedAt:'',endedAt:'',notes:r[ix('notes')]||'',gymId:'',gymNameSnapshot:ix('gymName')>=0?(r[ix('gymName')]||''):'',deload:r[ix('deload')]==='true',preStatus:{},pain:'',exercises:[]});const w=wm.get(id),eid=r[ix('exerciseId')]||uid('excsv'),name=r[ix('exerciseName')]||'動作',type=r[ix('type')]||'weight_reps',inputUnit=ix('inputUnit')>=0?normalizeWeightUnit(r[ix('inputUnit')]):'kg';let e=w.exercises.find(x=>x.exerciseId===eid);if(!e){e={exerciseId:eid,nameSnapshot:name,muscle:r[ix('muscle')]||'其他',type,equipmentId:ix('equipmentId')>=0?(r[ix('equipmentId')]||''):'',notes:'',inputUnit,sets:[],cardio:{minutes:0,distanceKm:0,speed:0,incline:0,pace:''}};w.exercises.push(e)}if(type==='cardio'){e.cardio={minutes:n(r[ix('cardioMinutes')]),distanceKm:n(r[ix('distanceKm')]),speed:n(r[ix('speed')]),incline:n(r[ix('incline')]),pace:''}}else{const wIdx=ix('weightKg')>=0?ix('weightKg'):ix('weight'),lwIdx=ix('leftWeightKg')>=0?ix('leftWeightKg'):ix('leftWeight'),rwIdx=ix('rightWeightKg')>=0?ix('rightWeightKg'):ix('rightWeight');e.sets.push({id:uid('s'),kind:r[ix('kind')]||'working',weight:n(r[wIdx]),reps:n(r[ix('reps')]),rir:r[ix('rir')]||'',rpe:r[ix('rpe')]||'',seconds:n(r[ix('seconds')]),leftWeight:n(r[lwIdx]),leftReps:n(r[ix('leftReps')]),rightWeight:n(r[rwIdx]),rightReps:n(r[ix('rightReps')]),completed:true})}});
+ rows.slice(1).forEach(r=>{const id=r[ix('workoutId')]||uid('w');if(!wm.has(id))wm.set(id,{id,date:r[ix('date')]||isoToday(),name:r[ix('workoutName')]||'CSV 匯入',duration:n(r[ix('duration')]),status:'completed',startedAt:'',endedAt:'',notes:r[ix('notes')]||'',gymId:'',gymNameSnapshot:ix('gymName')>=0?(r[ix('gymName')]||''):'',deload:r[ix('deload')]==='true',preStatus:{},pain:'',exercises:[]});const w=wm.get(id),eid=r[ix('exerciseId')]||uid('excsv'),name=r[ix('exerciseName')]||tr('analysisDynamic.exerciseFallback'),type=r[ix('type')]||'weight_reps',inputUnit=ix('inputUnit')>=0?normalizeWeightUnit(r[ix('inputUnit')]):'kg';let e=w.exercises.find(x=>x.exerciseId===eid);if(!e){e={exerciseId:eid,nameSnapshot:name,muscle:r[ix('muscle')]||'其他',type,equipmentId:ix('equipmentId')>=0?(r[ix('equipmentId')]||''):'',notes:'',inputUnit,sets:[],cardio:{minutes:0,distanceKm:0,speed:0,incline:0,pace:''}};w.exercises.push(e)}if(type==='cardio'){e.cardio={minutes:n(r[ix('cardioMinutes')]),distanceKm:n(r[ix('distanceKm')]),speed:n(r[ix('speed')]),incline:n(r[ix('incline')]),pace:''}}else{const wIdx=ix('weightKg')>=0?ix('weightKg'):ix('weight'),lwIdx=ix('leftWeightKg')>=0?ix('leftWeightKg'):ix('leftWeight'),rwIdx=ix('rightWeightKg')>=0?ix('rightWeightKg'):ix('rightWeight');e.sets.push({id:uid('s'),kind:r[ix('kind')]||'working',weight:n(r[wIdx]),reps:n(r[ix('reps')]),rir:r[ix('rir')]||'',rpe:r[ix('rpe')]||'',seconds:n(r[ix('seconds')]),leftWeight:n(r[lwIdx]),leftReps:n(r[ix('leftReps')]),rightWeight:n(r[rwIdx]),rightReps:n(r[ix('rightReps')]),completed:true})}});
  return{schemaVersion:CURRENT_SCHEMA,workouts:[...wm.values()],exerciseLibrary:data.exerciseLibrary,templates:[],gyms:[],equipment:[],settings:data.settings,bodyStatus:[],trash:[],snapshots:[],strengthGoals:[]}
 }
 
