@@ -181,6 +181,7 @@
       recentRecords:'最近紀錄',recentVsPrevious:'最近一次 vs 上一次',noProgressSignal:'目前沒有明顯進步訊號',
       onlyOneRecord:'只有一次紀錄，暫時無法比較。'
     },
+    reasons:{deleteGym:"刪除健身房",discardWorkout:"放棄訓練",setCurrentPlan:"設定目前訓練計畫",endCurrentPlan:"結束目前訓練計畫",startCurrentPlanDay:"開始目前計畫今日訓練",createPlanFromWorkout:"從訓練建立課表",startWorkout:"開始訓練",editWorkoutContent:"編輯訓練內容",finishWorkout:"完成訓練",restoreRecord:"復原紀錄",purgeRecord:"永久刪除",editRecord:"編輯紀錄",copyWorkout:"複製訓練",deleteRecord:"刪除紀錄",startManual:"開始手動補登",importSystemProgram:"加入系統 Program",startSystemProgram:"開始系統課表",addMyEquipment:"加入我的器材",copySystemExercise:"複製系統動作",deleteTemplate:"刪除課表",changeEquipmentUnit:"修改器材重量單位",deleteEquipment:"刪除器材",deleteStrengthGoal:"刪除力量目標",restoreSnapshot:"恢復快照",deleteExercise:"刪除動作",importData:"匯入資料",addGym:"新增健身房",syncGyms:"從訓練紀錄帶入健身房",addEquipment:"新增器材",addStrengthGoal:"新增力量目標",changeSettings:"修改設定",reinitialize:"重新初始化",beforeHistoryEdit:"歷史訓練編輯前",beforeBasicHistoryEdit:"歷史訓練基本資料編輯前",beforeRestore:"恢復前",beforeImport:"匯入前",autoSnapshot:"自動快照"},
     analysisProgress:{
       previousZero:'前期 0',
       signal:{
