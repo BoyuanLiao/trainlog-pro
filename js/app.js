@@ -194,11 +194,12 @@ function previousPeriodLabel(days){
  const d=Math.max(1,n(days)),curStart=rollingStart(d),prevEnd=shiftIso(curStart,-1),prevStart=shiftIso(prevEnd,-(d-1));
  return `${fmtDate(prevStart)} – ${fmtDate(prevEnd)}`
 }
+function localizedMessage(value){return value?.messageKey?tr(value.messageKey,value.messageParams||{}):String(value?.text||'')}
 function comparePct(cur,prev){return window.TrainLogProgress.comparePct(cur,prev)}
 function compareBadge(cur,prev){
  const c=comparePct(cur,prev);if(!c)return'';
  const arrow=c.dir==='up'?'↑':c.dir==='down'?'↓':'→';
- return `<span class="compare-badge ${c.dir}">${arrow} ${esc(c.text)}</span>`
+ return `<span class="compare-badge ${c.dir}">${arrow} ${esc(c.messageKey?localizedMessage(c):c.text)}</span>`
 }
 function analysisConfidence(workouts){return window.TrainLogAnalysis.analysisConfidence(workouts,{formalSetCount,patternForExercise:e=>exerciseAnalysisBasis(e).pattern})}
 function exerciseSessionMetrics(exId){
@@ -291,7 +292,7 @@ function buildAnalysisHighlights(ws,prevWs,days,confidence,cons){
    out.push({kind:'info',title:'目前資料還不夠多',desc:`這個期間只有 ${confidence.workouts} 次訓練、${confidence.formal} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。`})
  }
  const prog=strongestRecentExerciseProgress(ws);
- if(prog)out.push({kind:'good',title:`${prog.name} 出現進步訊號`,desc:`和上一次相比：${prog.signals.slice(0,3).map(x=>x.text).join('、')}。`});
+ if(prog)out.push({kind:'good',title:`${prog.name} 出現進步訊號`,desc:`和上一次相比：${prog.signals.slice(0,3).map(localizedMessage).join('、')}。`});
  const bias=persistentMovementBias();if(bias&&confidence.level!=='insufficient')out.push(bias);
  if(cons.totalWeeks>=2&&cons.weeks===cons.totalWeeks&&ws.length>=2)out.push({kind:'good',title:'近期訓練保持連續',desc:`統計期間涵蓋的 ${cons.totalWeeks} 個週區間都有訓練紀錄，平均約 ${cons.avgPerWeek.toFixed(1)} 次／週。`});
  if(days!=='all'&&prevWs.length){
@@ -321,7 +322,7 @@ function progressionAdvice(exId){
    limit:5
  })
 }
-function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv):null}
+function progressionDisplay(adv){return adv?trainingProgressionView.formatAdvice(adv,(key,vars)=>tr(key,vars)):null}
 function progressionToneClass(view){return view?.tone==='good'?'good':view?.tone==='warn'?'warn':''}
 function progressionApplyLabel(adv,ex,e){
  if(!adv||!trainingProgressionActions.canApply(adv))return'';
@@ -1860,12 +1861,12 @@ function renderExerciseAnalysis(id){
    history=sessions.slice(-6).reverse().map(s=>`<div class="progress-session"><div class="progress-session-date">${fmtDate(s.date)}</div><div class="progress-session-main"><b>${esc(s.label)}</b>${s.bestE1rm?` · 估算一次最大重量約 ${fmtWeight(s.bestE1rm)}`:''}${s.rir!=null?` · RIR ${s.rir.toFixed(1)}`:''}${s.rpe!=null?` · RPE ${s.rpe.toFixed(1)}`:''} · ${s.sets||0} 組</div></div>`).join('')
  }
  const overloadText=over.transitions?`最近 ${over.transitions+1} 次中，有 ${over.count} 次相較前一次出現進步訊號。`:'至少需要兩次紀錄才能比較。';
- const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressSlow'))} ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:
+ const platBox=plat.state==='slow'?`<div class="warnbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressSlow'))} ${infoButton('plateau_detection')}</b><div class="small" style="margin-top:4px">${esc(localizedMessage(plat))}</div></div>`:
    plat.state==='progress'?`<div class="goodbox" style="margin-top:9px"><b>${esc(tr('analysisUi.progressing'))}</b><div class="small" style="margin-top:4px">${esc(plat.text)}</div></div>`:'';
  box.innerHTML=`<div class="record-title">${esc(name)}</div>
    ${summary}
    <div class="section" style="margin-top:12px">${esc(tr('dynamic.recentVsPrevious'))}</div>
-   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(s.text)}</span>`).join(''):`<span class="signal">${esc(tr('dynamic.noProgressSignal'))}</span>`}</div>`:`<div class="analysis-note">${esc(tr('dynamic.onlyOneRecord'))}</div>`}
+   ${prev?`<div class="signal-list">${lastSignals.length?lastSignals.map(s=>`<span class="signal good">✓ ${esc(localizedMessage(s))}</span>`).join(''):`<span class="signal">${esc(tr('dynamic.noProgressSignal'))}</span>`}</div>`:`<div class="analysis-note">${esc(tr('dynamic.onlyOneRecord'))}</div>`}
    <div class="analysis-note">${esc(overloadText)} ${infoButton('progressive_overload_detection')}</div>
    ${platBox}
    ${sparkline(pts)}
