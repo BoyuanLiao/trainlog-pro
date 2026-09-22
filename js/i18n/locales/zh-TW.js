@@ -200,6 +200,22 @@
       onlyOneRecord:'只有一次紀錄，暫時無法比較。'
     },
     reasons:{deleteGym:"刪除健身房",discardWorkout:"放棄訓練",setCurrentPlan:"設定目前訓練計畫",endCurrentPlan:"結束目前訓練計畫",startCurrentPlanDay:"開始目前計畫今日訓練",createPlanFromWorkout:"從訓練建立課表",startWorkout:"開始訓練",editWorkoutContent:"編輯訓練內容",finishWorkout:"完成訓練",restoreRecord:"復原紀錄",purgeRecord:"永久刪除",editRecord:"編輯紀錄",copyWorkout:"複製訓練",deleteRecord:"刪除紀錄",startManual:"開始手動補登",importSystemProgram:"加入系統 Program",startSystemProgram:"開始系統課表",addMyEquipment:"加入我的器材",copySystemExercise:"複製系統動作",deleteTemplate:"刪除課表",changeEquipmentUnit:"修改器材重量單位",deleteEquipment:"刪除器材",deleteStrengthGoal:"刪除力量目標",restoreSnapshot:"恢復快照",deleteExercise:"刪除動作",importData:"匯入資料",addGym:"新增健身房",syncGyms:"從訓練紀錄帶入健身房",addEquipment:"新增器材",addStrengthGoal:"新增力量目標",changeSettings:"修改設定",reinitialize:"重新初始化",beforeHistoryEdit:"歷史訓練編輯前",beforeBasicHistoryEdit:"歷史訓練基本資料編輯前",beforeRestore:"恢復前",beforeImport:"匯入前",autoSnapshot:"自動快照"},
+    analysisDynamic:{
+      noTrainingData:'尚無訓練資料',exerciseFallback:'動作',
+      cardioSession:'{minutes} 分{distance}',durationBest:'最佳 {seconds} 秒',setsCount:'{count} 組',
+      groupHorizontal:'上半身｜水平',groupVertical:'上半身｜垂直',groupKnee:'下半身｜膝部',groupHip:'下半身｜髖部',groupArms:'手臂',groupCore:'核心',
+      horizontalPush:'水平推',horizontalPull:'水平拉',verticalPush:'垂直推',verticalPull:'垂直拉',kneeDominant:'膝主導',kneeFlexion:'膝屈曲',
+      biasTitle:'{a}持續多於{b}',biasDesc:'最近 4 個七天區間中，有 {wins} 個區間的{a}正式組明顯較多。這代表近期訓練分布偏向{a}，不是姿勢或肌力失衡診斷。',
+      insufficientTitle:'目前資料還不夠多',insufficientDesc:'這個期間只有 {workouts} 次訓練、{sets} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。',
+      progressTitle:'{name} 出現進步訊號',progressDesc:'和上一次相比：{signals}。',
+      consistencyTitle:'近期訓練保持連續',consistencyDesc:'統計期間涵蓋的 {weeks} 個週區間都有訓練紀錄，平均約 {average} 次／週。',
+      increase:'增加',decrease:'減少',volumeChangeTitle:'訓練量較前一期{direction}',volumeChangeDesc:'目前期間為 {current}，前一期為 {previous}，變化約 {percent}%。這只是量的變化，不自動代表好或壞。',
+      effortSparseTitle:'RIR / RPE 紀錄較少',effortSparseDesc:'目前只有約 {percent}% 的正式組有強度紀錄，補上 RIR / RPE 後，進步與疲勞分析會更可靠。',
+      collectMoreTitle:'先累積更多可比較紀錄',collectMoreDesc:'目前沒有明顯需要優先提醒的變化。持續記錄重量、次數與 RIR / RPE，之後會更容易看出趨勢。',
+      applyReps:'套用：未完成正式組每組 +1 下',applyTime:'套用：未完成正式組每組 +{seconds} 秒',applyWeight:'套用：未完成正式組 {sign}{increment} {unit}',
+      highWeight:'{name} 有非常高的重量',highReps:'{name} 有異常高的次數',longSet:'{name} 單組時間超過 2 小時',
+      longCardio:'{name} 有氧時間超過 10 小時',largeDistance:'{name} 距離看起來異常',largeIncline:'{name} 坡度看起來異常'
+    },
     analysisProgress:{
       previousZero:'前期 0',
       signal:{
