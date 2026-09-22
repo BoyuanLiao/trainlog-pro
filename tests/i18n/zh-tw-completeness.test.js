@@ -35,7 +35,7 @@ for(const {file,source} of sources){
   // Locale-key maps such as MUSCLE_I18N are passed to tr() indirectly.
   for(const m of source.matchAll(/['"]((?:domain|tutorialCopy|analysisProgress|progression)\.[A-Za-z0-9_.-]+)['"]/g))add(m[1],file);
 }
-const missing=[...keys].filter(key=>typeof get(locale,key)!=='string')
+const missing=[...keys.keys()].filter(key=>typeof get(locale,key)!=='string')
   .map(key=>({key,files:[...keys.get(key)]}));
 assert.deepStrictEqual(missing,[],'missing zh-TW translations: '+JSON.stringify(missing));
 
