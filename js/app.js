@@ -899,12 +899,14 @@ function bindBodyStatusButtons(scope=document){
  scope.querySelectorAll?.('[data-open-body-status]').forEach(b=>b.onclick=()=>openBodyStatusModal(b.dataset.openBodyStatus||isoToday()))
 }
 const UI_LEVELS={
- simple:{name:'簡易',short:'隱藏 RIR',desc:'訓練操作與一般模式相同，只隱藏剩餘次數（RIR／RPE）欄位。'},
- standard:{name:'一般',short:'顯示 RIR',desc:'保留完整的一般訓練操作，並顯示剩餘次數（RIR／RPE）。'},
- advanced:{name:'進階',short:'完整控制',desc:'顯示完整組別、RIR／RPE 與進階分析；中文為主，英文縮寫只作輔助。'}
+ simple:{nameKey:'domain.uiLevel.simpleName',shortKey:'domain.uiLevel.simpleShort',descKey:'domain.uiLevel.simpleDesc'},
+ standard:{nameKey:'domain.uiLevel.standardName',shortKey:'domain.uiLevel.standardShort',descKey:'domain.uiLevel.standardDesc'},
+ advanced:{nameKey:'domain.uiLevel.advancedName',shortKey:'domain.uiLevel.advancedShort',descKey:'domain.uiLevel.advancedDesc'}
 };
 function uiLevel(){return data.settings.uiLevel||'standard'}
-function uiLevelName(level=uiLevel()){return UI_LEVELS[level]?.name||'一般'}
+function uiLevelName(level=uiLevel()){return tr(UI_LEVELS[level]?.nameKey||'domain.uiLevel.standardName')}
+function uiLevelShort(level=uiLevel()){return tr(UI_LEVELS[level]?.shortKey||'domain.uiLevel.standardShort')}
+function uiLevelDesc(level=uiLevel()){return tr(UI_LEVELS[level]?.descKey||'domain.uiLevel.standardDesc')}
 function applyUiLevel(){
  const level=uiLevel();document.body.dataset.uiLevel=level;
  const badge=$('#uiLevelHeaderBadge');if(badge)badge.textContent=tr('finalUi.uiLevelMode',{level:uiLevelName(level)})
@@ -912,7 +914,7 @@ function applyUiLevel(){
 function syncUiLevelControls(scope=document){
  const cur=uiLevel();
  scope.querySelectorAll?.('[data-ui-level]').forEach(b=>b.classList.toggle('on',b.dataset.uiLevel===cur));
- scope.querySelectorAll?.('.ui-level-hint').forEach(h=>h.textContent=UI_LEVELS[cur]?.desc||'')
+ scope.querySelectorAll?.('.ui-level-hint').forEach(h=>h.textContent=uiLevelDesc(cur))
 }
 function setUiLevel(level){
  if(!UI_LEVELS[level])return;
@@ -928,7 +930,7 @@ function setUiLevel(level){
 }
 function uiLevelSwitchHtml(){
  const cur=uiLevel();
- return `<div class="ui-level-switch">${Object.entries(UI_LEVELS).map(([key,v])=>`<button type="button" class="${cur===key?'on':''}" data-ui-level="${key}">${v.name}<small>${v.short}</small></button>`).join('')}</div><div class="ui-level-hint">${esc(UI_LEVELS[cur].desc)}</div>`
+ return `<div class="ui-level-switch">${Object.entries(UI_LEVELS).map(([key,v])=>`<button type="button" class="${cur===key?'on':''}" data-ui-level="${key}">${v.name}<small>${v.short}</small></button>`).join('')}</div><div class="ui-level-hint">${esc(uiLevelDesc(cur))}</div>`
 }
 function bindUiLevelSwitch(scope=document){
  syncUiLevelControls(scope);
