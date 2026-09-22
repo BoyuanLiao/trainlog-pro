@@ -355,56 +355,56 @@ function validateWorkout(w){
 }
 
 const APP_COACH_STEPS=[
- {selector:'#quickStart',title:'開始訓練',copy:'要開始今天的訓練，直接點右上角「開始訓練」。'},
- {selector:'.nav button[data-page="trainPage"]',title:'訓練頁',copy:'選課表、開始空白訓練，以及進行中的重量與次數記錄都在這裡。'},
- {selector:'.nav button[data-page="recordsPage"]',title:'訓練紀錄',copy:'完成訓練後，到「紀錄」查看過去每次實際完成的內容。'},
- {selector:'.nav button[data-page="analysisPage"]',title:'分析',copy:'累積一些訓練後，可以在「分析」查看進步、PR 與長期趨勢。'},
- {selector:'.nav button[data-page="settingsPage"]',title:'設定',copy:'課表、器械、健身房、訓練偏好與備份都集中在設定裡。'}
+ {selector:'#quickStart',titleKey:'tutorialCopy.s01Title',copyKey:'tutorialCopy.s01Copy'},
+ {selector:'.nav button[data-page="trainPage"]',titleKey:'tutorialCopy.s02Title',copyKey:'tutorialCopy.s02Copy'},
+ {selector:'.nav button[data-page="recordsPage"]',titleKey:'tutorialCopy.s03Title',copyKey:'tutorialCopy.s03Copy'},
+ {selector:'.nav button[data-page="analysisPage"]',titleKey:'tutorialCopy.s04Title',copyKey:'tutorialCopy.s04Copy'},
+ {selector:'.nav button[data-page="settingsPage"]',titleKey:'tutorialCopy.s05Title',copyKey:'tutorialCopy.s05Copy'}
 ];
 
 const PAGE_COACH_STEPS={
  home:[
-  {selector:'#homeSuggestion',title:'今天建議',copy:'這裡會顯示今天最適合進行的訓練安排，以及目前計畫的下一個訓練日。'},
-  {selector:'#quickStart',title:'直接開始',copy:'確認今天的安排後，從這裡直接進入訓練。'},
-  {selector:'#recentProgress',title:'最近進步',copy:'有新的重量、次數或 PR 時，可以從這裡快速看到近期變化。'},
-  {selector:'#recentWorkouts',title:'最近訓練',copy:'想確認上次做了什麼，可以從這裡快速回顧最近紀錄。'}
+  {selector:'#homeSuggestion',titleKey:'tutorialCopy.s06Title',copyKey:'tutorialCopy.s06Copy'},
+  {selector:'#quickStart',titleKey:'tutorialCopy.s07Title',copyKey:'tutorialCopy.s07Copy'},
+  {selector:'#recentProgress',titleKey:'tutorialCopy.s08Title',copyKey:'tutorialCopy.s08Copy'},
+  {selector:'#recentWorkouts',titleKey:'tutorialCopy.s09Title',copyKey:'tutorialCopy.s09Copy'}
  ],
  trainLanding:[
-  {selector:'#trainLanding .hero',title:'開始今天的訓練',copy:'還沒有進行中的訓練時，這裡是訓練頁的主要入口。'},
-  {selector:'#trainStartBtn',title:'我的模板',copy:'使用你已經儲存的訓練模板快速開始。'},
-  {selector:'#browseProgramsBtn',title:'系統課表庫',copy:'想換課表時，可以從這裡瀏覽系統提供的訓練計畫。'},
-  {selector:'#trainCoachPicks',title:'目前計畫與推薦',copy:'長期課表與適合你的推薦會集中顯示在這裡。'}
+  {selector:'#trainLanding .hero',titleKey:'tutorialCopy.s10Title',copyKey:'tutorialCopy.s10Copy'},
+  {selector:'#trainStartBtn',titleKey:'tutorialCopy.s11Title',copyKey:'tutorialCopy.s11Copy'},
+  {selector:'#browseProgramsBtn',titleKey:'tutorialCopy.s12Title',copyKey:'tutorialCopy.s12Copy'},
+  {selector:'#trainCoachPicks',titleKey:'tutorialCopy.s13Title',copyKey:'tutorialCopy.s13Copy'}
  ],
  workout:[
-  {selector:'#sessionExercises > *',title:'動作卡',copy:'每張卡片代表一個動作；動作名稱、上次紀錄、重量、次數與組數都集中在這裡。'},
-  {selector:'#activeWorkout [data-demo]',title:'動作說明',copy:'不熟悉動作時，從「說明」查看操作提示與 YouTube 示範。'},
-  {selector:'#activeWorkout [data-unit]',title:'kg / lb',copy:'器械標示 kg 就用 kg，標示 lb 就切換成 lb；App 會自動換算保存。'},
-  {selector:'#activeWorkout [data-set="weight"]',title:'輸入重量',copy:'把這一組實際使用的重量填在這裡。'},
-  {selector:'#activeWorkout [data-set="reps"]',title:'輸入次數',copy:'做完後，把這組實際完成的次數填在這裡。'},
-  {selector:'#activeWorkout .advanced-set-quick',title:'快速調整',copy:'可以快速加減重量、增減次數，或直接複製上一組。'},
-  {selector:'#activeWorkout [data-complete]',title:'完成這組',copy:'確認重量與次數後按「完成這組」；只有完成的組數才會進入主要紀錄。'},
-  {selector:'.rest-quick-card',title:'休息計時器',copy:'完成一組後可以使用休息倒數，也能快速選 60、90、120 或 180 秒。'},
-  {selector:'#openTrainingTools',title:'訓練工具',copy:'從這裡新增動作、調整順序、收起動作卡，或切換顯示層次。'},
-  {selector:'#finishWorkout',title:'完成訓練',copy:'全部做完後，點這裡儲存本次訓練，之後就能在紀錄與分析查看結果。'}
+  {selector:'#sessionExercises > *',titleKey:'tutorialCopy.s14Title',copyKey:'tutorialCopy.s14Copy'},
+  {selector:'#activeWorkout [data-demo]',titleKey:'tutorialCopy.s15Title',copyKey:'tutorialCopy.s15Copy'},
+  {selector:'#activeWorkout [data-unit]',titleKey:'tutorialCopy.s16Title',copyKey:'tutorialCopy.s16Copy'},
+  {selector:'#activeWorkout [data-set="weight"]',titleKey:'tutorialCopy.s17Title',copyKey:'tutorialCopy.s17Copy'},
+  {selector:'#activeWorkout [data-set="reps"]',titleKey:'tutorialCopy.s18Title',copyKey:'tutorialCopy.s18Copy'},
+  {selector:'#activeWorkout .advanced-set-quick',titleKey:'tutorialCopy.s19Title',copyKey:'tutorialCopy.s19Copy'},
+  {selector:'#activeWorkout [data-complete]',titleKey:'tutorialCopy.s20Title',copyKey:'tutorialCopy.s20Copy'},
+  {selector:'.rest-quick-card',titleKey:'tutorialCopy.s21Title',copyKey:'tutorialCopy.s21Copy'},
+  {selector:'#openTrainingTools',titleKey:'tutorialCopy.s22Title',copyKey:'tutorialCopy.s22Copy'},
+  {selector:'#finishWorkout',titleKey:'tutorialCopy.s23Title',copyKey:'tutorialCopy.s23Copy'}
  ],
  records:[
-  {selector:'#recordsPage .section',title:'訓練紀錄',copy:'這一頁集中保存每一次已完成或手動補登的訓練。'},
-  {selector:'#recordsPage .calendar',title:'日期與月份',copy:'有訓練的日期會特別標示，可以用日期快速找到過去紀錄。'},
-  {selector:'#recordsPage .record',title:'紀錄清單',copy:'點開一筆紀錄，可以查看當天所有動作、重量、次數與組數。'},
+  {selector:'#recordsPage .section',titleKey:'tutorialCopy.s24Title',copyKey:'tutorialCopy.s24Copy'},
+  {selector:'#recordsPage .calendar',titleKey:'tutorialCopy.s25Title',copyKey:'tutorialCopy.s25Copy'},
+  {selector:'#recordsPage .record',titleKey:'tutorialCopy.s26Title',copyKey:'tutorialCopy.s26Copy'},
  ],
  analysis:[
-  {selector:'#analysisPage select',title:'分析期間',copy:'先選 7 天、30 天、90 天或全部，再看你想比較的時間範圍。'},
-  {selector:'#analysisPage .card',title:'本期重點',copy:'先看上方重點摘要；App 會整理目前最值得注意的進步與變化。'},
-  {selector:'#analysisPage',title:'分析內容',copy:'往下可以查看肌群刺激、動作模式、進步與 PR 等長期趨勢。'}
+  {selector:'#analysisPage select',titleKey:'tutorialCopy.s27Title',copyKey:'tutorialCopy.s27Copy'},
+  {selector:'#analysisPage .card',titleKey:'tutorialCopy.s28Title',copyKey:'tutorialCopy.s28Copy'},
+  {selector:'#analysisPage',titleKey:'tutorialCopy.s29Title',copyKey:'tutorialCopy.s29Copy'}
  ],
  settings:[
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(1), #settingsPage .card:nth-of-type(1)',title:'課表與訓練計畫',copy:'管理系統課表、自己的課表與目前訓練計畫。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(2), #settingsPage .card:nth-of-type(2)',title:'動作與器械',copy:'查找系統動作、器械，以及建立自己的動作。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(3), #settingsPage .card:nth-of-type(3)',title:'健身房與我的器材',copy:'建立不同健身房，並記住你常用的器械。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(4), #settingsPage .card:nth-of-type(4)',title:'訓練偏好與目標',copy:'調整訓練目標、每週天數、時間與器材偏好。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(5), #settingsPage .card:nth-of-type(5)',title:'健身術語與說明',copy:'看不懂 RIR、RPE、e1RM 等術語時，可以從這裡查詢。'},
-  {selector:'#settingsPage .settings-hub-card:nth-of-type(6), #settingsPage .card:nth-of-type(6)',title:'資料與備份',copy:'匯入、匯出與建立本機備份都放在這裡。'},
-  {selector:'#openTutorialFromSettings',title:'重新查看教學',copy:'之後忘記某個功能時，可以從設定最下面重新啟動操作教學。'}
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(1), #settingsPage .card:nth-of-type(1)',titleKey:'tutorialCopy.s30Title',copyKey:'tutorialCopy.s30Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(2), #settingsPage .card:nth-of-type(2)',titleKey:'tutorialCopy.s31Title',copyKey:'tutorialCopy.s31Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(3), #settingsPage .card:nth-of-type(3)',titleKey:'tutorialCopy.s32Title',copyKey:'tutorialCopy.s32Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(4), #settingsPage .card:nth-of-type(4)',titleKey:'tutorialCopy.s33Title',copyKey:'tutorialCopy.s33Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(5), #settingsPage .card:nth-of-type(5)',titleKey:'tutorialCopy.s34Title',copyKey:'tutorialCopy.s34Copy'},
+  {selector:'#settingsPage .settings-hub-card:nth-of-type(6), #settingsPage .card:nth-of-type(6)',titleKey:'tutorialCopy.s35Title',copyKey:'tutorialCopy.s35Copy'},
+  {selector:'#openTutorialFromSettings',titleKey:'tutorialCopy.s36Title',copyKey:'tutorialCopy.s36Copy'}
  ]
 };
 
@@ -450,7 +450,7 @@ function renderCoachStep(){
  if(!target){coachIndex++;renderCoachStep();return}
  target.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'});
  $('#coachStepLabel').textContent=tr('finalUi.coachStep',{current:coachIndex+1,total:steps.length});
- $('#coachTitle').textContent=s.title;$('#coachCopy').textContent=s.copy;
+ $('#coachTitle').textContent=tr(s.titleKey);$('#coachCopy').textContent=tr(s.copyKey);
  $('#coachProgress').innerHTML=steps.map((_,i)=>`<i class="${i<=coachIndex?'on':''}"></i>`).join('');
  $('#coachPrev').style.visibility=coachIndex===0?'hidden':'visible';
  $('#coachNext').textContent=coachIndex===steps.length-1?(coachTour.kind==='app'?tr('finalUi.coachStartSetup'):tr('finalUi.coachFinish')):tr('finalUi.coachNext');
