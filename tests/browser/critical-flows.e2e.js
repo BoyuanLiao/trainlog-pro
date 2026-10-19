@@ -26,6 +26,8 @@ function timerSeconds(text){
   }
 
   async function finishOnboarding({verifyValidation=false}={}){
+    await b.waitFor("document.querySelector('#firstLanguageWrap')?.classList.contains('show')",{timeout:5000,label:'language selection'});
+    await b.click('#firstLanguageContinue');
     await b.waitFor("document.querySelector('#coachOverlay')?.classList.contains('show')",{timeout:5000,label:'initial tutorial'});
     await b.click('#coachSkip');
     await b.waitFor("document.querySelector('#firstSetupWrap')?.classList.contains('show')",{label:'first setup'});
