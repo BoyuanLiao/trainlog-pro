@@ -212,7 +212,7 @@
       cardioSession:'{minutes} 分{distance}',durationBest:'最佳 {seconds} 秒',setsCount:'{count} 組',
       groupHorizontal:'上半身｜水平',groupVertical:'上半身｜垂直',groupKnee:'下半身｜膝部',groupHip:'下半身｜髖部',groupArms:'手臂',groupCore:'核心',
       horizontalPush:'水平推',horizontalPull:'水平拉',verticalPush:'垂直推',verticalPull:'垂直拉',kneeDominant:'膝主導',kneeFlexion:'膝屈曲',
-      biasTitle:'{a}持續多於{b}',biasDesc:'最近 4 個七天區間中，有 {wins} 個區間的{a}正式組明顯較多。這代表近期訓練分布偏向{a}，不是姿勢或肌力失衡診斷。',
+      biasTitle:'{a}持續多於{b}',biasDesc:'最近 4 個七天區間中，有 {wins} 個區間的{a}正式組明顯多於{b}。這代表近期訓練分布偏向{a}，不是姿勢或肌力失衡診斷。',
       insufficientTitle:'目前資料還不夠多',insufficientDesc:'這個期間只有 {workouts} 次訓練、{sets} 個正式組。系統會先顯示紀錄，不急著判斷長期趨勢。',
       progressTitle:'{name} 出現進步訊號',progressDesc:'和上一次相比：{signals}。',
       consistencyTitle:'近期訓練保持連續',consistencyDesc:'統計期間涵蓋的 {weeks} 個週區間都有訓練紀錄，平均約 {average} 次／週。',
