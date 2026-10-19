@@ -19,7 +19,9 @@ assert.strictEqual(I.setLocale('en-US'),'en-US');
 assert.strictEqual(ctx.document.documentElement.lang,'en-US');
 assert.strictEqual(I.t('nav.home'),'Home');
 assert.strictEqual(I.t('training.start'),'Start workout');
-assert.strictEqual(I.t('analysis.exerciseDetail'),'動作詳細分析','missing en-US keys must fall back to zh-TW');
+assert.strictEqual(I.t('analysis.exerciseDetail'),'Detailed exercise analysis');
+assert.strictEqual(I.t('feedback.settingsSaved'),'Settings saved');
+assert.strictEqual(I.t('tutorialCopy.s01Title'),'Start a workout');
 
 assert.strictEqual(I.setLocale('ja-JP'),'ja-JP');
 assert.strictEqual(ctx.document.documentElement.lang,'ja-JP');
@@ -29,4 +31,4 @@ assert.strictEqual(I.t('analysis.exerciseDetail'),'動作詳細分析','missing 
 
 assert.strictEqual(I.setLocale('xx-YY'),'zh-TW');
 assert.strictEqual(ctx.document.documentElement.lang,'zh-Hant');
-console.log('locale switching: zh-TW / en-US / ja-JP selection and fallback passed');
+console.log('locale switching: complete en-US, partial ja-JP fallback, and zh-TW default passed');
