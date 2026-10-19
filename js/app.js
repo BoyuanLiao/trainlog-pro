@@ -1038,6 +1038,7 @@ function renderTrainingDrawer(){
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.autoLoad'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.autoLoadDesc'))}</div></div><label class="drawer-toggle"><input id="drawerAutoLoad" type="checkbox" ${data.settings.trainingAutoLoad!==false?'checked':''}><span></span></label></div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.intervalTimer'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.intervalTimerDesc'))}</div></div><label class="drawer-toggle"><input id="drawerIntervalTimer" type="checkbox" ${data.settings.trainingIntervalTimer!==false?'checked':''}><span></span></label></div>
    <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('drawer.sound'))}</div><div class="drawer-setting-desc">${esc(tr('drawer.soundDesc'))}</div></div><label class="drawer-toggle"><input id="drawerRestSound" type="checkbox" ${data.settings.restTimerSound!==false?'checked':''}><span></span></label></div>
+   <div class="drawer-setting"><div class="drawer-setting-copy"><div class="drawer-setting-title">${esc(tr('restNotification.setting'))}</div><div class="drawer-setting-desc">${esc(tr('restNotification.hint'))}</div></div><label class="drawer-toggle"><input id="drawerRestNotification" type="checkbox"><span></span></label></div>
  </div>`;
  bindUiLevelSwitch(box);
  $('#drawerEditList').onclick=()=>{closeTrainingDrawer();openReorderModal()};
@@ -1054,7 +1055,8 @@ function renderTrainingDrawer(){
  $('#drawerNotes').onchange=e=>saveDrawerSetting('trainingNotes',e.target.checked,true);
  $('#drawerAutoLoad').onchange=e=>saveDrawerSetting('trainingAutoLoad',e.target.checked);
  $('#drawerIntervalTimer').onchange=e=>saveDrawerSetting('trainingIntervalTimer',e.target.checked);
- $('#drawerRestSound').onchange=e=>saveDrawerSetting('restTimerSound',e.target.checked)
+ $('#drawerRestSound').onchange=e=>saveDrawerSetting('restTimerSound',e.target.checked);
+ bindRestNotificationToggle($('#drawerRestNotification'))
 }
 function clampTrainingDrawerTabTop(top){
  const tab=$('#trainingDrawerTab'),h=tab?.offsetHeight||82;
@@ -1192,6 +1194,37 @@ function bindSessionEvents(){
 }
 function saveActiveOnly(rerender=false){localStorage.setItem(APP_KEY,JSON.stringify(data));if(rerender)renderTrain()}
 let timerEnd=0,timerTotal=0,timerInterval=null,timerHidden=false,timerFinished=false,timerLabel=tr('trainingUi.defaultNext'),restAudioCtx=null;
+function restNotificationStatus(){return !('Notification' in window)?'unsupported':Notification.permission}
+async function enableRestNotifications(){
+ if(restNotificationStatus()==='unsupported'){toast(tr('restNotification.unsupported'));return}
+ if(!window.isSecureContext){toast(tr('restNotification.secure'));return}
+ try{
+   const permission=await Notification.requestPermission();
+   data.settings.restTimerNotification=permission==='granted';
+   localStorage.setItem(APP_KEY,JSON.stringify(data));
+   toast(tr(permission==='granted'?'restNotification.enabled':'restNotification.denied'));
+ }catch(e){data.settings.restTimerNotification=false;toast(tr('restNotification.denied'))}
+ renderTrain();renderSettings()
+}
+function showRestNotification(){
+ if(data.settings.restTimerNotification!==true||restNotificationStatus()!=='granted')return;
+ try{
+   const notification=new Notification(tr('restNotification.title'),{body:tr('feedback.restFinished'),tag:'trainlog-rest-finished',renotify:false});
+   notification.onclick=()=>{try{window.focus();notification.close()}catch(e){}};
+ }catch(e){}
+}
+function bindRestNotificationToggle(input){
+ if(!input)return;
+ input.checked=data.settings.restTimerNotification===true&&restNotificationStatus()==='granted';
+ input.disabled=restNotificationStatus()==='unsupported';
+ input.onchange=()=>{
+   if(input.checked){enableRestNotifications();return}
+   data.settings.restTimerNotification=false;
+   localStorage.setItem(APP_KEY,JSON.stringify(data));
+   renderTrain();renderSettings()
+ }
+}
+
 function formatTimer(sec){sec=Math.max(0,Math.ceil(n(sec)));return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
 function primeRestAudio(){try{const C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!restAudioCtx)restAudioCtx=new C();if(restAudioCtx.state==='suspended')restAudioCtx.resume()}catch(e){}}
 function playRestSound(){
@@ -1231,7 +1264,7 @@ function adjustTimer(delta){
  renderTimer()
 }
 function finishTimer(){
- if(timerFinished)return;timerFinished=true;if(timerInterval)clearInterval(timerInterval);timerInterval=null;playRestSound();toast(tr('feedback.restFinished'));renderTimer()
+ if(timerFinished)return;timerFinished=true;if(timerInterval)clearInterval(timerInterval);timerInterval=null;playRestSound();showRestNotification();toast(tr('feedback.restFinished'));renderTimer()
 }
 function renderTimer(){
  const overlay=$('#restOverlay'),fab=$('#restFab'),time=$('#restOverlayTime'),fabTime=$('#restFabTime'),fill=$('#restOverlayFill'),sub=$('#restOverlaySub'),skip=$('#restSkipBtn');
@@ -2127,7 +2160,7 @@ function renderSettings(){
  $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save(tr('reasons.changeEquipmentUnit'),false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
  $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save(tr('reasons.deleteEquipment'),true)});
  $('#setTrainingGoal').value=coachGoal();$('#setSessionMinutes').value=String(n(data.settings.sessionMinutes)||60);$('#setExperienceLevel').value=data.settings.experienceLevel||'beginner';$('#setEquipmentPreference').value=data.settings.equipmentPreference||'machine';$('#setBlockWeeks').value=String(n(data.settings.blockWeeks)||6);$('#setPreferredGym').innerHTML='<option value="">${esc(tr("residual.recc7c9f4"))}</option>'+data.gyms.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');$('#setPreferredGym').value=data.settings.preferredGymId||'';$('#priorityMuscleOptions').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<label><input type="checkbox" data-priority-muscle="${m}" ${priorityMuscles().includes(m)?'checked':''}>${esc(displayMuscle(m))}</label>`).join('');const wd=WEEKDAY_KEYS.map(k=>tr(k)),avs=availableWeekdays();$('#availableWeekdayOptions').innerHTML=wd.map((x,i)=>`<label><input type="checkbox" data-available-weekday="${i}" ${avs.includes(i)?'checked':''}>${esc(tr('finalUi.weekday',{day:x}))}</label>`).join('');$('#setAllowConsecutiveDays').checked=!!data.settings.allowConsecutiveDays;$('#setLocale').value=i18n.normalizeLocale(data.settings.locale);$('#setUnit').value=data.settings.unit;$('#setIntensity').value=data.settings.intensity;$('#setRest').value=data.settings.defaultRest;$('#setWeeklySessions').value=data.settings.weeklySessions;$('#setCardioGoal').value=data.settings.weeklyCardio;$('#setWeekStart').value=String(data.settings.weekStart);$('#setWarmup').checked=!!data.settings.includeWarmup;$('#set1rm').checked=!!data.settings.show1RM;
- $('#setUiLevel').value=uiLevel();const tutBtn=$('#openTutorialFromSettings');if(tutBtn)tutBtn.onclick=openTutorialAgain;$('#setRestTimerPosition').value=data.settings.restTimerPosition||'top';$('#setTrainingNotes').checked=data.settings.trainingNotes!==false;$('#setTrainingAutoLoad').checked=data.settings.trainingAutoLoad!==false;$('#setTrainingIntervalTimer').checked=data.settings.trainingIntervalTimer!==false;$('#setRestTimerSound').checked=data.settings.restTimerSound!==false;
+ $('#setUiLevel').value=uiLevel();const tutBtn=$('#openTutorialFromSettings');if(tutBtn)tutBtn.onclick=openTutorialAgain;$('#setRestTimerPosition').value=data.settings.restTimerPosition||'top';$('#setTrainingNotes').checked=data.settings.trainingNotes!==false;$('#setTrainingAutoLoad').checked=data.settings.trainingAutoLoad!==false;$('#setTrainingIntervalTimer').checked=data.settings.trainingIntervalTimer!==false;$('#setRestTimerSound').checked=data.settings.restTimerSound!==false;bindRestNotificationToggle($('#setRestNotification'));
  $('#muscleGoalInputs').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<div class="field"><label>${esc(displayMuscle(m))}</label><input type="number" min="0" max="50" data-mgoal="${m}" value="${n((data.settings.weeklyMuscleGoals||{})[m])}"></div>`).join('');
  $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||tr('finalUi.deletedExercise'))}</b><div class="record-meta">${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="small">${esc(tr("residual.r00862c41"))}</div>';
  $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save(tr('reasons.deleteStrengthGoal'),true)});

@@ -125,6 +125,7 @@
       workoutName:'トレーニング名',date:'日付',duration:'トレーニング時間（分）',energyInput:'元気 1–5',sleepInput:'睡眠 1–5',fatigueInput:'疲労 1–5',gym:'ジム',gymPlaceholder:'ジムを選択または新規入力',gymHint:'新しい名前を入力して保存すると、ジム設定にも自動追加されます。',painInput:'痛み / 違和感',painPlaceholder:'例：右肩前面に違和感',deload:'今回は Deload / 軽減トレーニング',save:'保存',unnamed:'名称未設定のトレーニング',
       inputWarning:'入力値に問題がある可能性があります：\n\n{issues}\n\nこのまま保存しますか？',missingOriginal:'元のトレーニング記録が見つからないため、変更を保存できません。',summary:'{exercises} 種目 · {sets} ワーキングセット · {volume} · 有酸素 {cardio} 分',summaryPr:' · PR {count} 件',done:'完了'
     },
+    restNotification:{"setting":"休憩終了時にシステム通知を表示","hint":"ブラウザーの通知許可が必要です。サイトを閉じた後の通知は保証されません。","title":"休憩時間が終了しました","enabled":"システム通知を有効にしました","denied":"通知が許可されていません。ブラウザーの設定で許可してください。","unsupported":"このブラウザーはシステム通知に対応していません","secure":"システム通知には HTTPS が必要です"},
     timer:{title:'セット間休憩',defaultLabel:'次のセットを準備',minus:'−10秒',plus:'＋10秒',skip:'スキップ'},
     firstSetup:{kicker:'初回設定',title:'トレーニング設定と目標を登録',save:'設定を完了して開始'},
     feedback:{

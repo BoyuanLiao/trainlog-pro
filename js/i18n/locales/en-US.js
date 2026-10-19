@@ -112,6 +112,7 @@
       workoutName:'Workout name',date:'Date',duration:'Training time (minutes)',energyInput:'Energy 1–5',sleepInput:'Sleep 1–5',fatigueInput:'Fatigue 1–5',gym:'Gym',gymPlaceholder:'Select or enter a new gym',gymHint:'Entering and saving a new name automatically adds it to gym settings.',painInput:'Pain / discomfort',painPlaceholder:'Example: discomfort at the front of the right shoulder',deload:'This is a Deload / reduced-load workout',save:'Save',unnamed:'Unnamed workout',
       inputWarning:'Possible input issue detected:\n\n{issues}\n\nSave anyway?',missingOriginal:'The original training record could not be found, so changes cannot be saved.',summary:'{exercises} exercises · {sets} working sets · {volume} · cardio {cardio} min',summaryPr:' · {count} PR(s)',done:'Done'
     },
+    restNotification:{"setting":"Show system notification when rest ends","hint":"Allow browser notifications. Alerts are not guaranteed after the site is closed.","title":"Rest time is over","enabled":"System notifications enabled","denied":"Notifications are blocked. Enable them in browser settings.","unsupported":"This browser does not support system notifications","secure":"System notifications require HTTPS"},
     timer:{title:'Rest between sets',defaultLabel:'Prepare for the next set',minus:'−10 sec',plus:'+10 sec',skip:'Skip'},
     firstSetup:{kicker:'First-time setup',title:'Set your training preferences and goals first',save:'Finish setup and start using the app'},
     feedback:{

@@ -112,6 +112,7 @@
       workoutName:'課表名稱',date:'日期',duration:'訓練時間（分鐘）',energyInput:'精神 1–5',sleepInput:'睡眠 1–5',fatigueInput:'疲勞 1–5',gym:'健身房',gymPlaceholder:'選擇或直接輸入新健身房',gymHint:'輸入新的名稱並儲存後，會自動加入健身房設定。',painInput:'疼痛 / 不適',painPlaceholder:'例如：右肩前側不適',deload:'這次是 Deload / 減量訓練',save:'儲存',unnamed:'未命名訓練',
       inputWarning:'偵測到可能的輸入異常：\n\n{issues}\n\n仍要儲存嗎？',missingOriginal:'找不到原本的訓練紀錄，無法儲存修改。',summary:'{exercises} 個動作 · {sets} 正式組 · {volume} · 有氧 {cardio} 分',summaryPr:' · {count} 個 PR',done:'完成'
     },
+    restNotification:{"setting":"休息結束時顯示系統通知","hint":"需要允許瀏覽器通知；關閉網站後不保證準時提醒。","title":"休息時間結束","enabled":"系統通知已啟用","denied":"通知未獲授權，請至瀏覽器設定開啟權限","unsupported":"此瀏覽器不支援系統通知","secure":"系統通知需要 HTTPS 安全連線"},
     timer:{title:'組間休息',defaultLabel:'準備下一組',minus:'−10 秒',plus:'＋10 秒',skip:'跳過'},
     firstSetup:{kicker:'第一次使用設定',title:'先設定你的訓練偏好與目標',save:'完成設定並開始使用'},
     feedback:{
