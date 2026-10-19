@@ -12,6 +12,7 @@ const app=fs.readFileSync('js/app.js','utf8');
 assert(app.includes("function renderFirstLanguage()"),'app must render first-run language chooser');
 assert(app.includes("data.settings.localeSetupCompleted!==true||data.settings.tutorialCompleted===true"),'app tutorial must wait for language selection');
 assert(app.includes("data.settings.localeSetupCompleted===true&&data.settings.tutorialCompleted===true"),'preference setup must wait until language selection and tutorial are complete');
+assert(app.includes("$('[data-first-locale]').forEach(button=>{"),'first-run language chooser must bind all locale buttons');
 assert(app.includes("data.settings.locale=i18n.setLocale(button.dataset.firstLocale)"),'first-run language choice must switch locale immediately');
 assert(app.includes("localStorage.setItem(APP_KEY,JSON.stringify(data))"),'first-run locale must be persisted');
 
