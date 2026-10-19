@@ -4,7 +4,7 @@
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['zh-TW'] = Object.freeze({
     common:{save:'儲存',cancel:'取消',delete:'刪除',close:'關閉',back:'返回',search:'搜尋',all:'全部',more:'顯示更多',edit:'編輯',done:'完成'},
-    language:{label:'介面語言',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'切換後立即套用；尚未翻譯的文字會暫時顯示繁體中文。'},
+    language:{label:'介面語言',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'切換後會立即套用。'},
     languageSetup:{kicker:'歡迎使用 TrainLog Pro',title:'選擇介面語言',copy:'先選擇你要使用的語言。之後仍可在設定中隨時變更。',continue:'繼續'},
     domain:{
       muscle:{chest:'胸',back:'背',legs:'腿',shoulders:'肩膀',biceps:'二頭',triceps:'三頭',core:'腹部',cardio:'有氧',other:'其他'},

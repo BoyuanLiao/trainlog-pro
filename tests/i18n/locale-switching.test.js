@@ -27,8 +27,10 @@ assert.strictEqual(I.setLocale('ja-JP'),'ja-JP');
 assert.strictEqual(ctx.document.documentElement.lang,'ja-JP');
 assert.strictEqual(I.t('nav.settings'),'設定');
 assert.strictEqual(I.t('training.start'),'トレーニング開始');
-assert.strictEqual(I.t('analysis.exerciseDetail'),'動作詳細分析','missing ja-JP keys must fall back to zh-TW');
+assert.strictEqual(I.t('analysis.exerciseDetail'),'種目の詳細分析');
+assert.strictEqual(I.t('feedback.settingsSaved'),'設定を保存しました');
+assert.strictEqual(I.t('tutorialCopy.s01Title'),'トレーニング開始');
 
 assert.strictEqual(I.setLocale('xx-YY'),'zh-TW');
 assert.strictEqual(ctx.document.documentElement.lang,'zh-Hant');
-console.log('locale switching: complete en-US, partial ja-JP fallback, and zh-TW default passed');
+console.log('locale switching: complete en-US, complete ja-JP, and zh-TW default passed');
