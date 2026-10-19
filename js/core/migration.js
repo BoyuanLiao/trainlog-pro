@@ -33,7 +33,7 @@
     function defaultTemplates() { return []; }
     function freshData() { return {
       schemaVersion:CURRENT_SCHEMA,
-      settings:{locale:'zh-TW',unit:'kg',intensity:'RIR',defaultRest:90,weeklySessions:3,weeklyCardio:60,weekStart:1,includeWarmup:false,show1RM:true,uiLevel:'standard',trainingGoal:'general',sessionMinutes:60,experienceLevel:'beginner',equipmentPreference:'machine',blockWeeks:6,priorityMuscles:[],availableWeekdays:[],allowConsecutiveDays:false,preferredGymId:'',preferencesSetupCompleted:false,tutorialCompleted:false,workoutTutorialCompleted:false,pageTutorials:{home:false,trainLanding:false,workout:false,records:false,analysis:false,settings:false},trainingNotes:true,trainingAutoLoad:true,trainingIntervalTimer:true,restTimerPosition:'top',restTimerSound:true,trainingDrawerTabTop:8,analysisRange:'30',analysisTab:'overview',weeklyMuscleGoals:{胸:6,背:6,腿:8,肩膀:4,二頭:4,三頭:4,腹部:4}},
+      settings:{locale:'zh-TW',localeSetupCompleted:false,unit:'kg',intensity:'RIR',defaultRest:90,weeklySessions:3,weeklyCardio:60,weekStart:1,includeWarmup:false,show1RM:true,uiLevel:'standard',trainingGoal:'general',sessionMinutes:60,experienceLevel:'beginner',equipmentPreference:'machine',blockWeeks:6,priorityMuscles:[],availableWeekdays:[],allowConsecutiveDays:false,preferredGymId:'',preferencesSetupCompleted:false,tutorialCompleted:false,workoutTutorialCompleted:false,pageTutorials:{home:false,trainLanding:false,workout:false,records:false,analysis:false,settings:false},trainingNotes:true,trainingAutoLoad:true,trainingIntervalTimer:true,restTimerPosition:'top',restTimerSound:true,trainingDrawerTabTop:8,analysisRange:'30',analysisTab:'overview',weeklyMuscleGoals:{胸:6,背:6,腿:8,肩膀:4,二頭:4,三頭:4,腹部:4}},
       gyms:[],equipment:[],exerciseLibrary:defaultLibrary(),templates:defaultTemplates(),workouts:[],activeWorkout:null,currentPlan:null,todayAdjustment:null,bodyStatus:[],trash:[],snapshots:[],strengthGoals:[]
     }; }
     function guessType(e){if(e.durationMinutes||e.distanceKm)return'cardio';if(e.name&&/平板|plank|wall sit|dead hang/i.test(e.name))return'duration';return'weight_reps'}
@@ -50,6 +50,7 @@
       const migrateWeight=v=>needsWeightNormalization?toKg(v,'lb'):n(v);
       const out=freshData();
       out.settings={...out.settings,...(raw.settings||{})};
+      if(raw.settings?.localeSetupCompleted==null && n(raw.schemaVersion)>0)out.settings.localeSetupCompleted=true;
       if(raw.settings?.tutorialCompleted==null && n(raw.schemaVersion)>0)out.settings.tutorialCompleted=true;
       if(raw.settings?.workoutTutorialCompleted==null && n(raw.schemaVersion)>0)out.settings.workoutTutorialCompleted=true;
       if(raw.settings?.pageTutorials==null && n(raw.schemaVersion)>0)out.settings.pageTutorials={home:true,trainLanding:true,workout:true,records:true,analysis:true,settings:true};

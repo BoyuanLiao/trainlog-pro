@@ -490,7 +490,7 @@ function finishCoachTour(){
  if(kind==='app')renderAll()
 }
 function renderFirstTutorial(){
- if(data.settings.tutorialCompleted===true||coachTour)return;
+ if(data.settings.localeSetupCompleted!==true||data.settings.tutorialCompleted===true||coachTour)return;
  setTimeout(()=>startCoachTour('app'),120)
 }
 function maybeStartPageTutorial(pageId){
@@ -516,9 +516,32 @@ function openTutorialAgain(){
  startCoachTour('app')
 }
 
+function renderFirstLanguage(){
+ const wrap=$('#firstLanguageWrap');if(!wrap)return;
+ const pending=data.settings.localeSetupCompleted!==true;
+ wrap.classList.toggle('show',pending);
+ if(!pending)return;
+ document.body.style.overflow='hidden';
+ const current=i18n.normalizeLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
+ $('[data-first-locale]').forEach(button=>{
+   button.classList.toggle('primary',button.dataset.firstLocale===current);
+   button.classList.toggle('ghost',button.dataset.firstLocale!==current);
+   button.onclick=()=>{
+     data.settings.locale=i18n.setLocale(button.dataset.firstLocale);
+     try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}
+     renderAll();
+   };
+ });
+ $('#firstLanguageContinue').onclick=()=>{
+   data.settings.localeSetupCompleted=true;
+   try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}
+   wrap.classList.remove('show');document.body.style.overflow='';
+   renderAll()
+ };
+}
 function renderFirstSetup(){
  const wrap=$('#firstSetupWrap');if(!wrap)return;
- const pending=data.settings.tutorialCompleted===true&&data.settings.preferencesSetupCompleted!==true;
+ const pending=data.settings.localeSetupCompleted===true&&data.settings.tutorialCompleted===true&&data.settings.preferencesSetupCompleted!==true;
  wrap.classList.toggle('show',pending);
  if(!pending)return;
  document.body.style.overflow='hidden';
@@ -553,7 +576,7 @@ function renderAll(){
  i18n.apply(document);
  applyUiLevel();
  $('#todayText').textContent=i18n.formatDate(new Date(),{year:'numeric',month:'long',day:'numeric',weekday:'short'});
- renderResume();renderHome();renderTrain();renderRecords();renderAnalysis();renderSettings();renderFirstTutorial();renderFirstSetup();
+ renderResume();renderHome();renderTrain();renderRecords();renderAnalysis();renderSettings();renderFirstLanguage();renderFirstTutorial();renderFirstSetup();
  if(data.settings.tutorialCompleted===true&&data.settings.preferencesSetupCompleted===true){const active=$('.page.active');if(active)setTimeout(()=>maybeStartPageTutorial(active.id),180)};
 }
 function renderResume(){

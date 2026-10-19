@@ -5,6 +5,7 @@
   window.TrainLogLocales['en-US'] = Object.freeze({
     common:{save:'Save',cancel:'Cancel',delete:'Delete',close:'Close',back:'Back',search:'Search',all:'All',more:'Show more',edit:'Edit',done:'Done'},
     language:{label:'Interface language',zhTW:'Traditional Chinese',enUS:'English',jaJP:'Japanese',hint:'Changes apply immediately. Text that has not been translated yet will temporarily fall back to Traditional Chinese.'},
+    languageSetup:{kicker:'Welcome to TrainLog Pro',title:'Choose your language',copy:'Choose the language you want to use first. You can change it anytime later in Settings.',continue:'Continue'},
     domain:{
       muscle:{chest:'Chest',back:'Back',legs:'Legs',shoulders:'Shoulders',biceps:'Biceps',triceps:'Triceps',core:'Core',cardio:'Cardio',other:'Other'},
       type:{weightReps:'Weight × reps',duration:'Timed',cardio:'Cardio',bodyweight:'Bodyweight',unilateral:'Unilateral'},

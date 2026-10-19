@@ -5,6 +5,7 @@
   window.TrainLogLocales['ja-JP'] = Object.freeze({
     common:{save:'保存',cancel:'キャンセル',delete:'削除',close:'閉じる',back:'戻る',search:'検索',all:'すべて',more:'さらに表示',edit:'編集',done:'完了'},
     language:{label:'表示言語',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'変更はすぐに反映されます。未翻訳の文字は一時的に繁体字中国語で表示されます。'},
+    languageSetup:{kicker:'TrainLog Pro へようこそ',title:'表示言語を選択',copy:'最初に使用する言語を選択してください。後から設定でいつでも変更できます。',continue:'続ける'},
     actions:{manualEntry:'手動入力'},
     nav:{home:'ホーム',training:'トレーニング',records:'記録',analysis:'分析',settings:'設定'},
     home:{weeklyMuscles:'今週の筋群目標',recentProgress:'最近の進捗',recentWorkouts:'最近のトレーニング'},
