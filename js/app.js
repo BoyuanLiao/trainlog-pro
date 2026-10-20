@@ -523,7 +523,7 @@ function renderFirstLanguage(){
  if(!pending)return;
  document.body.style.overflow='hidden';
  const current=i18n.normalizeLocale(data.settings.locale||i18n.DEFAULT_LOCALE);
- $('[data-first-locale]').forEach(button=>{
+ $$('[data-first-locale]').forEach(button=>{
    button.classList.toggle('primary',button.dataset.firstLocale===current);
    button.classList.toggle('ghost',button.dataset.firstLocale!==current);
    button.onclick=()=>{
@@ -1785,7 +1785,7 @@ function renderAnalysis(){
  const totalMinutes=ws.reduce((a,w)=>a+n(w.duration),0),volume=ws.reduce((a,w)=>a+workoutVolume(w),0),formal=formalSetCount(ws),cardio=Math.round(ws.reduce((a,w)=>a+cardioMinutes(w),0));
  const prevMinutes=prevWs.reduce((a,w)=>a+n(w.duration),0),prevVolume=prevWs.reduce((a,w)=>a+workoutVolume(w),0),prevFormal=formalSetCount(prevWs),prevCardio=Math.round(prevWs.reduce((a,w)=>a+cardioMinutes(w),0));
  $('#analysisPeriod').textContent=tr('analysisUi.period',{current:rangeDateLabel(days)})+(days!=='all'?tr('analysisUi.previous',{previous:previousPeriodLabel(days)}):'');
- $$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
+ $$$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
 
  const effortRecorded=effort.high+effort.mid+effort.low;
  $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">${tr('analysisUi.confidence',{label:confidence.labelKey?tr(confidence.labelKey):confidence.label})} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${tr('analysisUi.confidenceMeta',{workouts:confidence.workouts,sets:confidence.formal,effort:effort.total?Math.round(effortRecorded/effort.total*100):0,pattern:Math.round(confidence.patternRate*100)})}</div></div></div></div>`;
