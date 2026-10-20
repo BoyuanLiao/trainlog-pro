@@ -33,7 +33,7 @@ const isoToday=()=> '2026-09-13';
 const clamp=(v,min,max)=>Math.min(max,Math.max(min,Number(v)||0));
 let data={templates:[],workouts:[],activeWorkout:null};
 const calls=[];
-function tr(key){return key}
+function tr(key){const m={'homeUi.freeTraining':'自由訓練','reasons.startWorkout':'開始訓練','reasons.finishWorkout':'完成訓練','reasons.beforeHistoryEdit':'歷史訓練編輯前','reasons.editWorkoutContent':'編輯訓練內容'};return m[key]||key}
 function save(reason,snapshot){calls.push(['save',reason,snapshot])}
 function openSessionMeta(first){calls.push(['meta',first])}
 function goPage(page){calls.push(['page',page])}

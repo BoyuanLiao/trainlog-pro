@@ -65,19 +65,19 @@ assert.equal(run("progressionAdvice('missing')"),null);
 const base={id:'bench',name:'Bench',type:'weight_reps',repMin:8,repMax:12,intMin:2,increment:2.5};
 setCase(base,[]);
 let r=run("progressionAdvice('bench')");
-assert.equal(r.state,'new');assert.ok(r.text.includes('第一次紀錄'));
+assert.equal(r.state,'new');assert.equal(r.messageKey,'progression.firstRecord');
 
 setCase(base,[workout('2026-09-12',strengthExercise('bench',[set({reps:12,rir:2}),set({reps:12,rir:3})]))]);
-r=run("progressionAdvice('bench')");assert.equal(r.state,'up');assert.ok(r.text.includes('建議下次嘗試增加'));
+r=run("progressionAdvice('bench')");assert.equal(r.state,'up');assert.equal(r.messageKey,'progression.increaseLoad');
 
 setCase(base,[workout('2026-09-12',strengthExercise('bench',[set({reps:12,rir:1}),set({reps:12,rir:3})]))]);
 r=run("progressionAdvice('bench')");assert.equal(r.state,'same');
 
 setCase(base,[workout('2026-09-12',strengthExercise('bench',[set({reps:6,rir:1}),set({reps:9,rir:2})]))]);
-r=run("progressionAdvice('bench')");assert.equal(r.state,'down');assert.ok(r.text.includes('低於目標範圍'));
+r=run("progressionAdvice('bench')");assert.equal(r.state,'down');assert.equal(r.messageKey,'progression.reduceLoad');
 
 setCase(base,[workout('2026-09-12',strengthExercise('bench',[set({reps:9,rir:2}),set({reps:10,rir:2})]))]);
-r=run("progressionAdvice('bench')");assert.equal(r.state,'same');assert.ok(r.text.includes('維持重量'));
+r=run("progressionAdvice('bench')");assert.equal(r.state,'same');assert.equal(r.messageKey,'progression.addReps');
 
 setCase(base,[workout('2026-09-12',strengthExercise('bench',[
   set({reps:12,rir:3,kind:'warmup'}),set({reps:12,rir:3,completed:false}),set({reps:9,rir:2})
@@ -91,7 +91,7 @@ r=run("progressionAdvice('bench')");assert.equal(r.state,'same');
 
 const duration={id:'plank',name:'Plank',type:'duration',repMin:30,repMax:60,increment:5};
 setCase(duration,[workout('2026-09-12',strengthExercise('plank',[set({seconds:60,reps:0}),set({seconds:65,reps:0})],'kg','duration'))]);
-r=run("progressionAdvice('plank')");assert.equal(r.state,'up');assert.ok(r.text.includes('已達目標上限'));
+r=run("progressionAdvice('plank')");assert.equal(r.state,'up');assert.equal(r.messageKey,'progression.durationIncrease');
 setCase(duration,[workout('2026-09-12',strengthExercise('plank',[set({seconds:40,reps:0}),set({seconds:50,reps:0})],'kg','duration'))]);
 r=run("progressionAdvice('plank')");assert.equal(r.state,'same');
 

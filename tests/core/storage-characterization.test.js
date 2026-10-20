@@ -23,7 +23,7 @@ function makeHarness({seed={},throwOnSet}={}) {
   const core=create({
     appKey:'trainlogProData', legacyKey:'fitnessRecordsV1', storage:localStorage,
     migrate:raw=>({migrated:true,raw}), freshData:()=>({fresh:true,snapshots:[]}),
-    uid:p=>p+'_test_'+(++uidCount), now:()=>new Date('2026-09-13T01:00:00+08:00')
+    uid:p=>p+'_test_'+(++uidCount), now:()=>new Date('2026-09-13T01:00:00+08:00'), defaultSnapshotReason:()=> '自動快照'
   });
   return {core,localStorage,render:()=>{renderCount++},get renderCount(){return renderCount}};
 }

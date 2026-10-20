@@ -8,6 +8,7 @@ let libraryPromise=null;
 let demoSeq=0;
 
 function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function tr(key,vars){return window.TrainLogI18n?.t?window.TrainLogI18n.t(key,vars):key}
 function norm(v){return String(v||'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9\u4e00-\u9fff]+/g,' ').replace(/\s+/g,' ').trim()}
 function toArray(v){return Array.isArray(v)?v:(v==null?[]:[v])}
 function itemText(item){return norm([item?.name,...toArray(item?.equipment)].filter(Boolean).join(' '))}
@@ -229,25 +230,25 @@ async function getLibrary(){
   return libraryPromise;
 }
 function renderError(root,msg){
-  root.innerHTML='<div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">'+esc(msg)+'</div>';
+  root.innerHTML='<div class="motion-demo-title"><span>'+esc(tr('motion.title'))+'</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">'+esc(msg)+'</div>';
 }
 async function loadDemo(domId,nameEn,label,equipmentName){
   const root=document.getElementById(domId);if(!root)return;
   try{
     const items=await getLibrary();
     const found=bestMatch(items,nameEn,label,equipmentName);
-    if(!found){renderError(root,'Exercise Library 目前找不到足夠吻合的動畫，避免顯示錯誤動作。');return}
+    if(!found){renderError(root,tr('motion.noMatch'));return}
     const x=found.item,src=GIF_BASE+encodeURIComponent(x.gif);
-    root.innerHTML='<div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div>'+ 
-      '<img class="exercise-library-gif" src="'+esc(src)+'" alt="'+esc(label||x.name)+' 動作動畫" loading="eager" referrerpolicy="no-referrer">'+
-      '<div class="motion-demo-note"><b>對應：</b>'+esc(x.name)+'<br>第三方動畫來源：Exercise Library（GitHub）。實際器械設定、握距與活動範圍仍以現場器材及舒適動作為準。</div>';
+    root.innerHTML='<div class="motion-demo-title"><span>'+esc(tr('motion.title'))+'</span><span class="pill">Exercise Library</span></div>'+ 
+      '<img class="exercise-library-gif" src="'+esc(src)+'" alt="'+esc(tr('motion.imageAlt',{name:label||x.name}))+'" loading="eager" referrerpolicy="no-referrer">'+
+      '<div class="motion-demo-note"><b>'+esc(tr('motion.matchPrefix'))+'</b>'+esc(x.name)+'<br>'+esc(tr('motion.sourceNote'))+'</div>';
     const img=root.querySelector('img');
-    if(img)img.addEventListener('error',()=>renderError(root,'動畫檔載入失敗，請確認目前網路連線後再試一次。'),{once:true});
-  }catch(err){renderError(root,'無法連線到 Exercise Library。這個動畫需要網路才能載入。')}
+    if(img)img.addEventListener('error',()=>renderError(root,tr('motion.loadFailed')),{once:true});
+  }catch(err){renderError(root,tr('motion.networkFailed'))}
 }
 window.TrainLogMotion3DHtml=function(id,pattern,label,nameEn='',equipmentName=''){
   const domId='exerciseLibraryDemo_'+(++demoSeq);
   setTimeout(()=>loadDemo(domId,nameEn,label,equipmentName),0);
-  return '<div id="'+domId+'" class="motion-demo motion-demo-3d"><div class="motion-demo-title"><span>動作動畫</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">正在尋找「'+esc(nameEn||label||'此動作')+'」的對應動畫…</div></div>';
+  return '<div id="'+domId+'" class="motion-demo motion-demo-3d"><div class="motion-demo-title"><span>'+esc(tr('motion.title'))+'</span><span class="pill">Exercise Library</span></div><div class="motion-demo-note">'+esc(tr('motion.searching',{name:nameEn||label||tr('motion.fallbackName')}))+'</div></div>';
 };
 })();

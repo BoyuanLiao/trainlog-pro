@@ -85,6 +85,11 @@ async function launchBrowser({url,downloadDir}){
   await cdp.send('DOM.enable');
   try{await cdp.send('Page.setDownloadBehavior',{behavior:'allow',downloadPath:downloadDir})}catch{}
 
+  const browserErrors=[];
+  cdp.on('Runtime.exceptionThrown',p=>{const e=p.exceptionDetails||{};browserErrors.push(`${e.text||'Error'}: ${e.exception?.description||''} at ${e.url||''}:${e.lineNumber||0}:${e.columnNumber||0}`)});
+  cdp.on('Runtime.consoleAPICalled',p=>{if(p.type==='error')browserErrors.push('console.error: '+(p.args||[]).map(a=>a.value||a.description||'').join(' '))});
+  await cdp.send('Log.enable');
+  cdp.on('Log.entryAdded',p=>{if(p.entry?.level==='error')browserErrors.push('resource: '+p.entry.text)});
   let promptText='';
   cdp.setPromptText=text=>{promptText=String(text||'')};
   cdp.on('Page.javascriptDialogOpening',async p=>{
@@ -106,7 +111,8 @@ async function launchBrowser({url,downloadDir}){
       try{if(await evaluate(expression))return true}catch{}
       await sleep(interval);
     }
-    throw new Error('Timed out waiting for '+label);
+    let state='';try{state=JSON.stringify(await evaluate(`({readyState:document.readyState,today:document.querySelector('#todayText')?.textContent,scripts:[...document.scripts].map(s=>s.src),locale:!!window.TrainLogI18n,utils:!!window.TrainLogUtils})`))}catch(e){state=String(e)}
+    throw new Error('Timed out waiting for '+label+'; state='+state+'; browser errors='+browserErrors.join(' | '));
   }
   async function click(selector){
     const q=JSON.stringify(selector);
@@ -138,7 +144,7 @@ async function launchBrowser({url,downloadDir}){
     await waitFor("document.readyState==='complete'&&!!document.querySelector('#todayText')?.textContent.trim()",{timeout:12000,label:'app startup'});
   }
 
-  await navigate(url);
+  try{await navigate(url)}catch(e){cdp.close();proc.kill('SIGKILL');try{fs.rmSync(profile,{recursive:true,force:true})}catch{}throw e}
   return {
     cdp,proc,profile,downloadDir,evaluate,waitFor,click,setValue,text,setFile,reload,navigate,
     async close(){

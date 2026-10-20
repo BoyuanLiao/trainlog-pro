@@ -10,7 +10,7 @@ const plain=value=>JSON.parse(JSON.stringify(value));
 
 // comparePct
 assert.strictEqual(comparePct(0,0),null);
-assert.deepStrictEqual(plain(comparePct(10,0)),{pct:null,dir:'up',text:'前期 0'});
+assert.deepStrictEqual(plain(comparePct(10,0)),{pct:null,dir:'up',messageKey:'analysisProgress.previousZero',messageParams:{}});
 assert.strictEqual(comparePct(120,100).dir,'up');
 assert.strictEqual(comparePct(120,100).text,'+20%');
 assert.strictEqual(comparePct(80,100).dir,'down');

@@ -343,6 +343,12 @@ input[type=checkbox],input[type=radio]{width:auto;min-height:auto;accent-color:v
 }
 .first-setup-muscles button.on{border-color:var(--accent);background:rgba(92,185,255,.14);color:#f1fbff}
 .first-setup-required{font-size:9px;color:#efcf88;margin-top:8px}
+.first-language-options{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}
+.first-language-options button{min-height:78px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.first-language-options button b{font-size:15px}
+.first-language-options button span{font-size:10px;color:var(--muted)}
+.first-language-options button.primary span{color:inherit}
+@media(max-width:420px){.first-language-options{grid-template-columns:1fr}}
 @media(max-width:420px){.first-setup-grid{grid-template-columns:1fr}.first-setup-wide{grid-column:auto}}
 .exercise-filter-bar{display:grid;gap:9px;margin-bottom:10px}
 .exercise-filter-quick{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}

@@ -39,7 +39,7 @@ const stagnant=[
 ];
 r=engine.recommend(ex,stagnant,opts);
 assert.equal(r.state,'same');assert.equal(r.action,'plateau');assert.equal(r.plateau,true);assert.equal(r.sessionsUsed,3);
-assert.ok(r.text.includes('最近 3 次'));
+assert.equal(r.messageKey,'progression.plateau');
 
 const progressing=[
   w('2026-09-01',e('bench',[s({weight:50,reps:8,rir:2}),s({weight:50,reps:8,rir:2})])),
@@ -59,7 +59,7 @@ const hardStagnant=[
   w('2026-09-10',e('bench',[s({weight:50,reps:8,rir:0}),s({weight:50,reps:8,rir:0})]))
 ];
 r=engine.recommend(ex,hardStagnant,opts);
-assert.equal(r.action,'plateau');assert.equal(r.hardTrend,true);assert.ok(r.text.includes('恢復')||r.text.includes('降重'));
+assert.equal(r.action,'plateau');assert.equal(r.hardTrend,true);assert.equal(r.messageKey,'progression.plateauHard');
 
 const unilateral={id:'split',name:'Split squat',type:'unilateral',repMin:8,repMax:12,intMin:2,increment:2.5};
 r=engine.recommend(unilateral,[w('2026-09-10',e('split',[

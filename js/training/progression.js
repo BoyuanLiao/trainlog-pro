@@ -113,7 +113,7 @@
     if(!exerciseMeta)return null;
     const history=historyForExercise(exerciseMeta.id,workouts,options.limit||5);
     if(!history.length){
-      return {state:'new',action:'new',plateau:false,hardTrend:false,sessionsUsed:0,text:'第一次紀錄，先以保留 2–3 下餘裕找到工作重量。'};
+      return {state:'new',action:'new',plateau:false,hardTrend:false,sessionsUsed:0,messageKey:'progression.firstRecord',messageParams:{}};
     }
 
     const latest=history[0].exercise;
@@ -128,15 +128,15 @@
       if(!summary)return null;
       if(summary.avgSeconds>=n(exerciseMeta.repMax)){
         return {state:'up',action:'increase_time',plateau:false,hardTrend:false,sessionsUsed:history.length,
-          text:`上次平均 ${Math.round(summary.avgSeconds)} 秒，已達目標上限，可嘗試每組增加約 ${exerciseMeta.increment||5} 秒。`};
+          messageKey:'progression.durationIncrease',messageParams:{avg:Math.round(summary.avgSeconds),increment:exerciseMeta.increment||5}};
       }
       return {state:'same',action:'maintain',plateau:false,hardTrend:false,sessionsUsed:history.length,
-        text:`上次平均 ${Math.round(summary.avgSeconds)} 秒，先維持並逐步接近 ${exerciseMeta.repMax} 秒。`};
+        messageKey:'progression.durationMaintain',messageParams:{avg:Math.round(summary.avgSeconds),target:exerciseMeta.repMax}};
     }
 
     if(exerciseMeta.type==='cardio'){
       return {state:'same',action:'maintain',plateau:false,hardTrend:false,sessionsUsed:history.length,
-        text:'有氧建議優先穩定時間與感受，再逐步增加時間、距離或坡度。'};
+        messageKey:'progression.cardioMaintain',messageParams:{}};
     }
 
     const latestSummary=strengthSummary(latest,exerciseMeta,intensity);
@@ -147,25 +147,23 @@
         ?options.incrementForUnit(exerciseMeta,inputUnit)
         :(exerciseMeta.increment||2.5);
       return {state:'up',action:'increase_load',plateau:false,hardTrend:false,sessionsUsed:history.length,
-        text:`上次所有正式組達 ${exerciseMeta.repMax} 下且強度可控，建議下次嘗試增加約 ${clean(inc)} ${inputUnit}。`};
+        messageKey:'progression.increaseLoad',messageParams:{repMax:exerciseMeta.repMax,increment:clean(inc),unit:inputUnit}};
     }
 
     if(latestSummary.minRep<(n(exerciseMeta.repMin)||8)-1){
       return {state:'down',action:'reduce_load',plateau:false,hardTrend:false,sessionsUsed:history.length,
-        text:`上次有組數低於目標範圍，建議維持或小幅降重，優先完成 ${exerciseMeta.repMin}–${exerciseMeta.repMax} 下。`};
+        messageKey:'progression.reduceLoad',messageParams:{repMin:exerciseMeta.repMin,repMax:exerciseMeta.repMax}};
     }
 
     const summaries=history.map(item=>strengthSummary(item.exercise,exerciseMeta,intensity)).filter(Boolean);
     const trend=plateauSignal(summaries,intensity);
     if(trend.plateau){
       return {state:'same',action:'plateau',plateau:true,hardTrend:trend.hardTrend,sessionsUsed:history.length,
-        text:trend.hardTrend
-          ?`最近 3 次在相近重量與次數停滯，而且主觀強度偏高；先檢查恢復狀況，必要時小幅降重或安排較輕的一次。`
-          :`最近 3 次在相近重量與次數沒有明顯提升，可能進入平台期；先維持重量，嘗試增加 1 下、改善動作品質或調整組間休息。`};
+        ...(trend.hardTrend?{messageKey:'progression.plateauHard',messageParams:{}}:{messageKey:'progression.plateau',messageParams:{}})};
     }
 
     return {state:'same',action:'add_reps',plateau:false,hardTrend:false,sessionsUsed:history.length,
-      text:`上次仍在 ${exerciseMeta.repMin}–${exerciseMeta.repMax} 下範圍內，建議維持重量並增加完成次數。`};
+      messageKey:'progression.addReps',messageParams:{repMin:exerciseMeta.repMin,repMax:exerciseMeta.repMax}};
   }
 
   window.TrainLogTrainingProgression=Object.freeze({

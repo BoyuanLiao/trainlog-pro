@@ -6,9 +6,9 @@
   const num=value=>{const x=Number(value);return Number.isFinite(x)?x:0};
   const clamp=(value,min,max)=>Math.min(max,Math.max(min,num(value)));
 
-  function createBlankWorkout({id,date,startedAt}){
+  function createBlankWorkout({id,date,startedAt,name=''}){
     return {
-      id,date,name:'自由訓練',duration:0,status:'active',startedAt,endedAt:'',notes:'',
+      id,date,name:String(name||''),duration:0,status:'active',startedAt,endedAt:'',notes:'',
       gymId:'',gymNameSnapshot:'',deload:false,preStatus:{},pain:'',exercises:[]
     };
   }
