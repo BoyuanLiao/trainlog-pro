@@ -1785,7 +1785,7 @@ function renderAnalysis(){
  const totalMinutes=ws.reduce((a,w)=>a+n(w.duration),0),volume=ws.reduce((a,w)=>a+workoutVolume(w),0),formal=formalSetCount(ws),cardio=Math.round(ws.reduce((a,w)=>a+cardioMinutes(w),0));
  const prevMinutes=prevWs.reduce((a,w)=>a+n(w.duration),0),prevVolume=prevWs.reduce((a,w)=>a+workoutVolume(w),0),prevFormal=formalSetCount(prevWs),prevCardio=Math.round(prevWs.reduce((a,w)=>a+cardioMinutes(w),0));
  $('#analysisPeriod').textContent=tr('analysisUi.period',{current:rangeDateLabel(days)})+(days!=='all'?tr('analysisUi.previous',{previous:previousPeriodLabel(days)}):'');
- $$$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
+ $$('[data-analysis-range]').forEach(b=>b.classList.toggle('on',b.dataset.analysisRange===analysisRange));
 
  const effortRecorded=effort.high+effort.mid+effort.low;
  $('#analysisConfidence').innerHTML=`<div class="analysis-confidence"><div class="confidence-main"><span class="confidence-dot ${confidence.level}"></span><div><div class="confidence-title">${tr('analysisUi.confidence',{label:confidence.labelKey?tr(confidence.labelKey):confidence.label})} ${infoButton('analysis_confidence')}</div><div class="confidence-meta">${tr('analysisUi.confidenceMeta',{workouts:confidence.workouts,sets:confidence.formal,effort:effort.total?Math.round(effortRecorded/effort.total*100):0,pattern:Math.round(confidence.patternRate*100)})}</div></div></div></div>`;
@@ -2343,7 +2343,7 @@ $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecor
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
 const analysisExerciseCompat=$('#analysisExercise');if(analysisExerciseCompat)analysisExerciseCompat.onchange=e=>renderExerciseAnalysis(e.target.value);
-$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
+$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
 $('#setLocale').onchange=()=>{data.settings.locale=i18n.setLocale($('#setLocale').value);try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAll()};
 $('#addTemplateBtn').onclick=()=>editTemplate();$('#addExerciseLibBtn').onclick=()=>editExerciseLib();$('#libSearch').oninput=renderLibrary;
 $$('[data-settings-view]').forEach(b=>b.onclick=()=>showSettingsView(b.dataset.settingsView));
