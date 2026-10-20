@@ -23,6 +23,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Check application JavaScript syntax
+        run: node --check js/app.js
       - name: Run all automated tests
         run: node tests/run-all.js
 
@@ -68,15 +70,7 @@ jobs:
             exit 1
           fi
 
-          google-chrome \
-            --headless=new \
-            --no-sandbox \
-            --disable-gpu \
-            --virtual-time-budget=3000 \
-            --dump-dom \
-            http://127.0.0.1:4173/ > /tmp/trainlog-dom.html
-
-          node tests/browser/assert-rendered-dom.js /tmp/trainlog-dom.html
+          TRAINLOG_E2E_URL=http://127.0.0.1:4173/ node tests/browser/startup-smoke.e2e.js
 
 
   browser-critical-e2e:
