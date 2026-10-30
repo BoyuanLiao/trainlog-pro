@@ -6,6 +6,8 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10171d">
 <title>TrainLog Pro v2.11.0</title>
+<link rel="icon" href="assets/trainlog-pro-logo.svg" type="image/svg+xml">
+<meta property="og:image" content="https://boyuanliao.github.io/trainlog-pro/assets/trainlog-pro-logo.svg">
 <link rel="stylesheet" href="css/app.css?v=2.11.0">
 <link rel="stylesheet" href="css/exercise-progress-browser.css?v=2.11.0">
 <link rel="stylesheet" href="css/motion-gifs.css?v=2.11.0">
@@ -13,7 +15,7 @@
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand">TrainLog Pro <span class="source-pill">v2.11.0</span></div><div class="subtitle" id="todayText"></div></div>
+    <div><div class="brand"><img src="assets/trainlog-pro-logo.svg" alt="TrainLog Pro 標誌" width="36" height="36" style="vertical-align:middle;object-fit:contain;margin-right:8px;border-radius:8px">TrainLog Pro <span class="source-pill">v2.11.0</span></div><div class="subtitle" id="todayText"></div></div>
     <div class="actions"><button class="btn small ghost" id="quickManual" data-testid="quick-manual" data-i18n="actions.manualEntry">手動補登</button><button class="btn small primary" id="quickStart" data-testid="quick-start" data-i18n="training.start">開始訓練</button></div>
   </div>
   <div id="resumeBanner"></div>
@@ -345,6 +347,21 @@
         </div>
       </div>
 
+      <div class="section">Google Drive 雲端備份（選用）</div>
+      <div class="card">
+        <p class="small backup-intro">使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。</p>
+        <div class="field">
+          <label for="driveClientId">Google OAuth Web Client ID</label>
+          <input id="driveClientId" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx.apps.googleusercontent.com">
+          <div class="hint">需先在 Google Cloud 啟用 Drive API、建立網頁 OAuth 用戶端，將此 GitHub Pages 網域加入 Authorized JavaScript origins。Client ID 只儲存在目前瀏覽器；請勿填入 Client Secret。</div>
+        </div>
+        <div class="backup-actions">
+          <button type="button" class="btn primary" id="driveBackupNow">立即備份到 Google Drive</button>
+          <button type="button" class="btn ghost" id="driveRestoreLatest">讀取最新雲端備份</button>
+        </div>
+        <div id="driveBackupStatus" class="small" role="status" aria-live="polite" style="margin-top:10px"></div>
+      </div>
+
       <div class="section" data-i18n="staticHtml.r8ebdf98e">自動備份紀錄</div>
       <div class="card"><div id="snapshotList" class="small"></div></div>
 
@@ -516,5 +533,6 @@
 <script src="js/training/progression-view.js?v=2.11.0"></script>
 <script src="js/ui/exercise-progress-browser.js?v=2.11.0"></script>
 <script src="js/app.js?v=2.11.0"></script>
+<script src="js/cloud/drive-backup.js?v=1"></script>
 </body>
 </html>

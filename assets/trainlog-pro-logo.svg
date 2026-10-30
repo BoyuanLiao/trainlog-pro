@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="TrainLog Pro">
+<defs><linearGradient id="g" x1="0" y1="1" x2=".8" y2="0"><stop stop-color="#145bff"/><stop offset="1" stop-color="#20f4df"/></linearGradient></defs>
+<rect width="512" height="512" rx="96" fill="#101a2c"/>
+<g fill="url(#g)"><rect x="74" y="211" width="28" height="85" rx="12"/><rect x="108" y="167" width="39" height="174" rx="15"/><rect x="153" y="139" width="45" height="230" rx="14"/><rect x="314" y="139" width="45" height="230" rx="14"/><rect x="365" y="167" width="39" height="174" rx="15"/><rect x="410" y="211" width="28" height="85" rx="12"/><rect x="201" y="261" width="110" height="17" rx="6"/><rect x="214" y="237" width="22" height="73" rx="7"/><rect x="244" y="218" width="22" height="92" rx="7"/><rect x="274" y="193" width="22" height="117" rx="7"/></g>
+<path d="M211 214 Q267 193 302 151" fill="none" stroke="#20e9f0" stroke-width="16" stroke-linecap="round"/><path d="M289 148 L315 136 L311 171" fill="#20e9f0"/>
+<text x="256" y="418" font-family="Arial,sans-serif" font-size="42" font-weight="800" fill="#fff" text-anchor="middle">TrainLog<tspan fill="#13bdf4"> Pro</tspan></text>
+</svg>
