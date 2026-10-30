@@ -62,8 +62,8 @@
   async function listFiles(){
     const items=[];let pageToken='';
     do {
-      const params=new URLSearchParams({spaces:'appDataFolder',fields:'nextPageToken,files(id,name,createdTime,size)',page_size:'100',q:"name contains 'trainlog-pro-backup-' and trashed = false"});
-      if(pageToken)params.set('page_token',pageToken);
+      const params=new URLSearchParams({spaces:'appDataFolder',fields:'nextPageToken,files(id,name,createdTime,size)',pageSize:'100',q:"name contains 'trainlog-pro-backup-' and trashed = false"});
+      if(pageToken)params.set('pageToken',pageToken);
       const result=await api(API+'?'+params);
       items.push(...(result.files||[]));pageToken=result.nextPageToken||'';
     }while(pageToken);
