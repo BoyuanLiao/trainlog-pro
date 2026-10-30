@@ -345,6 +345,21 @@
         </div>
       </div>
 
+      <div class="section">Google Drive 雲端備份（選用）</div>
+      <div class="card">
+        <p class="small backup-intro">使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。</p>
+        <div class="field">
+          <label for="driveClientId">Google OAuth Web Client ID</label>
+          <input id="driveClientId" type="text" autocomplete="off" spellcheck="false" placeholder="xxxxxxxx.apps.googleusercontent.com">
+          <div class="hint">需先在 Google Cloud 啟用 Drive API、建立網頁 OAuth 用戶端，將此 GitHub Pages 網域加入 Authorized JavaScript origins。Client ID 只儲存在目前瀏覽器；請勿填入 Client Secret。</div>
+        </div>
+        <div class="backup-actions">
+          <button type="button" class="btn primary" id="driveBackupNow">立即備份到 Google Drive</button>
+          <button type="button" class="btn ghost" id="driveRestoreLatest">讀取最新雲端備份</button>
+        </div>
+        <div id="driveBackupStatus" class="small" role="status" aria-live="polite" style="margin-top:10px"></div>
+      </div>
+
       <div class="section" data-i18n="staticHtml.r8ebdf98e">自動備份紀錄</div>
       <div class="card"><div id="snapshotList" class="small"></div></div>
 
@@ -516,5 +531,6 @@
 <script src="js/training/progression-view.js?v=2.11.0"></script>
 <script src="js/ui/exercise-progress-browser.js?v=2.11.0"></script>
 <script src="js/app.js?v=2.11.0"></script>
+<script src="js/cloud/drive-backup.js?v=1"></script>
 </body>
 </html>
