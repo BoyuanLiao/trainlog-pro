@@ -72,7 +72,7 @@
   }
   async function backup(){
     await authorize();
-    const payload=JSON.stringify(buildBackupPayload());
+    const payload=JSON.stringify(window.TrainLogBackupBridge.buildBackupPayload());
     const metadata={name:NAME+new Date().toISOString().replace(/[:.]/g,'-')+'.json',parents:['appDataFolder'],mimeType:'application/json'};
     const boundary='trainlog'+Date.now();
     const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+
@@ -96,7 +96,7 @@
     if(!result.ok)throw Error('讀取雲端備份失敗：'+result.status);
     const incoming=await result.json();
     if(incoming?.backupMeta?.format!=='trainlog-pro-full-backup')throw Error('雲端檔案不是有效的 TrainLog Pro 完整備份');
-    previewImport(incoming,'json',selected.name);
+    window.TrainLogBackupBridge.previewImport(incoming,'json',selected.name);
     status('已載入最新雲端備份。請確認匯入預覽並選擇恢復或合併；目前本機資料尚未更動。');
   }
   async function run(action){
