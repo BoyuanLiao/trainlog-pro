@@ -360,6 +360,12 @@
       <div class="section" data-i18n="cloudBackup.title">Google Drive 雲端備份（選用）</div>
       <div class="card">
         <p class="small backup-intro" data-i18n="cloudBackup.description">使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。</p>
+        <label class="field" style="display:flex;align-items:center;gap:10px;margin:12px 0;">
+          <input type="checkbox" id="driveAutoEnabled" style="width:18px;height:18px;" aria-label="自動備份到 Google Drive" data-i18n-aria="cloudBackup.autoLabel">
+          <span data-i18n="cloudBackup.autoLabel">資料或設定變更後自動備份（10 秒後）</span>
+        </label>
+        <div class="small" data-i18n="cloudBackup.autoHint">首次請按「立即備份」連接 Google 帳號。網站開啟且授權有效時才會自動備份，遇到其他裝置的變更會暫停以避免覆蓋資料。</div>
+        <div class="small" id="driveAutoStatus" role="status" aria-live="polite"></div>
         <div class="backup-actions">
           <button type="button" class="btn primary" id="driveBackupNow" data-i18n="cloudBackup.backup">立即備份到 Google Drive</button>
           <button type="button" class="btn ghost" id="driveRestoreLatest" data-i18n="cloudBackup.restore">讀取最新雲端備份</button>
