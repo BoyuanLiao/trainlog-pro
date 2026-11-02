@@ -3,7 +3,7 @@
 
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['ja-JP'] = Object.freeze({
-    cloudBackup:{title:'Google Drive クラウドバックアップ（任意）',description:'Google Drive の非公開アプリ専用フォルダに完全な JSON バックアップを保存します。初回手動バックアップ後はページを開いている間、変更を自動バックアップできます。最新5件を保持し、端末間の変更は自動統合しません。',hint:'Drive API を有効にし、Google OAuth ウェブクライアントを作成してください。GitHub Pages のオリジンを承認済み JavaScript 生成元に登録します。クライアント ID のみ端末に保存します。シークレットは入力しないでください。',backup:'Google Drive にバックアップ',restore:'最新のクラウドバックアップを読み込む',autoLabel:'データや設定の変更後、10 秒で自動バックアップ',autoHint:'初回は「Google Drive にバックアップ」で認証してください。サイトが開いており認証が有効な間だけ動作し、別の端末で変更された場合は上書きを防ぐため停止します。'},
+    cloudBackup:{title:'Google Drive クラウドバックアップ（任意）',description:'Google Drive の非公開アプリ専用フォルダに完全な JSON バックアップを保存します。初回手動バックアップ後はページを開いている間、変更を自動バックアップできます。最新5件を保持し、端末間の変更は自動統合しません。',hint:'Drive API を有効にし、Google OAuth ウェブクライアントを作成してください。GitHub Pages のオリジンを承認済み JavaScript 生成元に登録します。クライアント ID のみ端末に保存します。シークレットは入力しないでください。',backup:'Google Drive にバックアップ',restore:'最新のクラウドバックアップを読み込む',autoLabel:'データや設定の変更後、10 秒で自動バックアップ',autoHint:'初回は「Google Drive にバックアップ」で認証してください。サイトが開いており認証が有効な間だけ動作し、別の端末で変更された場合は上書きを防ぐため停止します。',returning:'以前 Google Drive バックアップを利用しています。再接続してクラウドの更新を確認できます。ローカルデータは自動上書きしません。',newDevice:'別の端末でバックアップ済みなら、同じ Google アカウントで再接続すると復元できます。',reconnect:'Google Drive に再接続',review:'復元／統合をプレビュー',keep:'ローカルデータを保持'},
     legal:{privacy:'プライバシーポリシー',terms:'利用規約',footerLabel:'サイトの法的情報'},
     common:{save:'保存',cancel:'キャンセル',delete:'削除',close:'閉じる',back:'戻る',search:'検索',all:'すべて',more:'さらに表示',edit:'編集',done:'完了'},
     language:{label:'表示言語',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'変更はすぐに反映されます。'},
