@@ -24,7 +24,7 @@
 <h2>二、資料的用途與儲存位置</h2>
 <ul>
 <li><strong>預設本機儲存：</strong>健身紀錄主要保存在你目前裝置與瀏覽器的 LocalStorage，用來顯示訓練紀錄、圖表、課表和使用者設定。不同裝置不會自動同步。</li>
-<li><strong>你主動啟用的雲端備份：</strong>按下備份按鈕時，應用程式會把完整的健身紀錄 JSON 上傳至你 Google 帳號的 Drive 隱藏應用程式資料空間 <code>appDataFolder</code>；一般的「我的雲端硬碟」列表不會直接顯示這類檔案。應用程式會嘗試保留最近 5 份備份。</li>
+<li><strong>你主動啟用的雲端備份：</strong>首次手動備份成功並啟用自動備份後，網站開啟且 Google 授權有效時，資料變更可於約 10 秒後自動上傳；應用程式會把完整的健身紀錄 JSON 上傳至你 Google 帳號的 Drive 隱藏應用程式資料空間 <code>appDataFolder</code>；一般的「我的雲端硬碟」列表不會直接顯示這類檔案。應用程式會嘗試保留最近 5 份備份。</li>
 <li><strong>還原：</strong>你主動選擇恢復時，應用程式會下載雲端備份並顯示匯入預覽，在確認前不會直接覆蓋本機資料。</li>
 <li><strong>權杖處理：</strong>OAuth 存取權杖僅供瀏覽器在當次執行期間呼叫 Google Drive API 使用；目前程式不將權杖或 Google 密碼寫入 LocalStorage，也不要求 Google Client Secret。</li>
 </ul>
