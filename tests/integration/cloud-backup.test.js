@@ -11,6 +11,7 @@ async function exercise({uploadFails=false}={}){
     driveAutoEnabled:{checked:false,addEventListener(type,cb){listeners.toggle=cb}},
     driveAutoStatus:{textContent:''},
     driveBackupStatus:status,
+    driveConnectionStatus:{textContent:''},
     driveReconnectPanel:{style:{display:'none'}},
     driveReconnectPrompt:{textContent:''},
     driveReconnectHome:{style:{display:'none'}},
@@ -86,8 +87,12 @@ async function exercise({uploadFails=false}={}){
   };
   vm.runInNewContext(fs.readFileSync('js/cloud/drive-backup.js','utf8'),ctx,{filename:'drive-backup.js'});
   assert(!elements.driveClientId,'OAuth Client ID must not require a user-visible input');
+  assert.equal(elements.driveReconnectPanel.style.display,'block','reconnect control shown when not authorized');
   listeners.backup();
   await new Promise(resolve=>setTimeout(resolve,25));
+  assert.equal(elements.driveReconnectPanel.style.display,'none','reconnect control hidden once authorized');
+  assert.equal(elements.driveReconnectHome.style.display,'none','no reconnect home banner with valid OAuth');
+  assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.connected');
   if(uploadFails){
     assert.equal(uploaded.length,0);
     assert.equal(deleted.length,0);

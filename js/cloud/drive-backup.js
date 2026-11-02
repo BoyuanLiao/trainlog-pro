@@ -24,12 +24,15 @@
   let pendingCloud=null;
   const previouslyUsed=()=>localStorage.getItem(EVER_KEY)==='true'||!!lastRemoteId;
   function showReconnect(){
+    const connected=isAuthorized();
     const panel=$('driveReconnectPanel');
-    if(panel)panel.style.display='block';
+    if(panel)panel.style.display=connected?'none':'block';
     const home=$('driveReconnectHome');
-    if(home)home.style.display=previouslyUsed()?'block':'none';
+    if(home)home.style.display=!connected&&previouslyUsed()?'block':'none';
     const prompt=$('driveReconnectPrompt');
     if(prompt)prompt.textContent=tr(previouslyUsed()?'cloudBackup.returning':'cloudBackup.newDevice');
+    const indicator=$('driveConnectionStatus');
+    if(indicator)indicator.textContent=connected?tr('cloudBackup.connected'):previouslyUsed()?tr('cloudBackup.authorizationNeeded'):tr('cloudBackup.notConnected');
   }
   function showCompare(visible){
     const panel=$('driveComparePanel');
@@ -94,6 +97,7 @@
           if(response?.error){reject(Error(response.error));return}
           token=response.access_token;
           expiresAt=Date.now()+(Number(response.expires_in)||3600)*1000;
+          showReconnect();
           resolve(token);
         },
         error_callback:()=>reject(Error('Google 授權視窗已關閉或登入失敗'))
@@ -104,7 +108,7 @@
   async function api(url,options={}){
     const res=await fetch(url,{...options,headers:{Authorization:'Bearer '+token,...(options.headers||{})}});
     if(!res.ok){
-      if(res.status===401){token='';expiresAt=0}
+      if(res.status===401){token='';expiresAt=0;showReconnect()}
       throw Error('Google Drive API '+res.status+': '+(await res.text()).slice(0,200));
     }
     if(res.status===204)return null;
@@ -164,7 +168,7 @@
     const selected=files[0];
     const result=await fetch(API+'/'+encodeURIComponent(selected.id)+'?alt=media',{headers:{Authorization:'Bearer '+token}});
     if(!result.ok){
-      if(result.status===401){token='';expiresAt=0}
+      if(result.status===401){token='';expiresAt=0;showReconnect()}
       throw Error('讀取雲端備份失敗：'+result.status);
     }
     const incoming=await result.json();
@@ -286,8 +290,9 @@
     }
     window.addEventListener('online',()=>{if(dirty)scheduleAuto(1000)});
     window.addEventListener('storage',event=>{if(event.key===APP_KEY)dataChanged()});
-    window.addEventListener('pageshow',()=>{if(dirty)scheduleAuto(1000)});
+    window.addEventListener('pageshow',()=>{showReconnect();if(dirty)scheduleAuto(1000)});
     if(autoEnabled) {dirty=fingerprint(appRaw())!==lastSyncedData;scheduleAuto();}
+    window.setInterval?.(showReconnect,30000);
 
     loadGIS().catch(err=>status('Google 授權元件預載失敗：'+errorText(err)));
     status('使用 Google 帳號授權後，即可備份或恢復健身紀錄。');
