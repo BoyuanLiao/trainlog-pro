@@ -10,6 +10,7 @@
   const NAME='trainlog-pro-backup-';
   const DEFAULT_CLIENT_ID='971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com';
   const $=id=>document.getElementById(id);
+  const tr=key=>window.TrainLogI18n?.t(key)||key;
   const APP_KEY='trainlogProData';
   const ENABLED_KEY='trainlogProDriveAutoEnabled';
   const LAST_REMOTE_KEY='trainlogProDriveLastRemoteId';
@@ -28,13 +29,13 @@
     const home=$('driveReconnectHome');
     if(home)home.style.display=previouslyUsed()?'block':'none';
     const prompt=$('driveReconnectPrompt');
-    if(prompt)prompt.textContent=previouslyUsed()
-      ?'你曾使用 Google Drive 備份。重新連接可檢查雲端是否有較新的資料；不會自動覆寫。'
-      :'如果已有其他裝置的 Google Drive 備份，可連接原 Google 帳號來找回資料。';
+    if(prompt)prompt.textContent=tr(previouslyUsed()?'cloudBackup.returning':'cloudBackup.newDevice');
   }
   function showCompare(visible){
     const panel=$('driveComparePanel');
     if(panel)panel.style.display=visible?'block':'none';
+    const home=$('driveCompareHome');
+    if(home)home.style.display=visible?'block':'none';
   }
   function fingerprint(value){
     if(!value)return '';
@@ -187,8 +188,11 @@
     rows.push('訓練計畫：'+(local.hasPlan?'本機有':'本機無')+'／'+(remote.hasPlan?'雲端有':'雲端無'));
     rows.push('以上為數量及識別碼初步比較；相同識別碼的內容仍可能不同，恢復前請查看預覽。');
     const el=$('driveCompareSummary');
-    if(el)el.textContent='最新雲端備份：'+cloud.selected.name+'\n'+rows.join('\n');
+    const message='最新雲端備份：'+cloud.selected.name+'\n'+rows.join('\n');
+    if(el)el.textContent=message;
     if(el)el.style.whiteSpace='pre-line';
+    const homeSummary=$('driveCompareHomeSummary');
+    if(homeSummary)homeSummary.textContent=message;
     showCompare(true);
     const home=$('driveReconnectHome');
     if(home)home.style.display='none';
@@ -266,6 +270,8 @@
     $('driveReconnectHomeButton')?.addEventListener('click',()=>run('reconnect'));
     $('driveReviewRestore')?.addEventListener('click',reviewCloud);
     $('driveDismissCompare')?.addEventListener('click',dismissCloud);
+    $('driveReviewHome')?.addEventListener('click',reviewCloud);
+    $('driveDismissHome')?.addEventListener('click',dismissCloud);
     showReconnect();
     const toggle=$('driveAutoEnabled');
     if(toggle){
