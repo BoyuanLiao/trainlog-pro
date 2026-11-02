@@ -3,6 +3,7 @@
 
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['ja-JP'] = Object.freeze({
+    cloudBackup:{title:'Google Drive クラウドバックアップ（任意）',description:'Google Drive の非公開アプリ専用フォルダに完全な JSON バックアップを手動保存します。最新5件を保持します。ローカル保存は維持され、自動同期は行いません。',hint:'Drive API を有効にし、Google OAuth ウェブクライアントを作成してください。GitHub Pages のオリジンを承認済み JavaScript 生成元に登録します。クライアント ID のみ端末に保存します。シークレットは入力しないでください。',backup:'Google Drive にバックアップ',restore:'最新のクラウドバックアップを読み込む'},
     common:{save:'保存',cancel:'キャンセル',delete:'削除',close:'閉じる',back:'戻る',search:'検索',all:'すべて',more:'さらに表示',edit:'編集',done:'完了'},
     language:{label:'表示言語',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'変更はすぐに反映されます。'},
     languageSetup:{kicker:'TrainLog Pro へようこそ',title:'表示言語を選択',copy:'最初に使用する言語を選択してください。後から設定でいつでも変更できます。',continue:'続ける'},

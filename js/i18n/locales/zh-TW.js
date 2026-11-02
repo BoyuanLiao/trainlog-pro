@@ -3,6 +3,7 @@
 
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['zh-TW'] = Object.freeze({
+    cloudBackup:{title:'Google Drive 雲端備份（選用）',description:'使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。',hint:'需先在 Google Cloud 啟用 Drive API、建立網頁 OAuth 用戶端，將此 GitHub Pages 網域加入 Authorized JavaScript origins。Client ID 只儲存在目前瀏覽器；請勿填入 Client Secret。',backup:'立即備份到 Google Drive',restore:'讀取最新雲端備份'},
     common:{save:'儲存',cancel:'取消',delete:'刪除',close:'關閉',back:'返回',search:'搜尋',all:'全部',more:'顯示更多',edit:'編輯',done:'完成'},
     language:{label:'介面語言',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'切換後會立即套用。'},
     languageSetup:{kicker:'歡迎使用 TrainLog Pro',title:'選擇介面語言',copy:'先選擇你要使用的語言。之後仍可在設定中隨時變更。',continue:'繼續'},

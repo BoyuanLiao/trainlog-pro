@@ -2369,6 +2369,8 @@ $('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try
 $('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert(tr('finalUi.invalidCsv'))}e.target.value=''};
 $('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
 
+window.TrainLogBackupBridge=Object.freeze({buildBackupPayload,previewImport});
+
 $('#recordMonth').value=monthKey();
 renderAll();
 })();
