@@ -3,7 +3,7 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
-async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
+async function exercise({uploadFails=false,remembered=false,cached='none',expiredAuto=false,remoteConflict=false}={}){
   const listeners={}, status={textContent:''}, deleted=[], uploaded=[];
   const elements={
     driveBackupNow:{disabled:false,addEventListener(type,cb){listeners.backup=cb}},
@@ -12,6 +12,8 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
     driveAutoStatus:{textContent:''},
     driveBackupStatus:status,
     driveConnectionStatus:{textContent:''},
+    driveExpiredNotice:{style:{display:'none'}},
+    driveExpiredReauthorize:{addEventListener(type,cb){listeners.reauthorize=cb}},
     driveReconnectPanel:{style:{display:'none'}},
     driveReconnectPrompt:{textContent:''},
     driveReconnectHome:{style:{display:'none'}},
@@ -23,7 +25,11 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
     driveDismissCompare:{addEventListener(type,cb){listeners.dismiss=cb}}
   };
   const storage=new Map([['trainlogProData',JSON.stringify({workouts:[{id:'w1'}]})]]);
-  if(remembered)storage.set('trainlogProDriveEverConnected','true');
+  if(remembered||expiredAuto)storage.set('trainlogProDriveEverConnected','true');
+  if(expiredAuto){
+    storage.set('trainlogProDriveAutoEnabled','true');
+    storage.set('trainlogProDriveLastRemoteId','old1');
+  }
   const tokenKey='trainlogProDriveAccessTokenV1';
   if(cached!=='none'){
     storage.set(tokenKey,cached==='invalid'?'{bad-json':
@@ -39,6 +45,7 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
     {id:'old4',name:'trainlog-pro-backup-4.json',createdTime:'2026-10-22T00:00:00Z'},
     {id:'old5',name:'trainlog-pro-backup-5.json',createdTime:'2026-10-21T00:00:00Z'}
   ];
+  if(remoteConflict)files.unshift({id:'different-device',name:'trainlog-pro-backup-different.json',createdTime:'2026-11-02T15:00:00Z'});
   function response(body,status=200){
     return {ok:status>=200&&status<300,status,async json(){return body},async text(){return JSON.stringify(body)}};
   }
@@ -71,7 +78,7 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
     document:{getElementById:id=>elements[id]||null,createElement(){return {}},head:{appendChild(){}}},
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(k,v)=>storage.set(k,v),removeItem:key=>storage.delete(key)},
     URL,URLSearchParams,Date,Promise,console,navigator:{onLine:true},
-    setTimeout:(cb,ms)=>setTimeout(cb,ms>=10000?10:ms),clearTimeout,
+    setTimeout:(cb,ms)=>setTimeout(cb,ms>=1000?10:ms),clearTimeout,
     async fetch(url,opts={}){
       if(url.includes('uploadType=multipart')){
         if(uploadFails)return response({error:'upload unavailable'},503);
@@ -93,6 +100,25 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
   };
   vm.runInNewContext(fs.readFileSync('js/cloud/drive-backup.js','utf8'),ctx,{filename:'drive-backup.js'});
   assert(!elements.driveClientId,'OAuth Client ID must not require a user-visible input');
+  if(expiredAuto){
+    assert.equal(elements.driveExpiredNotice.style.display,'block','expired auto backup should display notification');
+    assert.equal(uploaded.length,0,'no upload before user authorization');
+    assert.equal(popupRequests,0,'never ask for OAuth until a click');
+    listeners.reauthorize();
+    await new Promise(resolve=>setTimeout(resolve,75));
+    assert.equal(elements.driveExpiredNotice.style.display,'none','successful OAuth clears expiry notice');
+    assert.equal(popupRequests,1,'re-authorization should occur only on click');
+    if(remoteConflict){
+      assert.equal(uploaded.length,0,'conflicting cloud must not be overwritten');
+      assert.equal(elements.driveComparePanel.style.display,'block','cloud conflict should show compare');
+      assert(status.textContent.includes('cloudBackup.remoteConflict'));
+    }else{
+      assert.equal(uploaded.length,1,'matching cloud should resume unsynced automatic backup');
+      assert.equal(elements.driveComparePanel.style.display,'none');
+    }
+    return;
+  }
+  assert.equal(elements.driveExpiredNotice.style.display,'none','do not show expiry notice without opted-in automatic backup');
   assert.equal(elements.driveReconnectHome.style.display,'none','refresh must not show a reconnect banner');
   if(remembered)assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.remembered','remembered account must not be labeled as a disconnected account');
   assert.equal(elements.driveReconnectPanel.style.display,cached==='valid'?'none':'block','reconnect control should reflect cached token validity');
@@ -161,5 +187,7 @@ async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
   await exercise({cached:'valid'});
   await exercise({cached:'expired'});
   await exercise({cached:'invalid'});
+  await exercise({expiredAuto:true,cached:'expired'});
+  await exercise({expiredAuto:true,cached:'expired',remoteConflict:true});
   console.log('Google Drive mocked backup/restore and failure safety passed');
 })().catch(err=>{console.error(err);process.exitCode=1});
