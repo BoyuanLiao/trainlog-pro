@@ -32,6 +32,7 @@
       s.async=true;s.onload=resolve;s.onerror=()=>{loadingGIS=null;reject(Error('Google 登入元件載入失敗'))};
       document.head.appendChild(s);
     });
+    return loadingGIS;
   }
   async function authorize(){
     const id=saveClientId();
