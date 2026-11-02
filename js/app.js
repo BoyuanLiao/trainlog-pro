@@ -2377,7 +2377,23 @@ $('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try
 $('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert(tr('finalUi.invalidCsv'))}e.target.value=''};
 $('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){window.TrainLogCloudBackup?.pauseAfterLocalReset();localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
 
-window.TrainLogBackupBridge=Object.freeze({buildBackupPayload,previewImport});
+function summarizeBackupData(value){
+ const collectionKeys=['workouts','templates','exerciseLibrary','gyms','equipment','bodyStatus','strengthGoals'];
+ const result={};
+ for(const key of collectionKeys){
+   const array=Array.isArray(value?.[key])?value[key]:[];
+   result[key]={count:array.length,ids:array.map(x=>String(x?.id||x?.date||'')).filter(Boolean)};
+ }
+ result.hasSettings=!!value?.settings;
+ result.hasPlan=!!value?.currentPlan;
+ result.hasActive=!!value?.activeWorkout;
+ return result;
+}
+window.TrainLogBackupBridge=Object.freeze({
+ buildBackupPayload,previewImport,
+ summarizeLocal:()=>summarizeBackupData(data),
+ summarizeRemote:summarizeBackupData
+});
 
 $('#recordMonth').value=monthKey();
 renderAll();
