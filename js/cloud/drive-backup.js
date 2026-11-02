@@ -14,11 +14,26 @@
   const ENABLED_KEY='trainlogProDriveAutoEnabled';
   const LAST_REMOTE_KEY='trainlogProDriveLastRemoteId';
   const LAST_SYNC_KEY='trainlogProDriveLastSyncedData';
+  const EVER_KEY='trainlogProDriveEverConnected';
   const DELAY_MS=10000, MIN_INTERVAL_MS=60000;
   let pendingTimer=null, dirty=false, blocked=false, lastUploadAt=0;
   let lastSyncedData=localStorage.getItem(LAST_SYNC_KEY)||'';
   let lastRemoteId=localStorage.getItem(LAST_REMOTE_KEY)||'';
   let autoEnabled=localStorage.getItem(ENABLED_KEY)==='true';
+  let pendingCloud=null;
+  const previouslyUsed=()=>localStorage.getItem(EVER_KEY)==='true'||!!lastRemoteId;
+  function showReconnect(){
+    const panel=$('driveReconnectPanel');
+    if(panel)panel.style.display=previouslyUsed()?'block':'block';
+    const prompt=$('driveReconnectPrompt');
+    if(prompt)prompt.textContent=previouslyUsed()
+      ?'你曾使用 Google Drive 備份。重新連接可檢查雲端是否有較新的資料；不會自動覆寫。'
+      :'如果已有其他裝置的 Google Drive 備份，可連接原 Google 帳號來找回資料。';
+  }
+  function showCompare(visible){
+    const panel=$('driveComparePanel');
+    if(panel)panel.style.display=visible?'block':'none';
+  }
   function fingerprint(value){
     if(!value)return '';
     let h=2166136261;
@@ -127,6 +142,7 @@
     for(const old of all.filter(f=>f.id!==created.id).slice(4)){
       try{await api(API+'/'+encodeURIComponent(old.id),{method:'DELETE'})}catch(err){console.warn('Drive backup pruning failed',err)}
     }
+    localStorage.setItem(EVER_KEY,'true');
     lastRemoteId=created.id;
     lastSyncedData=fingerprint(capturedRaw);
     localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
@@ -139,19 +155,81 @@
     dirty=fingerprint(appRaw())!==lastSyncedData;
     setStatus('備份成功：'+new Date().toLocaleString()+'（雲端保留最近 5 份）');
   }
-  async function restore(){
-    await authorize();
+  async function readCloud(){
     const files=await listFiles();
-    if(!files.length){status('雲端尚無 TrainLog Pro 備份');return}
+    if(!files.length)return null;
     const selected=files[0];
     const result=await fetch(API+'/'+encodeURIComponent(selected.id)+'?alt=media',{headers:{Authorization:'Bearer '+token}});
-    if(!result.ok)throw Error('讀取雲端備份失敗：'+result.status);
+    if(!result.ok){
+      if(result.status===401){token='';expiresAt=0}
+      throw Error('讀取雲端備份失敗：'+result.status);
+    }
     const incoming=await result.json();
     if(incoming?.backupMeta?.format!=='trainlog-pro-full-backup')throw Error('雲端檔案不是有效的 TrainLog Pro 完整備份');
-    window.TrainLogBackupBridge.previewImport(incoming,'json',selected.name);
-    lastRemoteId=selected.id;localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
+    return {selected,incoming};
+  }
+  function compareCloud(cloud){
+    const bridge=window.TrainLogBackupBridge;
+    const local=bridge.summarizeLocal();
+    const remote=bridge.summarizeRemote(cloud.incoming);
+    const labels={workouts:'訓練紀錄',templates:'課表',exerciseLibrary:'動作',gyms:'健身房',equipment:'器材',bodyStatus:'身體狀態',strengthGoals:'力量目標'};
+    const rows=Object.keys(labels).map(key=>{
+      const a=local[key],b=remote[key];
+      const left=new Set(a.ids),right=new Set(b.ids);
+      const onlyLocal=a.ids.filter(id=>!right.has(id)).length;
+      const onlyCloud=b.ids.filter(id=>!left.has(id)).length;
+      return labels[key]+'：本機 '+a.count+'／雲端 '+b.count+
+        (onlyLocal||onlyCloud?'（僅本機 '+onlyLocal+'／僅雲端 '+onlyCloud+'）':'');
+    });
+    rows.push('設定：'+(local.hasSettings?'本機有':'本機無')+'／'+(remote.hasSettings?'雲端有':'雲端無'));
+    rows.push('訓練計畫：'+(local.hasPlan?'本機有':'本機無')+'／'+(remote.hasPlan?'雲端有':'雲端無'));
+    rows.push('以上為數量及識別碼初步比較；相同識別碼的內容仍可能不同，恢復前請查看預覽。');
+    const el=$('driveCompareSummary');
+    if(el)el.textContent='最新雲端備份：'+cloud.selected.name+'\n'+rows.join('\n');
+    if(el)el.style.whiteSpace='pre-line';
+    showCompare(true);
+  }
+  async function reconnect(){
+    // This operation is always started by a user gesture; no silent OAuth popup.
+    await authorize();
+    localStorage.setItem(EVER_KEY,'true');
+    showReconnect();
+    // Prevent auto-writing before the user reviews cloud data.
     blocked=true;clearTimeout(pendingTimer);pendingTimer=null;
-    setStatus('已開啟雲端備份預覽。自動備份暫停，確認恢復結果後請手動備份以重新啟用，避免覆蓋雲端資料。');
+    const cloud=await readCloud();
+    if(!cloud){
+      pendingCloud=null;showCompare(false);
+      blocked=false;
+      setStatus('Google Drive 已連接，但目前找不到 TrainLog Pro 雲端備份；本機資料未更動。');
+      return;
+    }
+    pendingCloud=cloud;
+    compareCloud(cloud);
+    setStatus('已連接 Google Drive 並比對備份，請選擇是否預覽恢復／合併。自動備份暫停。');
+  }
+  function reviewCloud(){
+    if(!pendingCloud)return;
+    window.TrainLogBackupBridge.previewImport(pendingCloud.incoming,'json',pendingCloud.selected.name);
+    lastRemoteId=pendingCloud.selected.id;
+    localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
+    showCompare(false);
+    setStatus('請在匯入預覽選擇恢復或合併。本機資料不會在確認前變更；自動備份仍暫停。');
+    pendingCloud=null;
+  }
+  function dismissCloud(){
+    pendingCloud=null;showCompare(false);
+    blocked=true;clearTimeout(pendingTimer);pendingTimer=null;
+    setStatus('已保留本機資料，自動備份暫停。若要重新開始上傳，請先確認雲端內容後手動備份。');
+  }
+  async function restore(){
+    await authorize();
+    localStorage.setItem(EVER_KEY,'true');
+    const cloud=await readCloud();
+    if(!cloud){setStatus('雲端尚無 TrainLog Pro 備份');return}
+    pendingCloud=cloud;
+    compareCloud(cloud);
+    blocked=true;clearTimeout(pendingTimer);pendingTimer=null;
+    setStatus('已取得最新雲端備份，請先查看本機與雲端資料的比較，再選擇預覽恢復／合併。');
   }
   async function run(action){
     if(busy)return;
@@ -161,6 +239,7 @@
     if(action!=='auto')setStatus(action==='backup'?'正在備份至 Google Drive…':'正在讀取雲端備份…');
     try{
       if(action==='restore')await restore();
+      else if(action==='reconnect')await reconnect();
       else await backup(action==='auto');
     }catch(err){
       setStatus('操作失敗：'+errorText(err)+(action==='auto'?'；本機資料安全，稍後可重試':''));
@@ -179,6 +258,10 @@
     if(!$('driveBackupNow')||!$('driveRestoreLatest'))return;
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
+    $('driveReconnect')?.addEventListener('click',()=>run('reconnect'));
+    $('driveReviewRestore')?.addEventListener('click',reviewCloud);
+    $('driveDismissCompare')?.addEventListener('click',dismissCloud);
+    showReconnect();
     const toggle=$('driveAutoEnabled');
     if(toggle){
       refreshToggle();
