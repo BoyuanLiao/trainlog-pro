@@ -24,7 +24,9 @@
   const previouslyUsed=()=>localStorage.getItem(EVER_KEY)==='true'||!!lastRemoteId;
   function showReconnect(){
     const panel=$('driveReconnectPanel');
-    if(panel)panel.style.display=previouslyUsed()?'block':'block';
+    if(panel)panel.style.display='block';
+    const home=$('driveReconnectHome');
+    if(home)home.style.display=previouslyUsed()?'block':'none';
     const prompt=$('driveReconnectPrompt');
     if(prompt)prompt.textContent=previouslyUsed()
       ?'你曾使用 Google Drive 備份。重新連接可檢查雲端是否有較新的資料；不會自動覆寫。'
@@ -188,6 +190,8 @@
     if(el)el.textContent='最新雲端備份：'+cloud.selected.name+'\n'+rows.join('\n');
     if(el)el.style.whiteSpace='pre-line';
     showCompare(true);
+    const home=$('driveReconnectHome');
+    if(home)home.style.display='none';
   }
   async function reconnect(){
     // This operation is always started by a user gesture; no silent OAuth popup.
@@ -199,7 +203,7 @@
     const cloud=await readCloud();
     if(!cloud){
       pendingCloud=null;showCompare(false);
-      blocked=false;
+      blocked=true;
       setStatus('Google Drive 已連接，但目前找不到 TrainLog Pro 雲端備份；本機資料未更動。');
       return;
     }
@@ -259,6 +263,7 @@
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
     $('driveReconnect')?.addEventListener('click',()=>run('reconnect'));
+    $('driveReconnectHomeButton')?.addEventListener('click',()=>run('reconnect'));
     $('driveReviewRestore')?.addEventListener('click',reviewCloud);
     $('driveDismissCompare')?.addEventListener('click',dismissCloud);
     showReconnect();
