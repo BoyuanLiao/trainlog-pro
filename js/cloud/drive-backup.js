@@ -37,6 +37,9 @@
     if(prompt)prompt.textContent=tr(previouslyUsed()?'cloudBackup.returning':'cloudBackup.newDevice');
     const indicator=$('driveConnectionStatus');
     if(indicator)indicator.textContent=connected?tr('cloudBackup.connected'):previouslyUsed()?tr('cloudBackup.remembered'):tr('cloudBackup.notConnected');
+    // Only users who opted into automatic backup need an interruptive expiry notice.
+    const notice=$('driveExpiredNotice');
+    if(notice)notice.style.display=autoEnabled&&previouslyUsed()&&!connected?'block':'none';
   }
   function showCompare(visible){
     const panel=$('driveComparePanel');
@@ -73,7 +76,7 @@
   }
   function pauseAfterLocalReset(){
     clearTimeout(pendingTimer);pendingTimer=null;autoEnabled=false;dirty=false;blocked=false;
-    localStorage.setItem(ENABLED_KEY,'false');refreshToggle();
+    localStorage.setItem(ENABLED_KEY,'false');refreshToggle();showReconnect();
     setStatus('本機資料已重設。自動雲端備份已暫停，以保護既有雲端備份');
   }
   let token='',expiresAt=0,client=null,busy=false,loadingGIS=null;
@@ -246,6 +249,35 @@
     compareCloud(cloud);
     setStatus('已連接 Google Drive 並比對備份，請選擇是否預覽恢復／合併。自動備份暫停。');
   }
+  async function resumeExpiredAuthorization(){
+    // Always invoked from the notice button. Reauthorization alone must never
+    // blindly resume an upload until the latest cloud backup has been checked.
+    await authorize();
+    const files=await listFiles();
+    const newest=files[0]?.id||'';
+    if(newest!==lastRemoteId){
+      blocked=true;clearTimeout(pendingTimer);pendingTimer=null;
+      if(newest){
+        const cloud=await readCloud();
+        pendingCloud=cloud;
+        if(cloud)compareCloud(cloud);
+      }else{
+        pendingCloud=null;showCompare(false);
+      }
+      setStatus(tr('cloudBackup.remoteConflict'));
+      return;
+    }
+    if(blocked){
+      setStatus(tr('cloudBackup.stillPaused'));
+      return;
+    }
+    dirty=fingerprint(appRaw())!==lastSyncedData;
+    if(dirty){
+      scheduleAuto(1000);
+    }else{
+      setStatus(tr('cloudBackup.resumedNoChanges'));
+    }
+  }
   function reviewCloud(){
     if(!pendingCloud)return;
     window.TrainLogBackupBridge.previewImport(pendingCloud.incoming,'json',pendingCloud.selected.name);
@@ -279,6 +311,7 @@
     try{
       if(action==='restore')await restore();
       else if(action==='reconnect')await reconnect();
+      else if(action==='reauthorize')await resumeExpiredAuthorization();
       else await backup(action==='auto');
     }catch(err){
       setStatus('操作失敗：'+errorText(err)+(action==='auto'?'；本機資料安全，稍後可重試':''));
@@ -299,6 +332,7 @@
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
     $('driveReconnect')?.addEventListener('click',()=>run('reconnect'));
     $('driveReconnectHomeButton')?.addEventListener('click',()=>run('reconnect'));
+    $('driveExpiredReauthorize')?.addEventListener('click',()=>run('reauthorize'));
     $('driveReviewRestore')?.addEventListener('click',reviewCloud);
     $('driveDismissCompare')?.addEventListener('click',dismissCloud);
     $('driveReviewHome')?.addEventListener('click',reviewCloud);
@@ -310,6 +344,7 @@
       toggle.addEventListener('change',()=>{
         autoEnabled=toggle.checked;
         localStorage.setItem(ENABLED_KEY,String(autoEnabled));
+        showReconnect();
         blocked=false;
         if(!autoEnabled){clearTimeout(pendingTimer);pendingTimer=null;setStatus('自動備份已停用；仍可手動備份')}
         else{dirty=fingerprint(appRaw())!==lastSyncedData;scheduleAuto();if(!dirty)setStatus('自動備份已啟用，資料變更後將自動備份')}
@@ -321,6 +356,7 @@
       if(event.key===TOKEN_KEY){
         if(event.newValue)restoreCachedToken();else{token='';expiresAt=0}
         showReconnect();
+        if(dirty&&isAuthorized())scheduleAuto(1000);
       }
     });
     window.addEventListener('pageshow',()=>{
