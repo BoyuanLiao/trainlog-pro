@@ -6,7 +6,6 @@ const assert=require('assert');
 async function exercise({uploadFails=false}={}){
   const listeners={}, status={textContent:''}, deleted=[], uploaded=[];
   const elements={
-    driveClientId:{value:'',addEventListener(type,cb){listeners.client=cb}},
     driveBackupNow:{disabled:false,addEventListener(type,cb){listeners.backup=cb}},
     driveRestoreLatest:{disabled:false,addEventListener(type,cb){listeners.restore=cb}},
     driveBackupStatus:status
@@ -26,6 +25,7 @@ async function exercise({uploadFails=false}={}){
   }
   const google={accounts:{oauth2:{initTokenClient(config){
     assert.equal(config.scope,'https://www.googleapis.com/auth/drive.appdata');
+    assert.equal(config.client_id,'971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com');
     return {requestAccessToken(){popupRequests++;config.callback({access_token:'token-test',expires_in:3600})}};
   }}}};
   const ctx={
@@ -53,7 +53,7 @@ async function exercise({uploadFails=false}={}){
     }
   };
   vm.runInNewContext(fs.readFileSync('js/cloud/drive-backup.js','utf8'),ctx,{filename:'drive-backup.js'});
-  assert(elements.driveClientId.value.endsWith('.apps.googleusercontent.com'));
+  assert(!elements.driveClientId,'OAuth Client ID must not require a user-visible input');
   listeners.backup();
   await new Promise(resolve=>setTimeout(resolve,25));
   if(uploadFails){
