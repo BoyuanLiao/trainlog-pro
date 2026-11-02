@@ -27,12 +27,14 @@
     const connected=isAuthorized();
     const panel=$('driveReconnectPanel');
     if(panel)panel.style.display=connected?'none':'block';
+    // A remembered connection is not an expired-session error: do not nag on every reload.
+    // OAuth tokens are intentionally memory-only; Drive actions request authorization when needed.
     const home=$('driveReconnectHome');
-    if(home)home.style.display=!connected&&previouslyUsed()?'block':'none';
+    if(home)home.style.display='none';
     const prompt=$('driveReconnectPrompt');
     if(prompt)prompt.textContent=tr(previouslyUsed()?'cloudBackup.returning':'cloudBackup.newDevice');
     const indicator=$('driveConnectionStatus');
-    if(indicator)indicator.textContent=connected?tr('cloudBackup.connected'):previouslyUsed()?tr('cloudBackup.authorizationNeeded'):tr('cloudBackup.notConnected');
+    if(indicator)indicator.textContent=connected?tr('cloudBackup.connected'):previouslyUsed()?tr('cloudBackup.remembered'):tr('cloudBackup.notConnected');
   }
   function showCompare(visible){
     const panel=$('driveComparePanel');

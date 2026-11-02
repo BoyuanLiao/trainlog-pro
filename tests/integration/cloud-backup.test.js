@@ -3,7 +3,7 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
-async function exercise({uploadFails=false}={}){
+async function exercise({uploadFails=false,remembered=false}={}){
   const listeners={}, status={textContent:''}, deleted=[], uploaded=[];
   const elements={
     driveBackupNow:{disabled:false,addEventListener(type,cb){listeners.backup=cb}},
@@ -23,6 +23,7 @@ async function exercise({uploadFails=false}={}){
     driveDismissCompare:{addEventListener(type,cb){listeners.dismiss=cb}}
   };
   const storage=new Map([['trainlogProData',JSON.stringify({workouts:[{id:'w1'}]})]]);
+  if(remembered)storage.set('trainlogProDriveEverConnected','true');
   const windowListeners={};
   const backup={app:'TrainLog Pro',workouts:[{id:'w1',name:'測試'}],backupMeta:{format:'trainlog-pro-full-backup'}};
   let preview=null, popupRequests=0, fileRequests=0;
@@ -87,6 +88,8 @@ async function exercise({uploadFails=false}={}){
   };
   vm.runInNewContext(fs.readFileSync('js/cloud/drive-backup.js','utf8'),ctx,{filename:'drive-backup.js'});
   assert(!elements.driveClientId,'OAuth Client ID must not require a user-visible input');
+  assert.equal(elements.driveReconnectHome.style.display,'none','refresh must not show a reconnect banner');
+  if(remembered)assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.remembered','remembered account must not be labeled as a disconnected account');
   assert.equal(elements.driveReconnectPanel.style.display,'block','reconnect control shown when not authorized');
   listeners.backup();
   await new Promise(resolve=>setTimeout(resolve,25));
@@ -145,5 +148,6 @@ async function exercise({uploadFails=false}={}){
 (async()=>{
   await exercise();
   await exercise({uploadFails:true});
+  await exercise({remembered:true});
   console.log('Google Drive mocked backup/restore and failure safety passed');
 })().catch(err=>{console.error(err);process.exitCode=1});
