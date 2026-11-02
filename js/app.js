@@ -66,7 +66,15 @@ function renderRecoveryBanner(){
 }
 setTimeout(renderRecoveryBanner,0);
 function snapshot(reason){return storageCore.snapshot(data,reason)}
-function save(reason='',takeSnapshot=false){return storageCore.save(data,reason,takeSnapshot,renderAll)}
+function save(reason='',takeSnapshot=false){
+ const result=storageCore.save(data,reason,takeSnapshot,renderAll);
+ window.TrainLogCloudBackup?.dataChanged();
+ return result;
+}
+function persistAppData(key,value){
+ localStorage.setItem(key,value);
+ window.TrainLogCloudBackup?.dataChanged();
+}
 const trainingMetrics=window.TrainLogTrainingMetrics;
 const trainingLifecycle=window.TrainLogTrainingLifecycle;
 const trainingMutations=window.TrainLogTrainingMutations;
@@ -485,7 +493,7 @@ function finishCoachTour(){
    data.settings.pageTutorials[pageKey]=true;
    if(pageKey==='workout')data.settings.workoutTutorialCompleted=true
  }
- localStorage.setItem(APP_KEY,JSON.stringify(data));
+ persistAppData(APP_KEY,JSON.stringify(data));
  coachTour=null;coachIndex=0;document.body.style.overflow='';
  if(kind==='app')renderAll()
 }
@@ -511,7 +519,7 @@ function openTutorialAgain(){
  data.settings.tutorialCompleted=false;
  data.settings.workoutTutorialCompleted=false;
  data.settings.pageTutorials={home:false,trainLanding:false,workout:false,records:false,analysis:false,settings:false};
- localStorage.setItem(APP_KEY,JSON.stringify(data));
+ persistAppData(APP_KEY,JSON.stringify(data));
  closeTrainingDrawer();
  startCoachTour('app')
 }
@@ -528,13 +536,13 @@ function renderFirstLanguage(){
    button.classList.toggle('ghost',button.dataset.firstLocale!==current);
    button.onclick=()=>{
      data.settings.locale=i18n.setLocale(button.dataset.firstLocale);
-     try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}
+     try{persistAppData(APP_KEY,JSON.stringify(data))}catch{}
      renderAll();
    };
  });
  $('#firstLanguageContinue').onclick=()=>{
    data.settings.localeSetupCompleted=true;
-   try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}
+   try{persistAppData(APP_KEY,JSON.stringify(data))}catch{}
    wrap.classList.remove('show');document.body.style.overflow='';
    renderAll()
  };
@@ -566,7 +574,7 @@ function renderFirstSetup(){
    data.settings.equipmentPreference=equip;
    data.settings.priorityMuscles=[...selected];
    data.settings.preferencesSetupCompleted=true;
-   localStorage.setItem(APP_KEY,JSON.stringify(data));
+   persistAppData(APP_KEY,JSON.stringify(data));
    wrap.classList.remove('show');document.body.style.overflow='';
    renderAll();setTimeout(()=>maybeStartPageTutorial('homePage'),350);toast(tr('feedback.setupSaved'))
  }
@@ -701,7 +709,7 @@ function adoptCurrentPlan(programId,from='recommendation'){
 }
 function endCurrentPlan(){if(!data.currentPlan)return;if(confirm(tr('dialogs.endPlan'))){data.currentPlan=null;data.todayAdjustment=null;save(tr('reasons.endCurrentPlan'),true);toast(tr('feedback.planEnded'))}}
 function todayAdjustment(){const t=data.todayAdjustment;if(t?.date===isoToday()&&TODAY_ADJUSTMENTS[t.mode])return t;return{date:isoToday(),mode:'normal',focusMuscle:''}}
-function setTodayAdjustment(mode,focusMuscle=''){if(!TODAY_ADJUSTMENTS[mode])mode='normal';data.todayAdjustment={date:isoToday(),mode,focusMuscle:focusMuscle||''};localStorage.setItem(APP_KEY,JSON.stringify(data));renderHome();toast(tr('feedback.todayAdjustment',{label:todayAdjustmentLabel(mode)}))}
+function setTodayAdjustment(mode,focusMuscle=''){if(!TODAY_ADJUSTMENTS[mode])mode='normal';data.todayAdjustment={date:isoToday(),mode,focusMuscle:focusMuscle||''};persistAppData(APP_KEY,JSON.stringify(data));renderHome();toast(tr('feedback.todayAdjustment',{label:todayAdjustmentLabel(mode)}))}
 function programDayBodyPenalty(day){let penalty=0;(day?.items||[]).forEach(it=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId),m=bodyStatusExerciseMatch(ex,isoToday());if(m)penalty+=m.strong?6:2});return penalty}
 function bodySafeAlternative(ex,used){for(const id of ex?.alternatives||[]){if(used.has(id))continue;const a=getExercise(id)||SYSTEM_EXERCISES.find(x=>x.id===id);if(a&&!bodyStatusExerciseMatch(a,isoToday())?.strong)return a}return null}
 function applyBodyStatusToItems(items){
@@ -857,7 +865,7 @@ function saveBodyStatus(status){
  status.updatedAt=new Date().toISOString();
  if(i>=0)data.bodyStatus[i]=status;else data.bodyStatus.push(status);
  data.bodyStatus=data.bodyStatus.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,180);
- localStorage.setItem(APP_KEY,JSON.stringify(data));renderAll()
+ persistAppData(APP_KEY,JSON.stringify(data));renderAll()
 }
 function bodyStatusSummary(status){
  const es=status?.entries||[];if(!es.length)return tr('bodyStatus.noneSummary');
@@ -948,7 +956,7 @@ function syncUiLevelControls(scope=document){
 function setUiLevel(level){
  if(!UI_LEVELS[level])return;
  const drawerWasOpen=$('#trainingDrawer')?.classList.contains('show');
- data.settings.uiLevel=level;localStorage.setItem(APP_KEY,JSON.stringify(data));
+ data.settings.uiLevel=level;persistAppData(APP_KEY,JSON.stringify(data));
  applyUiLevel();
  // 先立即同步按鈕，避免使用者點了但選中狀態仍停在舊模式。
  syncUiLevelControls(document);
@@ -983,7 +991,7 @@ function openTrainingDrawer(){
  renderTrainingDrawer();$('#trainingDrawer').classList.add('show');$('#trainingDrawerScrim').classList.add('show');document.body.style.overflow='hidden'
 }
 function saveDrawerSetting(key,value,rerender=false){
- data.settings[key]=value;localStorage.setItem(APP_KEY,JSON.stringify(data));if(rerender)renderTrain();renderTrainingDrawer()
+ data.settings[key]=value;persistAppData(APP_KEY,JSON.stringify(data));if(rerender)renderTrain();renderTrainingDrawer()
 }
 function sessionExerciseFromHistory(e){
  const ex=getExercise(e.exerciseId);
@@ -1049,7 +1057,7 @@ function renderTrainingDrawer(){
  $('#drawerCollapseAll').onclick=toggleAllExerciseCards;
  $('#drawerDeleteWorkout').onclick=()=>{closeTrainingDrawer();$('#cancelWorkout')?.click()};
  $$('input[name="drawerTimerPos"]').forEach(x=>x.onchange=()=>saveDrawerSetting('restTimerPosition',x.value));
- $('#drawerResetTabPosition').onclick=()=>{data.settings.trainingDrawerTabTop=8;localStorage.setItem(APP_KEY,JSON.stringify(data));applyTrainingDrawerTabPosition();toast(tr('feedback.drawerReset'))};
+ $('#drawerResetTabPosition').onclick=()=>{data.settings.trainingDrawerTabTop=8;persistAppData(APP_KEY,JSON.stringify(data));applyTrainingDrawerTabPosition();toast(tr('feedback.drawerReset'))};
  $('#drawerAllKg').onclick=()=>{(w.exercises||[]).forEach(e=>{if(!['cardio','duration'].includes(e.type))e.inputUnit='kg'});saveActiveOnly(true);renderTrainingDrawer();toast(tr('feedback.allKg'))};
  $('#drawerAllLb').onclick=()=>{(w.exercises||[]).forEach(e=>{if(!['cardio','duration'].includes(e.type))e.inputUnit='lb'});saveActiveOnly(true);renderTrainingDrawer();toast(tr('feedback.allLb'))};
  $('#drawerNotes').onchange=e=>saveDrawerSetting('trainingNotes',e.target.checked,true);
@@ -1092,7 +1100,7 @@ function initTrainingDrawer(){
    if(pointerId==null||e.pointerId!==pointerId)return;
    if(dragging){
      const top=clampTrainingDrawerTabTop(parseFloat(tab.style.top)||8);
-     tab.style.top=top+'px';data.settings.trainingDrawerTabTop=top;localStorage.setItem(APP_KEY,JSON.stringify(data));
+     tab.style.top=top+'px';data.settings.trainingDrawerTabTop=top;persistAppData(APP_KEY,JSON.stringify(data));
      suppressClick=true;tab.classList.remove('dragging');tab.releasePointerCapture?.(pointerId)
    }
    dragging=false;pointerId=null
@@ -1192,7 +1200,7 @@ function bindSessionEvents(){
  $('#cancelWorkout').onclick=()=>{const editing=!!data.activeWorkout?.editingWorkoutId;const msg=editing?tr('dialogs.cancelEdit'):tr('dialogs.discardWorkout');if(confirm(msg)){data.activeWorkout=null;save(editing?tr('finalUi.saveCancelEdit'):tr('reasons.discardWorkout'),true);toast(editing?tr('feedback.editCancelled'):tr('feedback.workoutDiscarded'))}}
  $$('#activeWorkout [data-timer]').forEach(b=>b.onclick=()=>startTimer(n(b.dataset.timer),tr('trainingUi.manualRest')));const ts=$('#timerShow');if(ts)ts.onclick=()=>{timerHidden=false;if(!timerEnd)startTimer(n(data.settings.defaultRest)||90,tr('trainingUi.manualRest'));else renderTimer()};
 }
-function saveActiveOnly(rerender=false){localStorage.setItem(APP_KEY,JSON.stringify(data));if(rerender)renderTrain()}
+function saveActiveOnly(rerender=false){persistAppData(APP_KEY,JSON.stringify(data));if(rerender)renderTrain()}
 let timerEnd=0,timerTotal=0,timerInterval=null,timerHidden=false,timerFinished=false,timerLabel=tr('trainingUi.defaultNext'),restAudioCtx=null;
 function restNotificationStatus(){return !('Notification' in window)?'unsupported':Notification.permission}
 async function enableRestNotifications(){
@@ -1201,7 +1209,7 @@ async function enableRestNotifications(){
  try{
    const permission=await Notification.requestPermission();
    data.settings.restTimerNotification=permission==='granted';
-   localStorage.setItem(APP_KEY,JSON.stringify(data));
+   persistAppData(APP_KEY,JSON.stringify(data));
    toast(tr(permission==='granted'?'restNotification.enabled':'restNotification.denied'));
  }catch(e){data.settings.restTimerNotification=false;toast(tr('restNotification.denied'))}
  renderTrain();renderSettings()
@@ -1220,7 +1228,7 @@ function bindRestNotificationToggle(input){
  input.onchange=()=>{
    if(input.checked){enableRestNotifications();return}
    data.settings.restTimerNotification=false;
-   localStorage.setItem(APP_KEY,JSON.stringify(data));
+   persistAppData(APP_KEY,JSON.stringify(data));
    renderTrain();renderSettings()
  }
 }
@@ -1492,7 +1500,7 @@ function openReorderModal(){
    const persistOrder=()=>{
      const order=$$('#reorderList .reorder-item').map(row=>n(row.dataset.reorderKey));
      w.exercises=order.map(i=>original[i]);
-     localStorage.setItem(APP_KEY,JSON.stringify(data));
+     persistAppData(APP_KEY,JSON.stringify(data));
      renderTrain()
    };
    $$('#reorderList [data-reorder-handle]').forEach(h=>{
@@ -1552,7 +1560,7 @@ function beginHistoryEdit(id){
  data.activeWorkout=JSON.parse(JSON.stringify(original));
  data.activeWorkout.editingWorkoutId=id;
  data.activeWorkout.status='active';
- localStorage.setItem(APP_KEY,JSON.stringify(data));
+ persistAppData(APP_KEY,JSON.stringify(data));
  closeModal();
  goPage('trainPage');
  toast(tr('recordsUi.fullEditEntered'));
@@ -1624,7 +1632,7 @@ function showAnalysisTab(tab){
   const next=['overview','muscle','exercise','load'].includes(tab)?tab:'overview';
   const changed=data.settings.analysisTab!==next;
   analysisTabState=next;data.settings.analysisTab=next;
-  if(changed){try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}}
+  if(changed){try{persistAppData(APP_KEY,JSON.stringify(data))}catch{}}
   $$('#analysisTabs [data-analysis-tab]').forEach(b=>b.classList.toggle('on',b.dataset.analysisTab===analysisTabState));
   $$('[data-analysis-panel]').forEach(p=>p.classList.toggle('hidden',p.dataset.analysisPanel!==analysisTabState));
 }
@@ -2343,8 +2351,8 @@ $('#recordMonth').onchange=renderRecords;$('#recordMuscle').onchange=renderRecor
 function shiftMonth(delta){const [y,m]=$('#recordMonth').value.split('-').map(Number),d=new Date(y,m-1+delta,1);$('#recordMonth').value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderRecords()}
 $('#prevMonth').onclick=()=>shiftMonth(-1);$('#nextMonth').onclick=()=>shiftMonth(1);$('#thisMonth').onclick=()=>{$('#recordMonth').value=monthKey();renderRecords()};
 const analysisExerciseCompat=$('#analysisExercise');if(analysisExerciseCompat)analysisExerciseCompat.onchange=e=>renderExerciseAnalysis(e.target.value);
-$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
-$('#setLocale').onchange=()=>{data.settings.locale=i18n.setLocale($('#setLocale').value);try{localStorage.setItem(APP_KEY,JSON.stringify(data))}catch{}renderAll()};
+$$('[data-analysis-range]').forEach(b=>b.onclick=()=>{const next=['7','30','90','all'].includes(b.dataset.analysisRange)?b.dataset.analysisRange:'30';analysisRange=next;data.settings.analysisRange=next;try{persistAppData(APP_KEY,JSON.stringify(data))}catch{}renderAnalysis()});
+$('#setLocale').onchange=()=>{data.settings.locale=i18n.setLocale($('#setLocale').value);try{persistAppData(APP_KEY,JSON.stringify(data))}catch{}renderAll()};
 $('#addTemplateBtn').onclick=()=>editTemplate();$('#addExerciseLibBtn').onclick=()=>editExerciseLib();$('#libSearch').oninput=renderLibrary;
 $$('[data-settings-view]').forEach(b=>b.onclick=()=>showSettingsView(b.dataset.settingsView));
 $$('.settings-back').forEach(b=>b.onclick=()=>showSettingsView('hub'));
@@ -2367,7 +2375,7 @@ $('#saveSettings').onclick=()=>{const hadPlan=!!data.currentPlan;data.settings.p
 $('#runSelfCheck').onclick=()=>renderSelfCheck(runAppSelfCheck());$('#exportJson').onclick=exportJSON;$('#exportCsv').onclick=exportCSV;
 $('#importJson').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(JSON.parse(await f.text()),'json',f.name)}catch{alert(tr('finalUi.invalidJson'))}e.target.value=''};
 $('#importCsv').onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{previewImport(csvToData(await f.text()),'csv',f.name)}catch(err){alert(tr('finalUi.invalidCsv'))}e.target.value=''};
-$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
+$('#clearAll').onclick=()=>{if(confirm(tr('dialogs.clearAll'))){window.TrainLogCloudBackup?.pauseAfterLocalReset();localStorage.removeItem(APP_KEY);data=freshData();save(tr('reasons.reinitialize'),false);toast(tr('feedback.allCleared'))}};
 
 window.TrainLogBackupBridge=Object.freeze({buildBackupPayload,previewImport});
 
