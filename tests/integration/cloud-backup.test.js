@@ -3,7 +3,7 @@ const fs=require('fs');
 const vm=require('vm');
 const assert=require('assert');
 
-async function exercise({uploadFails=false,remembered=false}={}){
+async function exercise({uploadFails=false,remembered=false,cached='none'}={}){
   const listeners={}, status={textContent:''}, deleted=[], uploaded=[];
   const elements={
     driveBackupNow:{disabled:false,addEventListener(type,cb){listeners.backup=cb}},
@@ -24,6 +24,11 @@ async function exercise({uploadFails=false,remembered=false}={}){
   };
   const storage=new Map([['trainlogProData',JSON.stringify({workouts:[{id:'w1'}]})]]);
   if(remembered)storage.set('trainlogProDriveEverConnected','true');
+  const tokenKey='trainlogProDriveAccessTokenV1';
+  if(cached!=='none'){
+    storage.set(tokenKey,cached==='invalid'?'{bad-json':
+      JSON.stringify({accessToken:'token-test',expiresAt:Date.now()+(cached==='expired'?-10000:3600000)}));
+  }
   const windowListeners={};
   const backup={app:'TrainLog Pro',workouts:[{id:'w1',name:'測試'}],backupMeta:{format:'trainlog-pro-full-backup'}};
   let preview=null, popupRequests=0, fileRequests=0;
@@ -90,12 +95,16 @@ async function exercise({uploadFails=false,remembered=false}={}){
   assert(!elements.driveClientId,'OAuth Client ID must not require a user-visible input');
   assert.equal(elements.driveReconnectHome.style.display,'none','refresh must not show a reconnect banner');
   if(remembered)assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.remembered','remembered account must not be labeled as a disconnected account');
-  assert.equal(elements.driveReconnectPanel.style.display,'block','reconnect control shown when not authorized');
+  assert.equal(elements.driveReconnectPanel.style.display,cached==='valid'?'none':'block','reconnect control should reflect cached token validity');
+  if(cached==='valid')assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.connected');
+  if(cached==='expired'||cached==='invalid')assert.equal(storage.has(tokenKey),false,'bad or expired token should be removed');
   listeners.backup();
   await new Promise(resolve=>setTimeout(resolve,25));
   assert.equal(elements.driveReconnectPanel.style.display,'none','reconnect control hidden once authorized');
   assert.equal(elements.driveReconnectHome.style.display,'none','no reconnect home banner with valid OAuth');
   assert.equal(elements.driveConnectionStatus.textContent,'cloudBackup.connected');
+  assert.equal(storage.has(tokenKey),true,'successful authorization should cache access token');
+  assert.equal(JSON.parse(storage.get(tokenKey)).accessToken,'token-test');
   if(uploadFails){
     assert.equal(uploaded.length,0);
     assert.equal(deleted.length,0);
@@ -141,7 +150,7 @@ async function exercise({uploadFails=false,remembered=false}={}){
     ctx.window.TrainLogCloudBackup.pauseAfterLocalReset();
     assert.equal(elements.driveAutoEnabled.checked,false);
   }
-  assert.equal(popupRequests,uploadFails?1:1);
+  assert.equal(popupRequests,cached==='valid'?0:1,'cached valid token should skip Google OAuth popup');
   assert.equal(elements.driveBackupNow.disabled,false);
   assert.equal(elements.driveRestoreLatest.disabled,false);
 }
@@ -149,5 +158,8 @@ async function exercise({uploadFails=false,remembered=false}={}){
   await exercise();
   await exercise({uploadFails:true});
   await exercise({remembered:true});
+  await exercise({cached:'valid'});
+  await exercise({cached:'expired'});
+  await exercise({cached:'invalid'});
   console.log('Google Drive mocked backup/restore and failure safety passed');
 })().catch(err=>{console.error(err);process.exitCode=1});
