@@ -360,6 +360,17 @@
       <div class="section" data-i18n="cloudBackup.title">Google Drive 雲端備份（選用）</div>
       <div class="card">
         <p class="small backup-intro" data-i18n="cloudBackup.description">使用你自己的 Google Drive 私有應用程式資料夾備份完整 JSON。第一次手動備份成功後，可在網站開啟時自動備份資料變更，最多保留最近 5 份；不會取代本機儲存，也不會自動合併不同裝置資料。</p>
+        <div id="driveReconnectPanel" class="card" style="display:none;margin:12px 0;padding:12px" role="region" aria-label="重新連接 Google Drive">
+          <div class="small" id="driveReconnectPrompt">曾經連接 Google Drive？重新授權後可以檢查雲端備份，不會直接覆蓋本機資料。</div>
+          <button type="button" class="btn ghost" id="driveReconnect" style="margin-top:8px">重新連接 Google Drive</button>
+        </div>
+        <div id="driveComparePanel" class="card" style="display:none;margin:12px 0;padding:12px" role="region" aria-label="雲端備份比較">
+          <div id="driveCompareSummary" class="small" aria-live="polite"></div>
+          <div class="backup-actions" style="margin-top:10px">
+            <button type="button" class="btn primary" id="driveReviewRestore">預覽恢復／合併選項</button>
+            <button type="button" class="btn ghost" id="driveDismissCompare">保留本機資料</button>
+          </div>
+        </div>
         <label class="field" style="display:flex;align-items:center;gap:10px;margin:12px 0;">
           <input type="checkbox" id="driveAutoEnabled" style="width:18px;height:18px;" aria-label="自動備份到 Google Drive" data-i18n-aria="cloudBackup.autoLabel">
           <span data-i18n="cloudBackup.autoLabel">資料或設定變更後自動備份（10 秒後）</span>
