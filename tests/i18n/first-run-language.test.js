@@ -14,7 +14,7 @@ assert(app.includes("data.settings.localeSetupCompleted!==true||data.settings.tu
 assert(app.includes("data.settings.localeSetupCompleted===true&&data.settings.tutorialCompleted===true"),'preference setup must wait until language selection and tutorial are complete');
 assert(app.includes("$('[data-first-locale]').forEach(button=>{"),'first-run language chooser must bind all locale buttons');
 assert(app.includes("data.settings.locale=i18n.setLocale(button.dataset.firstLocale)"),'first-run language choice must switch locale immediately');
-assert(app.includes("localStorage.setItem(APP_KEY,JSON.stringify(data))"),'first-run locale must be persisted');
+assert(app.includes("persistAppData(APP_KEY,JSON.stringify(data))")&&app.includes("localStorage.setItem(key,value)"),'first-run locale must be persisted through cloud-notifying storage wrapper');
 
 const html=fs.readFileSync('index.html','utf8');
 for(const locale of ['zh-TW','en-US','ja-JP'])assert(html.includes('data-first-locale="'+locale+'"'),'missing first-run locale option '+locale);

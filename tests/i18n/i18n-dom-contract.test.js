@@ -9,8 +9,10 @@ const index=fs.readFileSync('index.html','utf8');
   'analysis-tab-overview','analysis-tab-muscle','analysis-tab-exercise','analysis-tab-load'
 ].forEach(id=>assert(index.includes(`data-testid="${id}"`),'missing stable data-testid '+id));
 
-assert(index.includes('js/i18n/locales/zh-TW.js?v=2.11.0'));
-assert(index.includes('js/i18n/i18n.js?v=2.11.0'));
+const version=fs.readFileSync('js/app.js','utf8').match(/const APP_VERSION='([^']+)'/)?.[1];
+assert(version,'APP_VERSION missing');
+assert(index.includes('js/i18n/locales/zh-TW.js?v='+version));
+assert(index.includes('js/i18n/i18n.js?v='+version));
 assert(index.indexOf('js/i18n/locales/zh-TW.js')<index.indexOf('js/i18n/i18n.js'));
 assert(index.indexOf('js/i18n/i18n.js')<index.indexOf('js/app.js'));
 

@@ -5,13 +5,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#10171d">
-<title>TrainLog Pro v2.11.0</title>
+<title>TrainLog Pro v2.12.0</title>
 <meta name="google-site-verification" content="P4_mUFnxHuNAN6GkFN4TZvJtdung9Cl3cv-AGPv9aw4" />
 <link rel="icon" href="assets/trainlog-pro-logo.svg" type="image/svg+xml">
 <meta property="og:image" content="https://boyuanliao.github.io/trainlog-pro/assets/trainlog-pro-logo.svg">
-<link rel="stylesheet" href="css/app.css?v=2.11.0">
-<link rel="stylesheet" href="css/exercise-progress-browser.css?v=2.11.0">
-<link rel="stylesheet" href="css/motion-gifs.css?v=2.11.0">
+<link rel="stylesheet" href="css/app.css?v=2.12.0">
+<link rel="stylesheet" href="css/exercise-progress-browser.css?v=2.12.0">
+<link rel="stylesheet" href="css/motion-gifs.css?v=2.12.0">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-5JY343RVLX"></script>
 <script>
@@ -25,7 +25,7 @@
 <body>
 <div class="app">
   <div class="top">
-    <div><div class="brand"><img src="assets/trainlog-pro-logo.svg" alt="TrainLog Pro 標誌" width="36" height="36" style="vertical-align:middle;object-fit:contain;margin-right:8px;border-radius:8px">TrainLog Pro <span class="source-pill">v2.11.0</span></div><div class="subtitle" id="todayText"></div></div>
+    <div><div class="brand"><img src="assets/trainlog-pro-logo.svg" alt="TrainLog Pro 標誌" width="36" height="36" style="vertical-align:middle;object-fit:contain;margin-right:8px;border-radius:8px">TrainLog Pro <span class="source-pill">v2.12.0</span></div><div class="subtitle" id="todayText"></div></div>
     <div class="actions"><button class="btn small ghost" id="quickManual" data-testid="quick-manual" data-i18n="actions.manualEntry">手動補登</button><button class="btn small primary" id="quickStart" data-testid="quick-start" data-i18n="training.start">開始訓練</button></div>
   </div>
   <div id="resumeBanner"></div>
@@ -359,7 +359,13 @@
 
       <div class="section" data-i18n="cloudBackup.title">Google Drive 雲端備份（選用）</div>
       <div class="card">
-        <p class="small backup-intro" data-i18n="cloudBackup.description">使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。</p>
+        <p class="small backup-intro" data-i18n="cloudBackup.description">使用你自己的 Google Drive 私有應用程式資料夾備份完整 JSON。第一次手動備份成功後，可在網站開啟時自動備份資料變更，最多保留最近 5 份；不會取代本機儲存，也不會自動合併不同裝置資料。</p>
+        <label class="field" style="display:flex;align-items:center;gap:10px;margin:12px 0;">
+          <input type="checkbox" id="driveAutoEnabled" style="width:18px;height:18px;" aria-label="自動備份到 Google Drive" data-i18n-aria="cloudBackup.autoLabel">
+          <span data-i18n="cloudBackup.autoLabel">資料或設定變更後自動備份（10 秒後）</span>
+        </label>
+        <div class="small" data-i18n="cloudBackup.autoHint">首次請按「立即備份」連接 Google 帳號。網站開啟且授權有效時才會自動備份，遇到其他裝置的變更會暫停以避免覆蓋資料。</div>
+        <div class="small" id="driveAutoStatus" role="status" aria-live="polite"></div>
         <div class="backup-actions">
           <button type="button" class="btn primary" id="driveBackupNow" data-i18n="cloudBackup.backup">立即備份到 Google Drive</button>
           <button type="button" class="btn ghost" id="driveRestoreLatest" data-i18n="cloudBackup.restore">讀取最新雲端備份</button>
@@ -520,28 +526,28 @@
 <div class="modalwrap" id="modalWrap"><div class="modal"><div class="modalhead"><h2 id="modalTitle"></h2><button class="btn small ghost" id="modalClose">✕</button></div><div id="modalBody"></div></div></div>
 <div class="toast" id="toast" aria-live="polite"></div>
 
-<script src="js/i18n/locales/zh-TW.js?v=2.11.0"></script>
-<script src="js/i18n/locales/en-US.js?v=2.11.0"></script>
-<script src="js/i18n/locales/ja-JP.js?v=2.11.0"></script>
-<script src="js/i18n/i18n.js?v=2.11.0"></script>
-<script src="js/motion-gifs.js?v=2.11.0"></script>
-<script src="js/data/glossary.js?v=2.11.0"></script>
-<script src="js/data/equipment.js?v=2.11.0"></script>
-<script src="js/data/exercises.js?v=2.11.0"></script>
-<script src="js/data/programs.js?v=2.11.0"></script>
-<script src="js/analysis/training-metrics.js?v=2.11.0"></script>
-<script src="js/analysis/progress.js?v=2.11.0"></script>
-<script src="js/core/utils.js?v=2.11.0"></script>
-<script src="js/core/migration.js?v=2.11.0"></script>
-<script src="js/core/storage.js?v=2.11.0"></script>
-<script src="js/training/metrics.js?v=2.11.0"></script>
-<script src="js/training/lifecycle.js?v=2.11.0"></script>
-<script src="js/training/mutations.js?v=2.11.0"></script>
-<script src="js/training/progression.js?v=2.11.0"></script>
-<script src="js/training/progression-actions.js?v=2.11.0"></script>
-<script src="js/training/progression-view.js?v=2.11.0"></script>
-<script src="js/ui/exercise-progress-browser.js?v=2.11.0"></script>
-<script src="js/cloud/drive-backup.js?v=2.11.0"></script>
-<script src="js/app.js?v=2.11.0"></script>
+<script src="js/i18n/locales/zh-TW.js?v=2.12.0"></script>
+<script src="js/i18n/locales/en-US.js?v=2.12.0"></script>
+<script src="js/i18n/locales/ja-JP.js?v=2.12.0"></script>
+<script src="js/i18n/i18n.js?v=2.12.0"></script>
+<script src="js/motion-gifs.js?v=2.12.0"></script>
+<script src="js/data/glossary.js?v=2.12.0"></script>
+<script src="js/data/equipment.js?v=2.12.0"></script>
+<script src="js/data/exercises.js?v=2.12.0"></script>
+<script src="js/data/programs.js?v=2.12.0"></script>
+<script src="js/analysis/training-metrics.js?v=2.12.0"></script>
+<script src="js/analysis/progress.js?v=2.12.0"></script>
+<script src="js/core/utils.js?v=2.12.0"></script>
+<script src="js/core/migration.js?v=2.12.0"></script>
+<script src="js/core/storage.js?v=2.12.0"></script>
+<script src="js/training/metrics.js?v=2.12.0"></script>
+<script src="js/training/lifecycle.js?v=2.12.0"></script>
+<script src="js/training/mutations.js?v=2.12.0"></script>
+<script src="js/training/progression.js?v=2.12.0"></script>
+<script src="js/training/progression-actions.js?v=2.12.0"></script>
+<script src="js/training/progression-view.js?v=2.12.0"></script>
+<script src="js/ui/exercise-progress-browser.js?v=2.12.0"></script>
+<script src="js/cloud/drive-backup.js?v=2.12.0"></script>
+<script src="js/app.js?v=2.12.0"></script>
 </body>
 </html>
