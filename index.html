@@ -32,6 +32,13 @@
     <span class="small">你曾使用 Google Drive 備份。重新連接即可檢查雲端資料；不會自動覆蓋本機資料。</span>
     <button type="button" class="btn small ghost" id="driveReconnectHomeButton" style="margin-left:8px">重新連接 Google Drive</button>
   </div>
+  <div id="driveCompareHome" class="card" style="display:none;padding:12px">
+    <div id="driveCompareHomeSummary" class="small" style="white-space:pre-line" aria-live="polite"></div>
+    <div class="backup-actions" style="margin-top:10px">
+      <button type="button" class="btn primary" id="driveReviewHome">預覽恢復／合併選項</button>
+      <button type="button" class="btn ghost" id="driveDismissHome">保留本機資料</button>
+    </div>
+  </div>
   <div id="resumeBanner"></div>
   <div id="dataRecoveryBanner"></div>
 
