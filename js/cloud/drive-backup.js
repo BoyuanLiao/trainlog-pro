@@ -19,7 +19,12 @@
   let lastSyncedData=localStorage.getItem(LAST_SYNC_KEY)||'';
   let lastRemoteId=localStorage.getItem(LAST_REMOTE_KEY)||'';
   let autoEnabled=localStorage.getItem(ENABLED_KEY)==='true';
-  let pendingRaw='';
+  function fingerprint(value){
+    if(!value)return '';
+    let h=2166136261;
+    for(let i=0;i<value.length;i++){h^=value.charCodeAt(i);h=Math.imul(h,16777619)}
+    return value.length+':'+(h>>>0).toString(16);
+  }
   const appRaw=()=>localStorage.getItem(APP_KEY)||'';
   const isAuthorized=()=>!!token && Date.now()<expiresAt-60000;
   const setStatus=message=>{status(message);const el=$('driveAutoStatus');if(el)el.textContent=message};
@@ -37,8 +42,9 @@
   }
   function dataChanged(){
     const raw=appRaw();
-    if(!raw||raw===lastSyncedData)return;
-    dirty=true;pendingRaw=raw;scheduleAuto();
+    if(!raw)return;
+    dirty=fingerprint(raw)!==lastSyncedData;
+    if(dirty)scheduleAuto();
   }
   function pauseAfterLocalReset(){
     clearTimeout(pendingTimer);pendingTimer=null;autoEnabled=false;dirty=false;blocked=false;
@@ -122,7 +128,7 @@
       try{await api(API+'/'+encodeURIComponent(old.id),{method:'DELETE'})}catch(err){console.warn('Drive backup pruning failed',err)}
     }
     lastRemoteId=created.id;
-    lastSyncedData=capturedRaw;
+    lastSyncedData=fingerprint(capturedRaw);
     localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
     localStorage.setItem(LAST_SYNC_KEY,lastSyncedData);
     lastUploadAt=Date.now();
@@ -130,7 +136,7 @@
     if(!isAuto){
       autoEnabled=true;localStorage.setItem(ENABLED_KEY,'true');refreshToggle();
     }
-    dirty=appRaw()!==capturedRaw;
+    dirty=fingerprint(appRaw())!==lastSyncedData;
     setStatus('備份成功：'+new Date().toLocaleString()+'（雲端保留最近 5 份）');
   }
   async function restore(){
@@ -144,8 +150,8 @@
     if(incoming?.backupMeta?.format!=='trainlog-pro-full-backup')throw Error('雲端檔案不是有效的 TrainLog Pro 完整備份');
     window.TrainLogBackupBridge.previewImport(incoming,'json',selected.name);
     lastRemoteId=selected.id;localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
-    blocked=false;
-    setStatus('已載入最新雲端備份。請確認匯入預覽並選擇恢復或合併；目前本機資料尚未更動。');
+    blocked=true;clearTimeout(pendingTimer);pendingTimer=null;
+    setStatus('已開啟雲端備份預覽。自動備份暫停，確認恢復結果後請手動備份以重新啟用，避免覆蓋雲端資料。');
   }
   async function run(action){
     if(busy)return;
@@ -181,12 +187,13 @@
         localStorage.setItem(ENABLED_KEY,String(autoEnabled));
         blocked=false;
         if(!autoEnabled){clearTimeout(pendingTimer);pendingTimer=null;setStatus('自動備份已停用；仍可手動備份')}
-        else{dirty=appRaw()!==lastSyncedData;scheduleAuto();if(!dirty)setStatus('自動備份已啟用，資料變更後將自動備份')}
+        else{dirty=fingerprint(appRaw())!==lastSyncedData;scheduleAuto();if(!dirty)setStatus('自動備份已啟用，資料變更後將自動備份')}
       });
     }
     window.addEventListener('online',()=>{if(dirty)scheduleAuto(1000)});
+    window.addEventListener('storage',event=>{if(event.key===APP_KEY)dataChanged()});
     window.addEventListener('pageshow',()=>{if(dirty)scheduleAuto(1000)});
-    if(autoEnabled) {dirty=appRaw()!==lastSyncedData;scheduleAuto();}
+    if(autoEnabled) {dirty=fingerprint(appRaw())!==lastSyncedData;scheduleAuto();}
 
     loadGIS().catch(err=>status('Google 授權元件預載失敗：'+errorText(err)));
     status('使用 Google 帳號授權後，即可備份或恢復健身紀錄。');
