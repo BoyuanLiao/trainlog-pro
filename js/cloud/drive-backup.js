@@ -11,7 +11,7 @@
   const CLIENT_KEY='trainlogProGoogleClientId';
   const DEFAULT_CLIENT_ID='971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com';
   const $=id=>document.getElementById(id);
-  let token='',expiresAt=0,client=null,busy=false;
+  let token='',expiresAt=0,client=null,busy=false,loadingGIS=null;
   const status=message=>{if($('driveBackupStatus'))$('driveBackupStatus').textContent=message};
   const errorText=err=>String(err?.message||err||'未知錯誤');
   const clientId=()=>($('driveClientId')?.value||'').trim();
@@ -25,10 +25,11 @@
   }
   function loadGIS(){
     if(window.google?.accounts?.oauth2)return Promise.resolve();
-    return new Promise((resolve,reject)=>{
+    if(loadingGIS)return loadingGIS;
+    loadingGIS=new Promise((resolve,reject)=>{
       const s=document.createElement('script');
       s.src='https://accounts.google.com/gsi/client';
-      s.async=true;s.onload=resolve;s.onerror=()=>reject(Error('Google 登入元件載入失敗'));
+      s.async=true;s.onload=resolve;s.onerror=()=>{loadingGIS=null;reject(Error('Google 登入元件載入失敗'))};
       document.head.appendChild(s);
     });
   }
@@ -78,12 +79,12 @@
     const boundary='trainlog'+Date.now();
     const body='--'+boundary+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(metadata)+
       '\r\n--'+boundary+'\r\nContent-Type: application/json\r\n\r\n'+payload+'\r\n--'+boundary+'--';
-    await api(UPLOAD+'?uploadType=multipart&fields=id,name,createdTime',{
+    const created=await api(UPLOAD+'?uploadType=multipart&fields=id,name,createdTime',{
       method:'POST',headers:{'Content-Type':'multipart/related; boundary='+boundary},body
     });
     // Never remove the freshly-created backup; pruning failures are non-fatal.
     const all=await listFiles();
-    for(const old of all.slice(5)){
+    for(const old of all.filter(f=>f.id!==created.id).slice(4)){
       try{await api(API+'/'+encodeURIComponent(old.id),{method:'DELETE'})}catch(err){console.warn('Drive backup pruning failed',err)}
     }
     status('備份成功：'+new Date().toLocaleString()+'（雲端保留最近 5 份）');
@@ -116,6 +117,7 @@
     input.addEventListener('change',()=>{try{saveClientId();status('OAuth 設定已保存於這台裝置')}catch(err){status(errorText(err))}});
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
+    loadGIS().catch(err=>status('Google 授權元件預載失敗：'+errorText(err)));
     status('OAuth Client ID 已預設。按「立即備份」即可使用 Google 帳號授權。');
   }
   init();
