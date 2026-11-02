@@ -10,6 +10,41 @@
   const NAME='trainlog-pro-backup-';
   const DEFAULT_CLIENT_ID='971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com';
   const $=id=>document.getElementById(id);
+  const APP_KEY='trainlogProData';
+  const ENABLED_KEY='trainlogProDriveAutoEnabled';
+  const LAST_REMOTE_KEY='trainlogProDriveLastRemoteId';
+  const LAST_SYNC_KEY='trainlogProDriveLastSyncedData';
+  const DELAY_MS=10000, MIN_INTERVAL_MS=60000;
+  let pendingTimer=null, dirty=false, blocked=false, lastUploadAt=0;
+  let lastSyncedData=localStorage.getItem(LAST_SYNC_KEY)||'';
+  let lastRemoteId=localStorage.getItem(LAST_REMOTE_KEY)||'';
+  let autoEnabled=localStorage.getItem(ENABLED_KEY)==='true';
+  let pendingRaw='';
+  const appRaw=()=>localStorage.getItem(APP_KEY)||'';
+  const isAuthorized=()=>!!token && Date.now()<expiresAt-60000;
+  const setStatus=message=>{status(message);const el=$('driveAutoStatus');if(el)el.textContent=message};
+  function refreshToggle(){
+    const checkbox=$('driveAutoEnabled');
+    if(checkbox)checkbox.checked=autoEnabled;
+  }
+  function scheduleAuto(delay=DELAY_MS){
+    clearTimeout(pendingTimer);pendingTimer=null;
+    if(!autoEnabled||blocked||!dirty||busy)return;
+    if(!isAuthorized()){setStatus('有未備份的變更，請按「立即備份」重新授權 Google 帳號');return}
+    if(navigator.onLine===false){setStatus('離線中：變更已儲存於本機，恢復網路後重試');return}
+    pendingTimer=setTimeout(()=>{pendingTimer=null;run('auto')},Math.max(delay,lastUploadAt+MIN_INTERVAL_MS-Date.now(),0));
+    setStatus('有未備份變更，將於稍後自動備份至 Google Drive');
+  }
+  function dataChanged(){
+    const raw=appRaw();
+    if(!raw||raw===lastSyncedData)return;
+    dirty=true;pendingRaw=raw;scheduleAuto();
+  }
+  function pauseAfterLocalReset(){
+    clearTimeout(pendingTimer);pendingTimer=null;autoEnabled=false;dirty=false;blocked=false;
+    localStorage.setItem(ENABLED_KEY,'false');refreshToggle();
+    setStatus('本機資料已重設。自動雲端備份已暫停，以保護既有雲端備份');
+  }
   let token='',expiresAt=0,client=null,busy=false,loadingGIS=null;
   const status=message=>{if($('driveBackupStatus'))$('driveBackupStatus').textContent=message};
   const errorText=err=>String(err?.message||err||'未知錯誤');
@@ -62,8 +97,17 @@
     return items.filter(f=>f.name.startsWith(NAME)&&f.name.endsWith('.json'))
       .sort((a,b)=>String(b.createdTime||'').localeCompare(String(a.createdTime||'')));
   }
-  async function backup(){
-    await authorize();
+  async function backup(isAuto=false){
+    if(isAuto){
+      if(!autoEnabled||blocked||!isAuthorized()||navigator.onLine===false)return;
+      const remote=await listFiles();
+      if((remote[0]?.id||'')!==lastRemoteId){
+        blocked=true;
+        setStatus('偵測到其他裝置的雲端備份變更；已暫停自動備份，請先檢查雲端資料');
+        return;
+      }
+    }else await authorize();
+    const capturedRaw=appRaw();
     const payload=JSON.stringify(window.TrainLogBackupBridge.buildBackupPayload());
     const metadata={name:NAME+new Date().toISOString().replace(/[:.]/g,'-')+'.json',parents:['appDataFolder'],mimeType:'application/json'};
     const boundary='trainlog'+Date.now();
@@ -77,7 +121,17 @@
     for(const old of all.filter(f=>f.id!==created.id).slice(4)){
       try{await api(API+'/'+encodeURIComponent(old.id),{method:'DELETE'})}catch(err){console.warn('Drive backup pruning failed',err)}
     }
-    status('備份成功：'+new Date().toLocaleString()+'（雲端保留最近 5 份）');
+    lastRemoteId=created.id;
+    lastSyncedData=capturedRaw;
+    localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
+    localStorage.setItem(LAST_SYNC_KEY,lastSyncedData);
+    lastUploadAt=Date.now();
+    blocked=false;
+    if(!isAuto){
+      autoEnabled=true;localStorage.setItem(ENABLED_KEY,'true');refreshToggle();
+    }
+    dirty=appRaw()!==capturedRaw;
+    setStatus('備份成功：'+new Date().toLocaleString()+'（雲端保留最近 5 份）');
   }
   async function restore(){
     await authorize();
@@ -89,23 +143,54 @@
     const incoming=await result.json();
     if(incoming?.backupMeta?.format!=='trainlog-pro-full-backup')throw Error('雲端檔案不是有效的 TrainLog Pro 完整備份');
     window.TrainLogBackupBridge.previewImport(incoming,'json',selected.name);
-    status('已載入最新雲端備份。請確認匯入預覽並選擇恢復或合併；目前本機資料尚未更動。');
+    lastRemoteId=selected.id;localStorage.setItem(LAST_REMOTE_KEY,lastRemoteId);
+    blocked=false;
+    setStatus('已載入最新雲端備份。請確認匯入預覽並選擇恢復或合併；目前本機資料尚未更動。');
   }
   async function run(action){
     if(busy)return;
+    if(action==='auto'&&(!autoEnabled||blocked||!isAuthorized()))return;
     busy=true;
     for(const id of ['driveBackupNow','driveRestoreLatest'])if($(id))$(id).disabled=true;
-    status(action==='backup'?'正在備份至 Google Drive…':'正在讀取雲端備份…');
-    try{await (action==='backup'?backup():restore())}
-    catch(err){status('操作失敗：'+errorText(err))}
-    finally{busy=false;for(const id of ['driveBackupNow','driveRestoreLatest'])if($(id))$(id).disabled=false}
+    if(action!=='auto')setStatus(action==='backup'?'正在備份至 Google Drive…':'正在讀取雲端備份…');
+    try{
+      if(action==='restore')await restore();
+      else await backup(action==='auto');
+    }catch(err){
+      setStatus('操作失敗：'+errorText(err)+(action==='auto'?'；本機資料安全，稍後可重試':''));
+      if(action==='auto'&&isAuthorized()&&navigator.onLine!==false){
+        clearTimeout(pendingTimer);
+        pendingTimer=setTimeout(()=>{pendingTimer=null;run('auto')},60000);
+      }
+    }finally{
+      busy=false;
+      for(const id of ['driveBackupNow','driveRestoreLatest'])if($(id))$(id).disabled=false;
+      if(action==='auto'&&dirty&&!pendingTimer&&!blocked)scheduleAuto();
+      if(action==='backup'&&dirty)scheduleAuto();
+    }
   }
   function init(){
     if(!$('driveBackupNow')||!$('driveRestoreLatest'))return;
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
+    const toggle=$('driveAutoEnabled');
+    if(toggle){
+      refreshToggle();
+      toggle.addEventListener('change',()=>{
+        autoEnabled=toggle.checked;
+        localStorage.setItem(ENABLED_KEY,String(autoEnabled));
+        blocked=false;
+        if(!autoEnabled){clearTimeout(pendingTimer);pendingTimer=null;setStatus('自動備份已停用；仍可手動備份')}
+        else{dirty=appRaw()!==lastSyncedData;scheduleAuto();if(!dirty)setStatus('自動備份已啟用，資料變更後將自動備份')}
+      });
+    }
+    window.addEventListener('online',()=>{if(dirty)scheduleAuto(1000)});
+    window.addEventListener('pageshow',()=>{if(dirty)scheduleAuto(1000)});
+    if(autoEnabled) {dirty=appRaw()!==lastSyncedData;scheduleAuto();}
+
     loadGIS().catch(err=>status('Google 授權元件預載失敗：'+errorText(err)));
     status('使用 Google 帳號授權後，即可備份或恢復健身紀錄。');
   }
+  window.TrainLogCloudBackup=Object.freeze({dataChanged,pauseAfterLocalReset});
   init();
 })();
