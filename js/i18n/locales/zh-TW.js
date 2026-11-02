@@ -3,7 +3,7 @@
 
   window.TrainLogLocales = window.TrainLogLocales || {};
   window.TrainLogLocales['zh-TW'] = Object.freeze({
-    cloudBackup:{title:'Google Drive 雲端備份（選用）',description:'使用你自己的 Google Drive 私有應用程式資料夾，手動上傳完整 JSON 備份，最多保留最近 5 份。此功能不會取代本機儲存，且不會自動同步。',hint:'需先在 Google Cloud 啟用 Drive API、建立網頁 OAuth 用戶端，將此 GitHub Pages 網域加入 Authorized JavaScript origins。Client ID 只儲存在目前瀏覽器；請勿填入 Client Secret。',backup:'立即備份到 Google Drive',restore:'讀取最新雲端備份',autoLabel:'資料或設定變更後自動備份（10 秒後）',autoHint:'首次請按「立即備份」連接 Google 帳號。網站開啟且授權有效時才會自動備份，遇到其他裝置的變更會暫停以避免覆蓋資料。'},
+    cloudBackup:{title:'Google Drive 雲端備份（選用）',description:'使用你自己的 Google Drive 私有應用程式資料夾備份完整 JSON。第一次手動備份成功後，可在網站開啟時自動備份資料變更，最多保留最近 5 份；不會取代本機儲存，也不會自動合併不同裝置資料。',hint:'需先在 Google Cloud 啟用 Drive API、建立網頁 OAuth 用戶端，將此 GitHub Pages 網域加入 Authorized JavaScript origins。Client ID 只儲存在目前瀏覽器；請勿填入 Client Secret。',backup:'立即備份到 Google Drive',restore:'讀取最新雲端備份',autoLabel:'資料或設定變更後自動備份（10 秒後）',autoHint:'首次請按「立即備份」連接 Google 帳號。網站開啟且授權有效時才會自動備份，遇到其他裝置的變更會暫停以避免覆蓋資料。'},
     legal:{privacy:'隱私權政策',terms:'服務條款',footerLabel:'網站法律資訊'},
     common:{save:'儲存',cancel:'取消',delete:'刪除',close:'關閉',back:'返回',search:'搜尋',all:'全部',more:'顯示更多',edit:'編輯',done:'完成'},
     language:{label:'介面語言',zhTW:'繁體中文',enUS:'English',jaJP:'日本語',hint:'切換後會立即套用。'},
