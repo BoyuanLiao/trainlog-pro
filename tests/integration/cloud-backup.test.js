@@ -10,7 +10,16 @@ async function exercise({uploadFails=false}={}){
     driveRestoreLatest:{disabled:false,addEventListener(type,cb){listeners.restore=cb}},
     driveAutoEnabled:{checked:false,addEventListener(type,cb){listeners.toggle=cb}},
     driveAutoStatus:{textContent:''},
-    driveBackupStatus:status
+    driveBackupStatus:status,
+    driveReconnectPanel:{style:{display:'none'}},
+    driveReconnectPrompt:{textContent:''},
+    driveReconnectHome:{style:{display:'none'}},
+    driveReconnect:{addEventListener(type,cb){listeners.reconnect=cb}},
+    driveReconnectHomeButton:{addEventListener(type,cb){listeners.homeReconnect=cb}},
+    driveComparePanel:{style:{display:'none'}},
+    driveCompareSummary:{textContent:'',style:{}},
+    driveReviewRestore:{addEventListener(type,cb){listeners.review=cb}},
+    driveDismissCompare:{addEventListener(type,cb){listeners.dismiss=cb}}
   };
   const storage=new Map([['trainlogProData',JSON.stringify({workouts:[{id:'w1'}]})]]);
   const windowListeners={};
@@ -32,7 +41,25 @@ async function exercise({uploadFails=false}={}){
     return {requestAccessToken(){popupRequests++;config.callback({access_token:'token-test',expires_in:3600})}};
   }}}};
   const ctx={
-    window:{google,addEventListener:(type,cb)=>{windowListeners[type]=cb},TrainLogBackupBridge:{buildBackupPayload:()=>backup,previewImport:(data,type,name)=>{preview={data,type,name}}}},
+    window:{google,addEventListener:(type,cb)=>{windowListeners[type]=cb},TrainLogBackupBridge:{
+      buildBackupPayload:()=>backup,
+      previewImport:(data,type,name)=>{preview={data,type,name}},
+      summarizeLocal:()=>{
+        const d=JSON.parse(storage.get('trainlogProData')||'{}');
+        const result={};
+        for(const k of ['workouts','templates','exerciseLibrary','gyms','equipment','bodyStatus','strengthGoals']){
+          const a=d[k]||[];result[k]={count:a.length,ids:a.map(x=>String(x.id||x.date))};
+        }
+        result.hasSettings=!!d.settings;result.hasPlan=!!d.currentPlan;return result;
+      },
+      summarizeRemote:d=>{
+        const result={};
+        for(const k of ['workouts','templates','exerciseLibrary','gyms','equipment','bodyStatus','strengthGoals']){
+          const a=d[k]||[];result[k]={count:a.length,ids:a.map(x=>String(x.id||x.date))};
+        }
+        result.hasSettings=!!d.settings;result.hasPlan=!!d.currentPlan;return result;
+      }
+    }},
     google,
     document:{getElementById:id=>elements[id]||null,createElement(){return {}},head:{appendChild(){}}},
     localStorage:{getItem:key=>storage.get(key)||null,setItem:(k,v)=>storage.set(k,v),removeItem:key=>storage.delete(key)},
@@ -74,10 +101,15 @@ async function exercise({uploadFails=false}={}){
     listeners.restore();
     await new Promise(resolve=>setTimeout(resolve,25));
     assert.equal(fileRequests,1);
+    assert.equal(preview,null,'read should not open import before confirmation');
+    assert.equal(elements.driveComparePanel.style.display,'block');
+    assert(elements.driveCompareSummary.textContent.includes('訓練紀錄'));
+    listeners.review();
     assert.equal(preview.type,'json');
     assert.equal(preview.data.workouts[0].id,'w1');
     assert.equal(preview.name,'trainlog-pro-backup-new1.json');
     assert.equal(elements.driveAutoEnabled.checked,true);
+    assert.equal(storage.get('trainlogProDriveEverConnected'),'true');
     // Restore preview must not auto-overwrite cloud data.
     storage.set('trainlogProData',JSON.stringify({workouts:[{id:'w1'},{id:'w2'}]}));
     ctx.window.TrainLogCloudBackup.dataChanged();
