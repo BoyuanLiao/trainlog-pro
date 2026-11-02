@@ -102,7 +102,8 @@
         },
         error_callback:()=>reject(Error('Google 授權視窗已關閉或登入失敗'))
       });
-      client.requestAccessToken({prompt:'consent'});
+      // Reuse previously granted consent; Google may still require account selection.
+      client.requestAccessToken({prompt:''});
     });
   }
   async function api(url,options={}){

@@ -39,7 +39,7 @@ async function exercise({uploadFails=false}={}){
   const google={accounts:{oauth2:{initTokenClient(config){
     assert.equal(config.scope,'https://www.googleapis.com/auth/drive.appdata');
     assert.equal(config.client_id,'971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com');
-    return {requestAccessToken(){popupRequests++;config.callback({access_token:'token-test',expires_in:3600})}};
+    return {requestAccessToken(options){assert.equal(options.prompt,'','previous Drive consent should be reused');popupRequests++;config.callback({access_token:'token-test',expires_in:3600})}};
   }}}};
   const ctx={
     window:{google,addEventListener:(type,cb)=>{windowListeners[type]=cb},TrainLogBackupBridge:{
