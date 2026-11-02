@@ -1,6 +1,7 @@
 /* TrainLog Pro — optional client-side Google Drive backups.
  * Uses Google Identity Services and the Drive appDataFolder scope.
- * No client secret and no access token are persisted.
+ * Access tokens are optionally cached in localStorage until expiry (never a refresh token).
+ * This is readable by JavaScript running on this origin; guard against XSS.
  */
 (() => {
   'use strict';
@@ -16,6 +17,7 @@
   const LAST_REMOTE_KEY='trainlogProDriveLastRemoteId';
   const LAST_SYNC_KEY='trainlogProDriveLastSyncedData';
   const EVER_KEY='trainlogProDriveEverConnected';
+  const TOKEN_KEY='trainlogProDriveAccessTokenV1';
   const DELAY_MS=10000, MIN_INTERVAL_MS=60000;
   let pendingTimer=null, dirty=false, blocked=false, lastUploadAt=0;
   let lastSyncedData=localStorage.getItem(LAST_SYNC_KEY)||'';
@@ -75,6 +77,28 @@
     setStatus('本機資料已重設。自動雲端備份已暫停，以保護既有雲端備份');
   }
   let token='',expiresAt=0,client=null,busy=false,loadingGIS=null;
+  function clearCachedToken(){
+    token='';expiresAt=0;
+    try{localStorage.removeItem(TOKEN_KEY)}catch{}
+  }
+  function restoreCachedToken(){
+    try{
+      const raw=localStorage.getItem(TOKEN_KEY);
+      if(!raw)return;
+      const cached=JSON.parse(raw);
+      if(typeof cached?.accessToken==='string'&&cached.accessToken.length>0
+         &&Number.isFinite(cached.expiresAt)
+         &&Date.now()<cached.expiresAt-60000){
+        token=cached.accessToken;expiresAt=cached.expiresAt;
+      }else clearCachedToken();
+    }catch{clearCachedToken()}
+  }
+  function cacheToken(accessToken,expiry){
+    token=accessToken;expiresAt=expiry;
+    try{localStorage.setItem(TOKEN_KEY,JSON.stringify({accessToken,expiresAt:expiry}))}
+    catch{ /* Browser storage can be disabled; fall back to memory-only token. */ }
+  }
+  restoreCachedToken();
   const status=message=>{if($('driveBackupStatus'))$('driveBackupStatus').textContent=message};
   const errorText=err=>String(err?.message||err||'未知錯誤');
   function loadGIS(){
@@ -97,8 +121,8 @@
         client_id:id,scope:SCOPE,
         callback:response=>{
           if(response?.error){reject(Error(response.error));return}
-          token=response.access_token;
-          expiresAt=Date.now()+(Number(response.expires_in)||3600)*1000;
+          if(!response?.access_token){reject(Error('Google 沒有回傳有效的 Access Token'));return}
+          cacheToken(response.access_token,Date.now()+(Number(response.expires_in)||3600)*1000);
           showReconnect();
           resolve(token);
         },
@@ -111,7 +135,7 @@
   async function api(url,options={}){
     const res=await fetch(url,{...options,headers:{Authorization:'Bearer '+token,...(options.headers||{})}});
     if(!res.ok){
-      if(res.status===401){token='';expiresAt=0;showReconnect()}
+      if(res.status===401){clearCachedToken();showReconnect()}
       throw Error('Google Drive API '+res.status+': '+(await res.text()).slice(0,200));
     }
     if(res.status===204)return null;
@@ -171,7 +195,7 @@
     const selected=files[0];
     const result=await fetch(API+'/'+encodeURIComponent(selected.id)+'?alt=media',{headers:{Authorization:'Bearer '+token}});
     if(!result.ok){
-      if(result.status===401){token='';expiresAt=0;showReconnect()}
+      if(result.status===401){clearCachedToken();showReconnect()}
       throw Error('讀取雲端備份失敗：'+result.status);
     }
     const incoming=await result.json();
@@ -292,8 +316,17 @@
       });
     }
     window.addEventListener('online',()=>{if(dirty)scheduleAuto(1000)});
-    window.addEventListener('storage',event=>{if(event.key===APP_KEY)dataChanged()});
-    window.addEventListener('pageshow',()=>{showReconnect();if(dirty)scheduleAuto(1000)});
+    window.addEventListener('storage',event=>{
+      if(event.key===APP_KEY)dataChanged();
+      if(event.key===TOKEN_KEY){
+        if(event.newValue)restoreCachedToken();else{token='';expiresAt=0}
+        showReconnect();
+      }
+    });
+    window.addEventListener('pageshow',()=>{
+      if(!isAuthorized())restoreCachedToken();
+      showReconnect();if(dirty)scheduleAuto(1000)
+    });
     if(autoEnabled) {dirty=fingerprint(appRaw())!==lastSyncedData;scheduleAuto();}
     window.setInterval?.(showReconnect,30000);
 
