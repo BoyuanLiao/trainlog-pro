@@ -272,11 +272,8 @@
       return;
     }
     dirty=fingerprint(appRaw())!==lastSyncedData;
-    if(dirty){
-      scheduleAuto(1000);
-    }else{
-      setStatus(tr('cloudBackup.resumedNoChanges'));
-    }
+    if(!dirty)setStatus(tr('cloudBackup.resumedNoChanges'));
+    // The run() finally block schedules pending work after busy becomes false.
   }
   function reviewCloud(){
     if(!pendingCloud)return;
@@ -324,6 +321,7 @@
       for(const id of ['driveBackupNow','driveRestoreLatest'])if($(id))$(id).disabled=false;
       if(action==='auto'&&dirty&&!pendingTimer&&!blocked)scheduleAuto();
       if(action==='backup'&&dirty)scheduleAuto();
+      if(action==='reauthorize'&&dirty&&!blocked&&isAuthorized())scheduleAuto(1000);
     }
   }
   function init(){
