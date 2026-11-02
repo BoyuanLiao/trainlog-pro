@@ -8,21 +8,11 @@
   const API='https://www.googleapis.com/drive/v3/files';
   const UPLOAD='https://www.googleapis.com/upload/drive/v3/files';
   const NAME='trainlog-pro-backup-';
-  const CLIENT_KEY='trainlogProGoogleClientId';
   const DEFAULT_CLIENT_ID='971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com';
   const $=id=>document.getElementById(id);
   let token='',expiresAt=0,client=null,busy=false,loadingGIS=null;
   const status=message=>{if($('driveBackupStatus'))$('driveBackupStatus').textContent=message};
   const errorText=err=>String(err?.message||err||'未知錯誤');
-  const clientId=()=>($('driveClientId')?.value||'').trim();
-  function saveClientId(){
-    const id=clientId();
-    if(id && !/^[\w-]+\.apps\.googleusercontent\.com$/.test(id))throw Error('OAuth Client ID 格式不正確');
-    if(id)localStorage.setItem(CLIENT_KEY,id);
-    else localStorage.removeItem(CLIENT_KEY);
-    client=null;
-    return id;
-  }
   function loadGIS(){
     if(window.google?.accounts?.oauth2)return Promise.resolve();
     if(loadingGIS)return loadingGIS;
@@ -35,8 +25,7 @@
     return loadingGIS;
   }
   async function authorize(){
-    const id=saveClientId();
-    if(!id)throw Error('請先填入 Google OAuth Client ID');
+    const id=DEFAULT_CLIENT_ID;
     if(token && Date.now()<expiresAt-60000)return token;
     await loadGIS();
     return new Promise((resolve,reject)=>{
@@ -112,14 +101,11 @@
     finally{busy=false;for(const id of ['driveBackupNow','driveRestoreLatest'])if($(id))$(id).disabled=false}
   }
   function init(){
-    const input=$('driveClientId');
-    if(!input)return;
-    input.value=localStorage.getItem(CLIENT_KEY)||DEFAULT_CLIENT_ID;
-    input.addEventListener('change',()=>{try{saveClientId();status('OAuth 設定已保存於這台裝置')}catch(err){status(errorText(err))}});
+    if(!$('driveBackupNow')||!$('driveRestoreLatest'))return;
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
     loadGIS().catch(err=>status('Google 授權元件預載失敗：'+errorText(err)));
-    status('OAuth Client ID 已預設。按「立即備份」即可使用 Google 帳號授權。');
+    status('使用 Google 帳號授權後，即可備份或恢復健身紀錄。');
   }
   init();
 })();
