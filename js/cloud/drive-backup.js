@@ -9,6 +9,7 @@
   const UPLOAD='https://www.googleapis.com/upload/drive/v3/files';
   const NAME='trainlog-pro-backup-';
   const CLIENT_KEY='trainlogProGoogleClientId';
+  const DEFAULT_CLIENT_ID='971667698268-87b5i36l79saj1c1b2qfqfmrlktp8eme.apps.googleusercontent.com';
   const $=id=>document.getElementById(id);
   let token='',expiresAt=0,client=null,busy=false;
   const status=message=>{if($('driveBackupStatus'))$('driveBackupStatus').textContent=message};
@@ -111,11 +112,11 @@
   function init(){
     const input=$('driveClientId');
     if(!input)return;
-    input.value=localStorage.getItem(CLIENT_KEY)||'';
+    input.value=localStorage.getItem(CLIENT_KEY)||DEFAULT_CLIENT_ID;
     input.addEventListener('change',()=>{try{saveClientId();status('OAuth 設定已保存於這台裝置')}catch(err){status(errorText(err))}});
     $('driveBackupNow').addEventListener('click',()=>run('backup'));
     $('driveRestoreLatest').addEventListener('click',()=>run('restore'));
-    status('尚未連線。請設定 Google OAuth Client ID，再按「立即備份」。');
+    status('OAuth Client ID 已預設。按「立即備份」即可使用 Google 帳號授權。');
   }
   init();
 })();
