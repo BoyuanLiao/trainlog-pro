@@ -16,6 +16,16 @@ assert(appVersion,'APP_VERSION must be declared');
 assert.strictEqual(titleVersion,appVersion,'document title must match APP_VERSION');
 assert.strictEqual(pillVersion,appVersion,'visible source-pill version must match APP_VERSION');
 
+// Google OAuth verification: public homepage content must be visible without authentication.
+const overview=index.match(/<section id="publicAppOverview"[\s\S]*?<\/section>/)?.[0];
+assert(overview,'homepage must publicly explain TrainLog Pro');
+for(const key of ['publicHomepage.title','publicHomepage.features','publicHomepage.driveTitle','publicHomepage.drivePurpose','publicHomepage.driveControl','publicHomepage.privacyLink']){
+  assert(overview.includes('data-i18n="'+key+'"'),'public introduction is missing '+key);
+}
+assert(overview.includes('appDataFolder'),'Google Drive purpose must identify the exact private Drive scope');
+assert(overview.includes('href="privacy.html"'),'public homepage must link to Privacy Policy');
+assert(!/style="display:none/.test(overview),'public description must be visible without OAuth');
+
 // HTML ids must be unique: duplicate ids make querySelector/getElementById behavior ambiguous.
 const ids=[...index.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const seen=new Set(),duplicates=new Set();
