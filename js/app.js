@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.12.4';
+const APP_VERSION='2.12.5';
 const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const MUSCLE_I18N={'胸':'domain.muscle.chest','背':'domain.muscle.back','腿':'domain.muscle.legs','肩膀':'domain.muscle.shoulders','二頭':'domain.muscle.biceps','三頭':'domain.muscle.triceps','腹部':'domain.muscle.core','有氧':'domain.muscle.cardio','其他':'domain.muscle.other'};
@@ -728,7 +728,7 @@ function coachDayBuild(rec){
  else{items=coachSupplementItems(p,day,goal,target,items);if(adj.mode==='focus')items=addFocusAccessory(items,adj.focusMuscle).slice(0,Math.min(8,target+1))}
  return{p,day,items,adjustment:adj}
 }
-function coachExerciseListHtml(items,p){return `<div class="coach-exercises">${items.map((it,i)=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3;let note='';if(it.bodySubstituteFrom)note=`<div class="coach-ex-extra substitute">${esc(tr('coachReasons.bodyReplace',{name:it.bodySubstituteFrom}))}</div>`;else if(it.todayFocus)note='<div class="coach-ex-extra focus">${esc(tr("residual.r6521b0be"))}</div>';else if(it.todayEasy)note='<div class="coach-ex-extra easy">${esc(tr("residual.r615f61be"))}</div>';else if(it.coachSupplement)note='<div class="coach-ex-extra">${esc(tr("residual.r361a5fb3"))}</div>';return `<div class="coach-ex-row"><span class="coach-ex-num">${i+1}</span><div><div class="coach-ex-name">${esc(ex.name)}</div><div class="coach-ex-en">${esc(ex.nameEn||'')}</div>${note}</div><span class="tag">${esc(ex.type==='cardio'?tr('coachReasons.cardio'):tr('coachReasons.sets',{count:sets}))}</span></div>`}).join('')}</div>`}
+function coachExerciseListHtml(items,p){return `<div class="coach-exercises">${items.map((it,i)=>{const ex=getExercise(it.exerciseId)||SYSTEM_EXERCISES.find(x=>x.id===it.exerciseId);if(!ex)return'';const sets=n(it.targetSets)||n(ex.targetSets)||3;let note='';if(it.bodySubstituteFrom)note=`<div class="coach-ex-extra substitute">${esc(tr('coachReasons.bodyReplace',{name:it.bodySubstituteFrom}))}</div>`;else if(it.todayFocus)note=`<div class="coach-ex-extra focus">${esc(tr("residual.r6521b0be"))}</div>`;else if(it.todayEasy)note=`<div class="coach-ex-extra easy">${esc(tr("residual.r615f61be"))}</div>`;else if(it.coachSupplement)note=`<div class="coach-ex-extra">${esc(tr("residual.r361a5fb3"))}</div>`;return `<div class="coach-ex-row"><span class="coach-ex-num">${i+1}</span><div><div class="coach-ex-name">${esc(ex.name)}</div><div class="coach-ex-en">${esc(ex.nameEn||'')}</div>${note}</div><span class="tag">${esc(ex.type==='cardio'?tr('coachReasons.cardio'):tr('coachReasons.sets',{count:sets}))}</span></div>`}).join('')}</div>`}
 function recommendationBreakdownHtml(r){const d=r.dimensions,names={goal:'目標',schedule:'時間安排',equipment:'器材',experience:'經驗',priority:'優先部位',volume:'近期訓練量',movement:'動作模式',continuity:'動作延續',preference:'偏好'},max={goal:25,schedule:15,equipment:15,experience:10,priority:10,volume:10,movement:5,continuity:5,preference:5};return `<div class="recommend-score-grid ui-advanced-only">${Object.entries(d).map(([k,v])=>`<div class="recommend-score-cell"><b>${v}/${max[k]}</b><span>${names[k]}</span></div>`).join('')}</div>${!r.hard.ok?`<div class="recommend-limit">限制：${esc(r.hard.limits.join('；'))}</div>`:''}`}
 function currentPlanRecommendation(){const p=currentPlanProgram();if(!p)return null;const r=coachProgramScore(p,data.currentPlan?.goal||coachGoal());r.dayIndex=coachProgramDayIndex(p);return r}
 function todayAdjustHtml(){const a=todayAdjustment();return `<div class="today-adjust-grid">${Object.entries(TODAY_ADJUSTMENTS).map(([k,v])=>`<button type="button" data-today-adjust="${k}" class="${a.mode===k?'on':''}">${v.label}</button>`).join('')}<button type="button" data-today-body-status>${esc(tr("residual.r01ec088f"))}</button></div>${a.mode==='focus'?`<div class="today-focus-grid">${MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<button type="button" data-today-focus="${m}" class="${a.focusMuscle===m?'on':''}">${esc(displayMuscle(m))}</button>`).join('')}</div>`:''}<div class="adjust-note">${esc(todayAdjustmentDesc(a.mode))}${(todayBodyStatus().entries||[]).length?tr('coachMeta.bodyStatusExtra'):''}</div>`}
@@ -778,7 +778,7 @@ function renderHome(){
  const load=recentMuscleLoad(7),goals=data.settings.weeklyMuscleGoals||{};
  $('#weeklyMuscles').innerHTML=MUSCLES.filter(m=>m!=='有氧'&&m!=='其他').map(m=>{const goal=n(goals[m])||0,val=n(load[m]),pct=goal?Math.min(100,val/goal*100):0;return `<div class="barline"><div class="topline"><b>${esc(displayMuscle(m))}</b><span>${esc(tr('finalUi.groupsValue',{value:`${val} / ${goal||'—'}`}))}</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');
  const prog=[];data.exerciseLibrary.filter(ex=>['weight_reps','bodyweight','unilateral','duration'].includes(ex.type)).forEach(ex=>{const adv=progressionAdvice(ex.id);const best=bestSetForExercise(ex.id);if(best&&adv)prog.push({ex,adv,best})});prog.sort((a,b)=>b.best.date.localeCompare(a.best.date));
- $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">${esc(tr('finalUi.recentEvidence',{date:p.best.date,evidence:view.evidence}))}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">${esc(tr('finalUi.judgement',{reason:view.reason}))}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):'<div class="card empty">${esc(tr("residual.r24cff772"))}</div>';
+ $('#recentProgress').innerHTML=prog.length?prog.slice(0,3).map(p=>{const view=progressionDisplay(p.adv);return `<div class="record"><div class="record-head"><div><div class="record-title">${esc(p.ex.name)}</div><div class="record-meta">${esc(tr('finalUi.recentEvidence',{date:p.best.date,evidence:view.evidence}))}</div></div><span class="pill ${progressionToneClass(view)}">${esc(view.label)}</span></div><div class="small" style="margin-top:8px;font-weight:800">${esc(tr('finalUi.judgement',{reason:view.reason}))}</div><div class="small" style="margin-top:4px">${esc(view.text)}</div></div>`}).join(''):`<div class="card empty">${esc(tr("residual.r24cff772"))}</div>`;
  const goalHtml=(data.strengthGoals||[]).map(g=>{const ex=getExercise(g.exerciseId),best=bestSetForExercise(g.exerciseId),cur=best?best.weight:0,pct=g.weight?Math.min(100,cur/g.weight*100):0;return `<div class="record"><div class="record-head"><div><b>目標：${esc(ex?.name||tr('analysisDynamic.exerciseFallback'))}</b><div class="record-meta">目前最佳重量 ${fmtWeight(cur)} · ${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><span>${Math.round(pct)}%</span></div><div class="progress"><i style="width:${pct}%"></i></div></div>`}).join('');if(goalHtml)$('#recentProgress').insertAdjacentHTML('beforeend',goalHtml);
  $('#recentWorkouts').innerHTML=data.workouts.length?data.workouts.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(workoutCardHtml).join(''):`<div class="card empty">${esc(tr('dynamic.noCompletedWorkout'))}</div>`;$$('#recentWorkouts [data-open]').forEach(b=>b.onclick=()=>editWorkout(b.dataset.open))
 }
@@ -1410,7 +1410,7 @@ function openExercisePicker(onPick){
    const recent=recentMap.get(ex.id);
    const base=exercisePickerRowHtml(ex);
    return recent?base.replace('</div>\n </div>',`<div class="exercise-picker-recent">最近：${esc(recent)}</div></div>\n </div>`):base
- }).join('')||'<div class="empty">${esc(tr("residual.r6723d7f4"))}<br><span class="small">${esc(tr("residual.r8d120204"))}</span></div>';
+ }).join('')||`<div class="empty">${esc(tr("residual.r6723d7f4"))}<br><span class="small">${esc(tr("residual.r8d120204"))}</span></div>`;
 
  const scopeLabel=()=>{
    if(state.scope==='recent')return tr('dynamic.pickerRecent');
@@ -1479,7 +1479,7 @@ function openExercisePicker(onPick){
 function openReplaceModal(idx){
  const current=data.activeWorkout.exercises[idx],ex=getExercise(current.exerciseId),alts=(ex?.alternatives||[]).map(getExercise).filter(Boolean);
  const list=[...alts,...data.exerciseLibrary.filter(x=>!alts.some(a=>a.id===x.id)&&x.id!==current.exerciseId&&x.muscle===current.muscle)];
- openModal(tr('modal.replaceExercise'),list.map(x=>`<button class="btn ghost" data-rp="${x.id}" style="width:100%;margin-bottom:7px;text-align:left">${esc(x.name)}<div class="small">${esc(displayMuscle(x.muscle))}</div></button>`).join('')||'<div class="empty">${esc(tr("residual.re7cda89f"))}</div>',()=>$$('[data-rp]').forEach(b=>b.onclick=()=>{const replacement=makeSessionExercise(getExercise(b.dataset.rp),data.activeWorkout.date);data.activeWorkout.exercises[idx]=replacement;saveActiveOnly(true);closeModal()}))
+ openModal(tr('modal.replaceExercise'),list.map(x=>`<button class="btn ghost" data-rp="${x.id}" style="width:100%;margin-bottom:7px;text-align:left">${esc(x.name)}<div class="small">${esc(displayMuscle(x.muscle))}</div></button>`).join('')||`<div class="empty">${esc(tr("residual.re7cda89f"))}</div>`,()=>$$('[data-rp]').forEach(b=>b.onclick=()=>{const replacement=makeSessionExercise(getExercise(b.dataset.rp),data.activeWorkout.date);data.activeWorkout.exercises[idx]=replacement;saveActiveOnly(true);closeModal()}))
 }
 function openReorderModal(){
  const w=data.activeWorkout;if(!w)return;
@@ -1594,7 +1594,7 @@ function showMuscleStimulusDetail(muscle,workouts){
    <div class="grid3"><div class="stat"><b>${fmtStim(s.total)}</b><span>${esc(tr("residual.rc8493e92"))}</span></div><div class="stat"><b>${fmtStim(s.direct)}</b><span>${esc(tr("residual.r3c8539f2"))}</span></div><div class="stat"><b>${fmtStim(s.indirect)}</b><span>${esc(tr("residual.r8ab76d45"))}</span></div></div>
    <div class="analysis-note">${esc(tr("residual.r7f5c3e15"))}</div>
  </div>
- <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):'<div class="empty">${esc(tr("residual.rc23e28d1"))}</div>'}</div>`);
+ <div class="card">${rows.length?rows.map(r=>`<div class="source-row"><div class="record-head"><div><b>${esc(r.name)}</b><div class="record-meta">${r.pattern?esc(patternDisplayName(r.pattern)):''}${r.equipment?` · ${esc(r.equipment)}`:''}</div></div><b>${fmtStim(r.total)}</b></div><div class="tagrow" style="margin-top:6px">${r.direct?`<span class="tag">直接 ${fmtStim(r.direct)}</span>`:''}${r.indirect?`<span class="tag">間接 ${fmtStim(r.indirect)}</span>`:''}</div></div>`).join(''):`<div class="empty">${esc(tr("residual.rc23e28d1"))}</div>`}</div>`);
 }
 // TrainLog Pro v2.10.0 analysis intelligence
 let analysisTabState=['overview','muscle','exercise','load'].includes(data.settings.analysisTab)?data.settings.analysisTab:'overview';
@@ -1681,7 +1681,7 @@ function renderAnalysisLoadTrend(ws,days){
       <div class="analysis-week-copy"><b>${esc(analysisWeekLabel(r.key))}</b><span>${r.workouts} 次 · ${r.sets} 正式組 · ${fmtKg(r.volume)}${r.avgRir==null?'':` · 平均 RIR ${r.avgRir.toFixed(1)}`}</span></div>
       <div class="analysis-week-bar"><i style="width:${Math.max(4,Math.round(r.sets/maxSets*100))}%"></i></div>
     </div>`).join('')+
-    '<div class="analysis-note">${esc(tr("residual.rd484f477"))}</div>';
+    `<div class="analysis-note">${esc(tr("residual.rd484f477"))}</div>`;
 }
 
 function renderAnalysisMuscleTargets(ws,days){
@@ -1707,7 +1707,7 @@ function renderAnalysisMuscleTargets(ws,days){
       <span class="compare-badge ${cls}">${esc(status)}</span>
     </div>`
   }).join('')+
-  '<div class="analysis-note">${esc(tr("residual.r8e8d434c"))}</div>';
+  `<div class="analysis-note">${esc(tr("residual.r8e8d434c"))}</div>`;
 }
 
 function renderAnalysisMovementGaps(ws,days){
@@ -1722,8 +1722,8 @@ function renderAnalysisMovementGaps(ws,days){
   const gaps=rows.filter(x=>x.sets===0||(max>=4&&x.sets<max*.25))
     .sort((a,b)=>a.sets-b.sets).slice(0,4);
   root.innerHTML=`<div class="analysis-pattern-chips">${rows.map(x=>`<span class="tag">${esc(patternDisplayName(x.key))} · ${esc(tr('finalUi.setsPerWeek',{count:fmtStim(x.perWeek)}))}</span>`).join('')}</div>`+
-    (gaps.length?`<div class="analysis-gap-list">${gaps.map(x=>`<div class="analysis-gap-item"><b>${esc(patternDisplayName(x.key))}</b><span>${x.sets===0?'本期沒有紀錄':'相對於本期其他主要模式較少'}</span></div>`).join('')}</div>`:'<div class="good" style="margin-top:10px;font-weight:850">${esc(tr("residual.r2803e06c"))}</div>')+
-    '<div class="analysis-note">${esc(tr("residual.rd2b26b9d"))}</div>';
+    (gaps.length?`<div class="analysis-gap-list">${gaps.map(x=>`<div class="analysis-gap-item"><b>${esc(patternDisplayName(x.key))}</b><span>${x.sets===0?'本期沒有紀錄':'相對於本期其他主要模式較少'}</span></div>`).join('')}</div>`:`<div class="good" style="margin-top:10px;font-weight:850">${esc(tr("residual.r2803e06c"))}</div>`)+
+    `<div class="analysis-note">${esc(tr("residual.rd2b26b9d"))}</div>`;
 }
 
 function renderAnalysisProgressOpportunities(ws){
@@ -1776,7 +1776,7 @@ function renderAnalysisPrTimeline(ws){
   root.innerHTML=events.length?`<div class="analysis-pr-list">${events.map(e=>`<div class="analysis-pr-item">
     <div class="analysis-pr-dot">★</div><div><b>${esc(e.name)}</b><div class="record-meta">${esc(e.date)} · ${esc(e.kind)}</div><div class="analysis-pr-value">${esc(e.value)}</div></div>
   </div>`).join('')}</div><div class="analysis-note">${esc(tr("residual.r2cce1f14"))}</div>`:
-  '<div class="empty">${esc(tr("residual.r76745630"))}</div>';
+  `<div class="empty">${esc(tr("residual.r76745630"))}</div>`;
 }
 function renderV210Analysis(ws,days){
   renderAnalysisLoadTrend(ws,days);
@@ -1949,7 +1949,7 @@ function renderExerciseAnalysis(id){
    <div class="section">${esc(tr('dynamic.recentRecords'))}</div><div class="progress-session-list">${history}</div>`
 }
 function sparkline(pts){
- if(!pts.length)return'<div class="empty">${esc(tr("residual.r97a2dbc7"))}</div>';const arr=pts.slice(-12),vals=arr.map(p=>p.v),min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;const points=arr.map((p,i)=>`${10+i*(280/Math.max(1,arr.length-1))},${105-(p.v-min)/range*85}`).join(' ');return `<svg class="spark" viewBox="0 0 300 120" role="img" aria-label="${esc(tr("residual.re9d8257e"))}"><line x1="10" y1="105" x2="290" y2="105" stroke="#40515c"/><polyline fill="none" stroke="#69c4ff" stroke-width="3" points="${points}"/>${arr.map((p,i)=>`<circle cx="${10+i*(280/Math.max(1,arr.length-1))}" cy="${105-(p.v-min)/range*85}" r="4" fill="#f4f7f8"/>`).join('')}</svg>`
+ if(!pts.length)return`<div class="empty">${esc(tr("residual.r97a2dbc7"))}</div>`;const arr=pts.slice(-12),vals=arr.map(p=>p.v),min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;const points=arr.map((p,i)=>`${10+i*(280/Math.max(1,arr.length-1))},${105-(p.v-min)/range*85}`).join(' ');return `<svg class="spark" viewBox="0 0 300 120" role="img" aria-label="${esc(tr("residual.re9d8257e"))}"><line x1="10" y1="105" x2="290" y2="105" stroke="#40515c"/><polyline fill="none" stroke="#69c4ff" stroke-width="3" points="${points}"/>${arr.map((p,i)=>`<circle cx="${10+i*(280/Math.max(1,arr.length-1))}" cy="${105-(p.v-min)/range*85}" r="4" fill="#f4f7f8"/>`).join('')}</svg>`
 }
 
 
@@ -2052,7 +2052,7 @@ function renderSystemPrograms(){
    return(!q||text.includes(q))&&(!cat||p.category===cat)&&(!days||String(p.daysPerWeek)===days)&&(!level||p.level===level)&&(!dur||p.duration<=dur)&&(!eq||p.equipmentMode===eq)&&(!goal||programGoalFit(p,goal)>=25);
  });
  $('#programCount').textContent=tr('finalUi.programCount',{visible:items.length,total:SYSTEM_PROGRAMS.length});
- const shown=items.slice(0,programDisplayLimit);box.innerHTML=shown.length?shown.map(systemProgramCardHtml).join(''):'<div class="card empty">${esc(tr("residual.rb428b5cd"))}</div>';
+ const shown=items.slice(0,programDisplayLimit);box.innerHTML=shown.length?shown.map(systemProgramCardHtml).join(''):`<div class="card empty">${esc(tr("residual.rb428b5cd"))}</div>`;
  if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="programMore" style="width:100%">${esc(tr('finalUi.moreRemaining',{count:items.length-shown.length}))}</button>`;
  bindProgramCards(box);const more=$('#programMore');if(more)more.onclick=()=>{programDisplayLimit+=18;renderSystemPrograms()};
 }
@@ -2116,7 +2116,7 @@ function renderSystemEquipment(){
  const box=$('#systemEquipmentList');if(!box)return;const q=($('#systemEqSearch')?.value||'').trim().toLowerCase(),cat=$('#systemEqCategory')?.value||'',res=$('#systemEqResistance')?.value||'',brand=$('#systemEqBrand')?.value||'';
  const items=SYSTEM_EQUIPMENT.filter(e=>{const brandText=(e.brandModels||[]).map(x=>`${x.brand} ${x.series} ${x.model} ${x.name}`).join(' '),compat=(e.brandCompat||[]).join(' ');const txt=(e.nameZh+' '+e.nameEn+' '+(e.aliases||[]).join(' ')+' '+e.category+' '+e.primary+' '+e.descZh+' '+brandText+' '+compat).toLowerCase();const brandOk=!brand||supportedBrandsForEquipment(e).includes(brand);return(!q||txt.includes(q))&&(!cat||e.category===cat)&&(!res||e.resistance===res)&&brandOk});
  $('#equipmentCount').textContent=tr('finalUi.equipmentCount',{visible:items.length,total:SYSTEM_EQUIPMENT.length});
- const shown=items.slice(0,equipmentDisplayLimit);box.innerHTML=shown.length?shown.map(systemEquipmentCardHtml).join(''):'<div class="card empty">${esc(tr("residual.rffa4d0bf"))}</div>';
+ const shown=items.slice(0,equipmentDisplayLimit);box.innerHTML=shown.length?shown.map(systemEquipmentCardHtml).join(''):`<div class="card empty">${esc(tr("residual.rffa4d0bf"))}</div>`;
  if(items.length>shown.length)box.innerHTML+=`<button class="btn ghost" id="equipmentMore" style="width:100%">${esc(tr('finalUi.moreRemaining',{count:items.length-shown.length}))}</button>`;
  bindEquipmentCards(box);const more=$('#equipmentMore');if(more)more.onclick=()=>{equipmentDisplayLimit+=24;renderSystemEquipment()};
 }
@@ -2160,19 +2160,19 @@ function renderSettings(){
  if(hx)hx.textContent=tr('finalUi.exerciseTotal',{count:data.exerciseLibrary.length});
  if(hg)hg.textContent=tr('finalUi.gymsTotal',{count:data.gyms.length});
  if(hme)hme.textContent=tr('finalUi.myEquipmentTotal',{count:data.equipment.length});
- $('#templateList').innerHTML=data.templates.length?data.templates.map(t=>`<div class="template-item"><div class="record-head"><div><b>${esc(t.name)}</b> ${t.sourceProgramId?'<span class="source-pill">FROM SYSTEM</span>':''}<div class="record-meta">${tr('drawer.historyExerciseCount',{count:t.items.length})}${t.nameEn?' · '+esc(t.nameEn):''}</div></div><div class="actions"><button class="btn small ghost" data-edit-tpl="${t.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-del-tpl="${t.id}">${esc(tr('gym.delete'))}</button></div></div>${t.dayMeta?.focusSummary?`<div class="small" style="margin-top:7px"><b>${esc(t.dayMeta.dayTitle||tr('finalUi.focusFallback'))}</b> · ${esc(t.dayMeta.focusSummary)}</div>`:''}<div class="tagrow" style="margin-top:8px">${t.items.map(i=>`<span class="tag">${esc(getExercise(i.exerciseId)?.name||tr('finalUi.deletedExercise'))}</span>`).join('')}</div></div>`).join(''):'<div class="card empty">${esc(tr("residual.r1a327ebb"))}</div>';
+ $('#templateList').innerHTML=data.templates.length?data.templates.map(t=>`<div class="template-item"><div class="record-head"><div><b>${esc(t.name)}</b> ${t.sourceProgramId?'<span class="source-pill">FROM SYSTEM</span>':''}<div class="record-meta">${tr('drawer.historyExerciseCount',{count:t.items.length})}${t.nameEn?' · '+esc(t.nameEn):''}</div></div><div class="actions"><button class="btn small ghost" data-edit-tpl="${t.id}">${esc(tr("residual.r4642d168"))}</button><button class="btn small danger" data-del-tpl="${t.id}">${esc(tr('gym.delete'))}</button></div></div>${t.dayMeta?.focusSummary?`<div class="small" style="margin-top:7px"><b>${esc(t.dayMeta.dayTitle||tr('finalUi.focusFallback'))}</b> · ${esc(t.dayMeta.focusSummary)}</div>`:''}<div class="tagrow" style="margin-top:8px">${t.items.map(i=>`<span class="tag">${esc(getExercise(i.exerciseId)?.name||tr('finalUi.deletedExercise'))}</span>`).join('')}</div></div>`).join(''):`<div class="card empty">${esc(tr("residual.r1a327ebb"))}</div>`;
  $$('[data-edit-tpl]').forEach(b=>b.onclick=()=>editTemplate(b.dataset.editTpl));$$('[data-del-tpl]').forEach(b=>b.onclick=()=>{if(confirm(tr('dialogs.deleteTemplate'))){data.templates=data.templates.filter(t=>t.id!==b.dataset.delTpl);save(tr('reasons.deleteTemplate'),true)}});
  renderLibrary();
  renderGymSettings();
- $('#equipmentList').innerHTML=data.equipment.length?data.equipment.map(e=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${esc(e.name)}</div><div class="snapshot-reason">${e.brand?esc(e.brand):esc(tr('finalUi.unspecifiedBrand'))}${e.model?` · ${esc(e.model)}`:''}${e.series?` · ${esc(e.series)}`:''} · ${esc(tr('finalUi.weightMark'))} ${normalizeWeightUnit(e.weightUnit||'kg')}</div></div><div class="actions"><button class="btn small ghost" data-eq-unit="${e.id}">${normalizeWeightUnit(e.weightUnit||'kg')} ↔</button><button class="btn small danger" data-deleq="${e.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="empty">${esc(tr("residual.raf76980d"))}</div>';
+ $('#equipmentList').innerHTML=data.equipment.length?data.equipment.map(e=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${esc(e.name)}</div><div class="snapshot-reason">${e.brand?esc(e.brand):esc(tr('finalUi.unspecifiedBrand'))}${e.model?` · ${esc(e.model)}`:''}${e.series?` · ${esc(e.series)}`:''} · ${esc(tr('finalUi.weightMark'))} ${normalizeWeightUnit(e.weightUnit||'kg')}</div></div><div class="actions"><button class="btn small ghost" data-eq-unit="${e.id}">${normalizeWeightUnit(e.weightUnit||'kg')} ↔</button><button class="btn small danger" data-deleq="${e.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):`<div class="empty">${esc(tr("residual.raf76980d"))}</div>`;
  $$('[data-eq-unit]').forEach(b=>b.onclick=()=>{const e=data.equipment.find(x=>x.id===b.dataset.eqUnit);if(!e)return;e.weightUnit=normalizeWeightUnit(e.weightUnit)==='kg'?'lb':'kg';save(tr('reasons.changeEquipmentUnit'),false);toast(tr('feedback.equipmentUnit',{unit:e.weightUnit}))});
  $$('[data-deleq]').forEach(b=>b.onclick=()=>{data.equipment=data.equipment.filter(e=>e.id!==b.dataset.deleq);save(tr('reasons.deleteEquipment'),true)});
  $('#setTrainingGoal').value=coachGoal();$('#setSessionMinutes').value=String(n(data.settings.sessionMinutes)||60);$('#setExperienceLevel').value=data.settings.experienceLevel||'beginner';$('#setEquipmentPreference').value=data.settings.equipmentPreference||'machine';$('#setBlockWeeks').value=String(n(data.settings.blockWeeks)||6);$('#setPreferredGym').innerHTML='<option value="">${esc(tr("residual.recc7c9f4"))}</option>'+data.gyms.map(g=>`<option value="${esc(g.id)}">${esc(g.name)}</option>`).join('');$('#setPreferredGym').value=data.settings.preferredGymId||'';$('#priorityMuscleOptions').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<label><input type="checkbox" data-priority-muscle="${m}" ${priorityMuscles().includes(m)?'checked':''}>${esc(displayMuscle(m))}</label>`).join('');const wd=WEEKDAY_KEYS.map(k=>tr(k)),avs=availableWeekdays();$('#availableWeekdayOptions').innerHTML=wd.map((x,i)=>`<label><input type="checkbox" data-available-weekday="${i}" ${avs.includes(i)?'checked':''}>${esc(tr('finalUi.weekday',{day:x}))}</label>`).join('');$('#setAllowConsecutiveDays').checked=!!data.settings.allowConsecutiveDays;$('#setLocale').value=i18n.normalizeLocale(data.settings.locale);$('#setUnit').value=data.settings.unit;$('#setIntensity').value=data.settings.intensity;$('#setRest').value=data.settings.defaultRest;$('#setWeeklySessions').value=data.settings.weeklySessions;$('#setCardioGoal').value=data.settings.weeklyCardio;$('#setWeekStart').value=String(data.settings.weekStart);$('#setWarmup').checked=!!data.settings.includeWarmup;$('#set1rm').checked=!!data.settings.show1RM;
  $('#setUiLevel').value=uiLevel();const tutBtn=$('#openTutorialFromSettings');if(tutBtn)tutBtn.onclick=openTutorialAgain;$('#setRestTimerPosition').value=data.settings.restTimerPosition||'top';$('#setTrainingNotes').checked=data.settings.trainingNotes!==false;$('#setTrainingAutoLoad').checked=data.settings.trainingAutoLoad!==false;$('#setTrainingIntervalTimer').checked=data.settings.trainingIntervalTimer!==false;$('#setRestTimerSound').checked=data.settings.restTimerSound!==false;bindRestNotificationToggle($('#setRestNotification'));
  $('#muscleGoalInputs').innerHTML=MUSCLES.filter(m=>!['有氧','其他'].includes(m)).map(m=>`<div class="field"><label>${esc(displayMuscle(m))}</label><input type="number" min="0" max="50" data-mgoal="${m}" value="${n((data.settings.weeklyMuscleGoals||{})[m])}"></div>`).join('');
- $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||tr('finalUi.deletedExercise'))}</b><div class="record-meta">${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):'<div class="small">${esc(tr("residual.r00862c41"))}</div>';
+ $('#strengthGoalList').innerHTML=(data.strengthGoals||[]).length?data.strengthGoals.map(g=>`<div class="record"><div class="record-head"><div><b>${esc(getExercise(g.exerciseId)?.name||tr('finalUi.deletedExercise'))}</b><div class="record-meta">${esc(tr('finalUi.target',{weight:fmtWeight(g.weight),reps:g.reps}))}</div></div><button class="btn small danger" data-delgoal="${g.id}">${esc(tr('gym.delete'))}</button></div></div>`).join(''):`<div class="small">${esc(tr("residual.r00862c41"))}</div>`;
  $$('[data-delgoal]').forEach(b=>b.onclick=()=>{data.strengthGoals=data.strengthGoals.filter(g=>g.id!==b.dataset.delgoal);save(tr('reasons.deleteStrengthGoal'),true)});
- $('#snapshotList').innerHTML=data.snapshots.length?data.snapshots.map(s=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${new Date(s.at).toLocaleString('zh-TW')}</div><div class="snapshot-reason">${esc(s.reason||tr('finalUi.autoBackup'))}</div></div><button class="btn small ghost" data-restore-snap="${s.id}">${esc(tr("residual.rf1b5cda4"))}</button></div>`).join(''):'<div class="empty">${esc(tr("residual.r4cdd5477"))}</div>';
+ $('#snapshotList').innerHTML=data.snapshots.length?data.snapshots.map(s=>`<div class="snapshot-item"><div class="snapshot-copy"><div class="snapshot-time">${new Date(s.at).toLocaleString('zh-TW')}</div><div class="snapshot-reason">${esc(s.reason||tr('finalUi.autoBackup'))}</div></div><button class="btn small ghost" data-restore-snap="${s.id}">${esc(tr("residual.rf1b5cda4"))}</button></div>`).join(''):`<div class="empty">${esc(tr("residual.r4cdd5477"))}</div>`;
  $$('[data-restore-snap]').forEach(b=>b.onclick=()=>{const s=data.snapshots.find(x=>x.id===b.dataset.restoreSnap);if(s&&confirm(tr('dialogs.restoreSnapshot'))){snapshot(tr('reasons.beforeRestore'));const snaps=data.snapshots;data=migrate(JSON.parse(JSON.stringify(s.payload)));data.snapshots=snaps;save(tr('reasons.restoreSnapshot'),false);toast(tr('feedback.snapshotRestored'))}})
 }
 function renderLibrary(){
@@ -2239,9 +2239,9 @@ function applyLookupExerciseToEditor(exId){
 function renderMachineLookupResults(query){
  const box=$('#machineLookupResults');if(!box)return;
  const q=String(query||'').trim();
- if(q.length<2){box.innerHTML='<div class="machine-lookup-empty">${esc(tr("finalUi.machineMinPrefix"))}<b>Lat Pulldown</b>、<b>Inner / Outer Thigh</b>、<b>Pullover</b>${esc(tr("residual.rba70ff76"))}</div>';return}
+ if(q.length<2){box.innerHTML=`<div class="machine-lookup-empty">${esc(tr("finalUi.machineMinPrefix"))}<b>Lat Pulldown</b>、<b>Inner / Outer Thigh</b>、<b>Pullover</b>${esc(tr("residual.rba70ff76"))}</div>`;return}
  const hits=machineLookupCandidates(q);
- if(!hits.length){box.innerHTML='<div class="machine-lookup-empty">${esc(tr("finalUi.machineNoMatchPrefix"))}<b>Leg Extension</b>${esc(tr("residual.r2d32bcaa"))}</div>';return}
+ if(!hits.length){box.innerHTML=`<div class="machine-lookup-empty">${esc(tr("finalUi.machineNoMatchPrefix"))}<b>Leg Extension</b>${esc(tr("residual.r2d32bcaa"))}</div>`;return}
  box.innerHTML=hits.map(({eq,match,actions})=>{
    const brands=[...new Set((eq.brandModels||[]).map(x=>x.brand).filter(Boolean))];
    const matched=`${match.kind} · ${match.label}${match.text?`：「${match.text}」`:''}`;
@@ -2287,7 +2287,7 @@ function editTemplate(id=''){
  const original=id?data.templates.find(x=>x.id===id):null;
  let working=JSON.parse(JSON.stringify(original||{id:uid('tpl'),name:tr('finalUi.newTemplate'),items:[]}));
  const showEditor=()=>{
-   const itemHtml=()=>working.items.map((it,i)=>`<div class="record"><div class="record-head"><b>${i+1}. ${esc(getExercise(it.exerciseId)?.name||'已刪除')}</b><div class="actions"><button class="btn small ghost" data-tu="${i}">↑</button><button class="btn small ghost" data-td="${i}">↓</button><button class="btn small danger" data-tr="${i}">${esc(tr("residual.r2f5b553d"))}</button></div></div></div>`).join('')||'<div class="empty">${esc(tr("residual.r745e433f"))}</div>';
+   const itemHtml=()=>working.items.map((it,i)=>`<div class="record"><div class="record-head"><b>${i+1}. ${esc(getExercise(it.exerciseId)?.name||'已刪除')}</b><div class="actions"><button class="btn small ghost" data-tu="${i}">↑</button><button class="btn small ghost" data-td="${i}">↓</button><button class="btn small danger" data-tr="${i}">${esc(tr("residual.r2f5b553d"))}</button></div></div></div>`).join('')||`<div class="empty">${esc(tr("residual.r745e433f"))}</div>`;
    const bindRows=()=>{
      const box=$('#tplItems');if(!box)return;box.innerHTML=itemHtml();
      $$('[data-tr]').forEach(b=>b.onclick=()=>{working.items.splice(n(b.dataset.tr),1);bindRows()});
@@ -2312,7 +2312,7 @@ function mergeBodyStatus(a,b){const m=new Map((a||[]).map(x=>[x.date,x]));(b||[]
 function importSummaryHtml(migrated,type,newCount,dup,source=null){
  const raw=source&&typeof source==='object'?source:{};
  const hasSettings=type==='json'&&!!raw.settings&&typeof raw.settings==='object',hasPlan=type==='json'&&!!raw.currentPlan,hasActive=type==='json'&&!!raw.activeWorkout;
- return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>${esc(tr('gym.workoutRecords'))}</span></div><div class="stat"><b>${newCount}</b><span>${esc(tr("residual.r0ad79527"))}</span></div><div class="stat"><b>${dup}</b><span>${esc(tr("residual.r4151912e"))}</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?'<span class="tag good">${esc(tr("residual.re4d4e06b"))}</span>':''}${hasPlan?'<span class="tag good">${esc(tr("residual.reaf857cc"))}</span>':''}${hasActive?'<span class="tag">${esc(tr("residual.r7692195b"))}</span>':''}</div>${type==='csv'?'<div class="small" style="margin-top:10px">${esc(tr("residual.r5e7f5add"))}</div>':'<div class="small" style="margin-top:10px">${esc(tr("residual.rb074f245"))}</div>'}</div>`
+ return `<div class="card"><div class="grid3"><div class="stat"><b>${migrated.workouts.length}</b><span>${esc(tr('gym.workoutRecords'))}</span></div><div class="stat"><b>${newCount}</b><span>${esc(tr("residual.r0ad79527"))}</span></div><div class="stat"><b>${dup}</b><span>${esc(tr("residual.r4151912e"))}</span></div></div><div class="tagrow" style="margin-top:12px"><span class="tag">我的課表 ${migrated.templates.length}</span><span class="tag">健身房 ${migrated.gyms.length}</span><span class="tag">我的器材 ${migrated.equipment.length}</span><span class="tag">身體狀態 ${migrated.bodyStatus.length}</span><span class="tag">力量目標 ${migrated.strengthGoals.length}</span>${hasSettings?`<span class="tag good">${esc(tr("residual.re4d4e06b"))}</span>`:''}${hasPlan?`<span class="tag good">${esc(tr("residual.reaf857cc"))}</span>`:''}${hasActive?`<span class="tag">${esc(tr("residual.r7692195b"))}</span>`:''}</div>${type==='csv'?`<div class="small" style="margin-top:10px">${esc(tr("residual.r5e7f5add"))}</div>`:`<div class="small" style="margin-top:10px">${esc(tr("residual.rb074f245"))}</div>`}</div>`
 }
 function previewImport(incoming,type,fileName){
  const migrated=migrate(incoming),existing=new Map(data.workouts.map(w=>[w.id,w])),newCount=migrated.workouts.filter(w=>!existing.has(w.id)).length,dup=migrated.workouts.length-newCount;

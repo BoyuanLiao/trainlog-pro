@@ -26,6 +26,12 @@ assert(overview.includes('appDataFolder'),'Google Drive purpose must identify th
 assert(overview.includes('href="privacy.html"'),'public homepage must link to Privacy Policy');
 assert(!/style="display:none/.test(overview),'public description must be visible without OAuth');
 
+// Regression: interpolated HTML must not be wrapped in single-quoted strings.
+const brokenPlaceholder=/'<(?:div|span)[^'\n]*\$\{[^'\n]*<\/(?:div|span)>'/g;
+assert.deepStrictEqual([...app.matchAll(brokenPlaceholder)].map(match=>match[0]),[],
+  'translated HTML messages must interpolate rather than display literal template syntax');
+assert(app.includes('residual.r24cff772'),'recent progress translation must stay referenced');
+
 // HTML ids must be unique: duplicate ids make querySelector/getElementById behavior ambiguous.
 const ids=[...index.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const seen=new Set(),duplicates=new Set();
