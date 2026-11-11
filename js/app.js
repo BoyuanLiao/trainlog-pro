@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.12.5';
+const APP_VERSION='2.12.6';
 const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const MUSCLE_I18N={'胸':'domain.muscle.chest','背':'domain.muscle.back','腿':'domain.muscle.legs','肩膀':'domain.muscle.shoulders','二頭':'domain.muscle.biceps','三頭':'domain.muscle.triceps','腹部':'domain.muscle.core','有氧':'domain.muscle.cardio','其他':'domain.muscle.other'};
