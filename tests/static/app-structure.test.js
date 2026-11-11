@@ -32,6 +32,15 @@ assert.deepStrictEqual([...app.matchAll(brokenPlaceholder)].map(match=>match[0])
   'translated HTML messages must interpolate rather than display literal template syntax');
 assert(app.includes('residual.r24cff772'),'recent progress translation must stay referenced');
 
+// Regression: daily adjustment labels must resolve the translation keys rather than
+// reading the nonexistent `label` property from TODAY_ADJUSTMENTS entries.
+const todayAdjustRender=app.match(/function todayAdjustHtml\(\)\{[^\n]+/)?.[0]||'';
+assert(todayAdjustRender,'today adjustment control must exist');
+assert(todayAdjustRender.includes('todayAdjustmentLabel(k)'),
+  'today adjustment buttons must render the localized option labels');
+assert(!todayAdjustRender.includes('${v.label}'),
+  'today adjustment buttons must never render undefined from v.label');
+
 // HTML ids must be unique: duplicate ids make querySelector/getElementById behavior ambiguous.
 const ids=[...index.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);
 const seen=new Set(),duplicates=new Set();
