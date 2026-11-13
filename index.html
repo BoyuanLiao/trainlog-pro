@@ -177,6 +177,18 @@
       <div class="section ui-standard-only"><span data-i18n="analysis.consistency">訓練一致性</span> <button class="info-btn" type="button" data-info="training_consistency" aria-label="訓練一致性說明" data-i18n-aria="staticHtml.r4e801cdf">i</button></div>
       <div class="card ui-standard-only" id="consistencyAnalysis"></div>
     </div>
+    <div class="section" id="bodyCompositionSection">⚖ 體脂與體組成追蹤</div>
+    <div class="card">
+      <div class="small" style="margin-bottom:10px">OMRON 體脂計量測紀錄｜資料筆數：<b id="bodyCount">0 筆</b>｜最後量測：<b id="bodyLatest">—</b></div>
+      <div class="grid3">
+        <div class="stat"><b id="bodyWeight">—</b><span>最新體重</span></div>
+        <div class="stat"><b id="bodyFat">—</b><span>最新體脂率</span></div>
+        <div class="stat"><b id="bodyMuscle">—</b><span>最新骨骼肌重量</span></div>
+      </div>
+      <div class="section">最近 12 個月趨勢（月中位數）</div>
+      <div id="bodyRecentList" style="overflow-x:auto"></div>
+      <p class="small">測量可能受水分、運動與時間影響；請搭配腰圍、力量表現觀察長期趨勢。體脂計估計值不等於醫療診斷。</p>
+    </div>
   </section>
 
   <section class="page" id="settingsPage">
@@ -354,6 +366,20 @@
 
       <div class="card">
         <p class="small backup-intro" data-i18n="staticHtml.ra338555f">資料保存在目前瀏覽器，可離線使用。建議偶爾下載完整備份，換手機或瀏覽器時也比較方便恢復。</p>
+      </div>
+
+      <div class="section">OMRON 體脂計匯入</div>
+      <div class="card">
+        <div class="backup-group-title">匯入 HBF-702T 體組成 CSV</div>
+        <p class="small">支援測量日期、體重、體脂率、內臟脂肪、骨骼肌率、各部位皮下脂肪率、BMI 等欄位。匯入前可預覽有效與重複筆數，不會覆蓋訓練紀錄。</p>
+        <div class="field"><label for="bodyImportFile">選擇 OMRON 匯出的 CSV</label><input type="file" id="bodyImportFile" accept=".csv,text/csv"></div>
+        <div id="bodyImportPreview" class="small" style="white-space:pre-line;margin:10px 0" role="status" aria-live="polite">尚未選擇檔案</div>
+        <div class="backup-actions">
+          <button class="btn primary" type="button" id="bodyImportConfirm" disabled>確認新增體脂紀錄</button>
+          <button class="btn ghost" type="button" id="bodyExportCsv">匯出體脂紀錄 CSV</button>
+          <button class="btn danger" type="button" id="bodyClear">刪除全部體脂紀錄</button>
+        </div>
+        <p class="small">目前體脂資料獨立保存在這台裝置的瀏覽器中，尚未納入 App 完整 JSON／Google Drive 備份。跨裝置使用前請另外匯出體脂 CSV。</p>
       </div>
 
       <div class="section" data-i18n="staticHtml.rbe3f1bc1">備份與恢復</div>
@@ -585,5 +611,6 @@
 <script src="js/ui/exercise-progress-browser.js?v=2.12.6"></script>
 <script src="js/cloud/drive-backup.js?v=2.12.6"></script>
 <script src="js/app.js?v=2.12.6"></script>
+<script src="js/body-composition.js?v=1"></script>
 </body>
 </html>
