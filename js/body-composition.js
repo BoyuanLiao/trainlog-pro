@@ -87,6 +87,15 @@
 			if(!at||weight===null||weight<20||weight>400){invalid++;continue}
 			const item={measuredAt:at,timezone:timezoneIndex<0?'':row[timezoneIndex]||'',model:modelIndex<0?'':row[modelIndex]||''};
 			for(const [name,index] of indices)item[name]=index<0?null:number(row[index]);
+			// 部分 OMRON 匯出檔未提供脂肪重量或骨骼肌重量，以對應百分比推估並標記來源。
+			if(item.fatMassKg===null&&item.bodyFatPercent!==null){
+				item.fatMassKg=Math.round(item.weightKg*item.bodyFatPercent)/100;
+				item.fatMassEstimated=true;
+			}
+			if(item.skeletalMuscleKg===null&&item.skeletalMusclePercent!==null){
+				item.skeletalMuscleKg=Math.round(item.weightKg*item.skeletalMusclePercent)/100;
+				item.skeletalMuscleMassEstimated=true;
+			}
 			records.push(item);
 		}
 		if(!records.length)throw new Error('找不到有效的測量紀錄');
