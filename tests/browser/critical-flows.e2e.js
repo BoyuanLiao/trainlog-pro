@@ -85,6 +85,23 @@ function timerSeconds(text){
   await b.setValue('#smGymName','E2E Gym');
   await b.click('#smSave');
 
+	await b.click('#trainingDrawerTab');
+	const displayLevels=await b.evaluate(`Array.from(
+		document.querySelectorAll('#trainingDrawer [data-ui-level]'),
+		button=>[button.dataset.uiLevel,button.firstChild.textContent,button.querySelector('small').textContent]
+	)`);
+	assert.deepStrictEqual(displayLevels,[
+		['simple','簡易','隱藏 RIR'],
+		['standard','一般','顯示 RIR'],
+		['advanced','進階','完整控制']
+	]);
+	for(const level of ['simple','advanced','standard']){
+		await b.click(`#trainingDrawer [data-ui-level="${level}"]`);
+		assert.strictEqual((await storage()).settings.uiLevel,level);
+		assert.strictEqual(await b.evaluate("document.querySelector('#trainingDrawer.show [data-ui-level].on')?.dataset.uiLevel"),level);
+	}
+	await b.click('#trainingDrawerClose');
+
   await b.click('#sessionAddEx');
   await b.setValue('#pickSearch','腿推','input');
   await b.waitFor(`!!document.querySelector('[data-pick="ex_legpress"]')`,{label:'leg press picker result'});
