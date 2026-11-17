@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const APP_KEY='trainlogProData';
-const APP_VERSION='2.12.6';
+const APP_VERSION='2.12.7';
 const CURRENT_SCHEMA=19;
 const MUSCLES=['胸','背','腿','肩膀','二頭','三頭','腹部','有氧','其他'];
 const MUSCLE_I18N={'胸':'domain.muscle.chest','背':'domain.muscle.back','腿':'domain.muscle.legs','肩膀':'domain.muscle.shoulders','二頭':'domain.muscle.biceps','三頭':'domain.muscle.triceps','腹部':'domain.muscle.core','有氧':'domain.muscle.cardio','其他':'domain.muscle.other'};
@@ -966,8 +966,11 @@ function setUiLevel(level){
  toast(tr('feedback.uiLevelChanged',{level:uiLevelName(level)}))
 }
 function uiLevelSwitchHtml(){
- const cur=uiLevel();
- return `<div class="ui-level-switch">${Object.entries(UI_LEVELS).map(([key,v])=>`<button type="button" class="${cur===key?'on':''}" data-ui-level="${key}">${v.name}<small>${v.short}</small></button>`).join('')}</div><div class="ui-level-hint">${esc(uiLevelDesc(cur))}</div>`
+	const cur=uiLevel();
+	const buttons=Object.keys(UI_LEVELS).map(level=>
+		`<button type="button" class="${cur===level?'on':''}" data-ui-level="${level}">${esc(uiLevelName(level))}<small>${esc(uiLevelShort(level))}</small></button>`
+	).join('');
+	return `<div class="ui-level-switch">${buttons}</div><div class="ui-level-hint">${esc(uiLevelDesc(cur))}</div>`
 }
 function bindUiLevelSwitch(scope=document){
  syncUiLevelControls(scope);
